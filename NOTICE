@@ -1,0 +1,20 @@
+Super Spectral
+Copyright 2026 Alexander Gomez
+
+Licensed under the Apache License, Version 2.0 (the "License"); see LICENSE.
+
+SPLIT LICENSING
+---------------
+Everything in this repository is Apache-2.0 EXCEPT the `host/` directory,
+which is licensed under the GNU General Public License v3.0 or later
+(see host/LICENSE). `host/` holds the Linux companion software, which
+imports Praat/parselmouth (GPLv3). No code crosses the `host/` boundary in
+either direction: firmware never depends on `host/`, and `host/` is never
+linked into firmware. See docs/adr/0004-split-licensing.md.
+
+THIRD-PARTY NOTICES
+-------------------
+(Append one entry per vendored or linked third-party component:
+ name, version, licence, copyright line, URL. Managed ESP-IDF components
+ are enumerated by `esp-idf-sbom`; this file carries the copyright lines
+ that Apache-2.0 §4(d) requires to be preserved.)
