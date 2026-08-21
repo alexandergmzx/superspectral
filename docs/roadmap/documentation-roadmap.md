@@ -129,7 +129,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   - [x] `firmware/twatch-s3/dependencies.lock` committed; `env.lock.md` filled (IDF tag + SHA, `idf_tools.py list`, interpreter path, container digest, distro, cmake/ninja/ccache). *(2026-08-20)*
   - [x] Skeleton builds **twice** with identical `.bin` sha256 (`CONFIG_APP_REPRODUCIBLE_BUILD=y`). *(2026-08-20: identical after `fullclean`; note that `PROJECT_VER` is captured at configure time, so a build from a stale configure differs only in the version stamp — reconfigure before comparing.)*
   - [ ] CI firmware job green on the digest-pinned container.
-  - [ ] Old trees gone; `~/.bashrc` no longer sources ROS unconditionally; `env | grep -i IDF_COMPONENT` empty.
+  - [ ] Old trees gone; `~/.bashrc` no longer sources ROS unconditionally; `env | grep -i IDF_COMPONENT` empty. *(2026-08-20 partial: the `get_idf` alias to the dev snapshot is retired (`get_idf54` → v5.4.1, kept by owner's choice); `~/esp/esp-idf` and the half-installed `~/esp/idf/v5.5.5` + `~/esp/tools/v5.5.5` are scheduled for the owner to delete; `~/.espressif` (EIM v6.0.1) is untouched — its activation script must never be sourced in a Super Spectral shell (it sets `IDF_COMPONENT_LOCAL_STORAGE_URL`, which `.envrc` unsets defensively). ROS sourcing in `~/.bashrc` is still unconditional; `.envrc` scrubs it per project.)*
 
 ### E2 — First contact with hardware *(after E1; needs the watch)*
 
