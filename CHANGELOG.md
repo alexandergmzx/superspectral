@@ -83,6 +83,23 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
   `python-scripts/gen_colormap_lut.py`.
 - Pre-commit hook `presets-rules`; a CI step running the preset checker.
 
+*Session of 2026-08-21, daytime (same branch; plan in
+[`docs/session-plans/2026-08-21-daytime-remediation.md`](docs/session-plans/2026-08-21-daytime-remediation.md)):*
+
+- **[ADR 0006](docs/adr/0006-fft-normalisation-and-window-conventions.md)
+  written** (`proposed`) — the last named ADR line of the Phase-0 definition of
+  done. Periodic cosine-sum windows built from the preset's own coefficients,
+  Heinzel S1/S2, 0 dBFS = full-scale sine, `fc32` only, `fft2r` for every size in
+  v1, and our own `cplx2real`. **ADR 0020** allocated for the f0 estimator.
+- **The GPL environment exists**: `host/pyproject.toml`, `host/uv.lock`,
+  `host/REUSE.toml`, `host/.python-version`. `praat-parselmouth==0.4.7` pinned
+  exactly, because the pin is the Praat version.
+- `python-scripts/check_markers.py` plus
+  [`markers-closed-2026-08-21.tsv`](docs/roadmap/markers-closed-2026-08-21.tsv)
+  and [`markers-allowlist.tsv`](docs/roadmap/markers-allowlist.tsv): every
+  unresolved-value marker is either a closed correction that must not regress or
+  an allowed one with a **named owner**. Wired into pre-commit and CI.
+
 ### Changed
 
 - ADR 0004's `host/` boundary is now literally one `grep`: every file under
@@ -119,6 +136,32 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
 - `live_singing`'s `enbw_hz` was truncated rather than rounded.
 - SPDX headers added to `firmware/idf-gate/{CMakeLists.txt,
   main/CMakeLists.txt, main/idf_component.yml}`.
+
+*Session of 2026-08-21, daytime — corrections, several of them to the night's own work:*
+
+- **The golden-file pitch method was corrected in the wrong direction overnight**
+  and is now right. No released `praat-parselmouth` (0.4.0–0.4.7) can run
+  `To Pitch (filtered autocorrelation)` — all of them bundle **Praat 6.1.38**,
+  which predates the method by two years. Golden sets pin `method: raw`;
+  `verify.py` invariant 6 gates `filtered` on `praat_bundled ≥ 6.4.0`.
+- **The window oracle must build from coefficients, not names.** Preset
+  `nuttall` (esp-dsp's set) has no SciPy equivalent — it is 0.0163 from SciPy's
+  `nuttall`, which is in fact the Blackman–Nuttall set.
+- **The Saarbrücken corpus is CC BY 4.0** (Zenodo 16874898), not
+  `unstated-terms`; the site has no terms page at all. ADR 0005's "1 356
+  patients" is 1 356 *sessions*, and "687 healthy" matches nothing in the index.
+- **05 #23's companion DOI** was wrong on DOI, issue and pages; **#44's author
+  order** put the second author first; **#47** is CC BY-NC-ND 4.0, not paid.
+- **An FDA "correction" is retracted**: a pass inferred from the Federal
+  Register API that the September 2019 revision did not exist. The guidance's own
+  cover page names it. ADR 0005 now cites the edition it means (2026-01-06) and
+  quotes §II verbatim.
+- Four items parked as "unread" were read from datasheets **already filed in this
+  repo** (DRV2605L timings and currents, FT6336U/ST7789 rail currents, ST7789
+  `GATECTRL`, ESP32-S3 strapping Table 3-1) — and one of them found that the
+  ST7789**V3** spec's own current table is `TBD` in every cell.
+- Two `pre-commit` hook revs marked "VERIFY before first use" have now been used;
+  `pre-commit run -a` passes 21/21 for the first time.
 
 <!-- Link targets are filled in at the first tagged release. -->
 [Unreleased]: ./

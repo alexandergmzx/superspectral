@@ -8,7 +8,7 @@
 # lower a count in the same commit that removes a marker.
 .github/workflows/ci.yml	3	prose describing the marker gate and the (verify) class it checks
 .pre-commit-config.yaml	4	prose describing the marker gate; two hook revs marked VERIFY before first use
-CHANGELOG.md	1	historical record
+CHANGELOG.md	2	historical record
 CLAUDE.md	4	the constitution quotes the proposal; follows the RQ freeze
 README.md	2	follows the documents it indexes
 docs/README.md	1	follows the documents it indexes
@@ -47,6 +47,7 @@ docs/reference-projects/notes/esp-dsp_notes.md	3	read at a pinned revision; re-r
 docs/reference-projects/notes/lilygolib-axp2101_notes.md	3	read at a pinned revision; re-read at the next bump
 docs/roadmap/README.md	1	tracks the questions; closes when they do
 docs/roadmap/documentation-roadmap.md	8	tracks the questions; closes when they do
+docs/session-plans/2026-08-21-daytime-remediation.md	1	dated session record — historical
 docs/session-plans/2026-08-21-overnight-phase0.md	2	dated session record — historical
 docs/standards/README.md	1	follows the documents it indexes
 docs/validation/README.md	6	Phase 1 measured — every target has a method, not yet a number
