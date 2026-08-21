@@ -87,5 +87,5 @@ direct_dependencies:
 - lewisxhe/sensorlib
 - lvgl/lvgl
 manifest_hash: 554f17a3ae5a42b9415823b4db7da530e49f43359c6a48b1e32df4c55f22a600
-target: esp32s3
+target: esp32
 version: 3.0.0

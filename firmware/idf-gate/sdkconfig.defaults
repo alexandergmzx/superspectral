@@ -12,6 +12,10 @@
 #   rm -f sdkconfig && idf.py reconfigure     (or idf.py fullclean && idf.py build)
 # Regenerate a minimal file from a tuned sdkconfig with: idf.py save-defconfig
 
+# ---- Target pin: a regenerated sdkconfig must never default to plain ESP32 ----
+# (discovered 2026-08-21: rm sdkconfig + idf.py build configured esp32 -> 2 MB flash)
+CONFIG_IDF_TARGET="esp32s3"
+
 # ---- Reproducibility (docs/devenv/env.lock.md; CI builds twice and diffs) ----
 # Selects COMPILER_HIDE_PATHS_MACROS; maps paths to /IDF, /IDF_PROJECT, ...;
 # drops timestamps from app + bootloader metadata. GDB then needs
@@ -101,16 +105,12 @@ CONFIG_ESP_BROWNOUT_DET=y
 CONFIG_ESP_BROWNOUT_DET_LVL_SEL_7=y
 
 # ---- No radio in v1 (ADR 0017) ----------------------------------------------
-# SX1262 is held in reset with ALDO4 off; Wi-Fi and BT stacks never enter the
-# link line. BT_ENABLED is a real prompt (components/bt/Kconfig): n it is.
+# The real guard is structural: CMakeLists.txt sets `set(COMPONENTS main)`, so
+# bt, esp_wifi, esp_netif, lwip, openthread are NOT in the build at all (the
+# pre-commit `sdkconfig-invariants` hook asserts that line). Their Kconfig
+# symbols therefore do not exist in the generated sdkconfig; the two lines
+# below are kept for intent and are harmlessly ignored (2026-08-21: verified
+# that the trimmed build drops CONFIG_ESP_WIFI_ENABLED, which is promptless
+# and could not have been set to n any other way). SX1262 stays in reset with
+# ALDO4 off.
 CONFIG_BT_ENABLED=n
-# ESP_WIFI_ENABLED exists in components/esp_wifi/Kconfig but is PROMPTLESS:
-#     config ESP_WIFI_ENABLED
-#         bool
-#         default y if SOC_WIFI_SUPPORTED
-# kconfiglib silently ignores assignments to promptless symbols while loading
-# defaults, so "CONFIG_ESP_WIFI_ENABLED=n" here would have NO effect and the
-# generated sdkconfig would still read =y - a trap for the reviewer. The real
-# guard is structural: no component REQUIRES esp_wifi/esp_netif/esp_event for
-# networking, and the pre-commit grep asserts that. Line kept for intent only:
-# CONFIG_ESP_WIFI_ENABLED=n   (promptless on esp32s3 - cannot be overridden)
