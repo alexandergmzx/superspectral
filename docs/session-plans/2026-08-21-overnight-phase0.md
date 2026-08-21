@@ -269,7 +269,7 @@ Three things could not be done here and are yours:
 | 4 | **ADR 0007 — display path** and **ADR 0008 — ring/twang metric.** Untouched tonight. | backlog |
 | 5 | **The proposal is a DRAFT and says so.** §1–§7 are filled and every claim is cited, but the voice is mine, not yours. | [`docs/proposal/01-…`](../proposal/01-super-spectral-proposal.md) |
 | 6 | **05 #23's DOI does not exist** and 05 #44's author list is wrong. Flagged, not silently changed — a bibliography entry is a claim about the record. | [05-papers](../bibliography/05-papers.md) |
-| 7 | **The Saarbrücken corpus is quarantined** on `unstated-terms`. Someone has to read its Terms & Conditions page before anything from it reaches a number. | [`datasets/corpora/manifest.yaml`](../../datasets/corpora/manifest.yaml) |
+| ~~7~~ | ~~**The Saarbrücken corpus is quarantined** on `unstated-terms`~~ — **closed 2026-08-21, and it was never a decision.** There is no Terms & Conditions page: that footer heading covers an Impressum and a privacy link. The licence is on the Zenodo deposit — **CC BY 4.0**, record 16874898 — which is one API call away. The licence quarantine is lifted; what stays open is Q41, the ethics question, which is a different thing and is genuinely the owner's. | [`datasets/corpora/manifest.yaml`](../../datasets/corpora/manifest.yaml) |
 
 ## Before you push
 

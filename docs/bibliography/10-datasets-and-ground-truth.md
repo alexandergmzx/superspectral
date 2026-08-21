@@ -75,7 +75,7 @@ Grounds the LTAS / H1–H2 / CPP axis of the host compare mode (ADR 0002) and **
 | # | Dataset | Content | Licence | Priority | Why |
 |---|---------|---------|---------|:--------:|-----|
 | 18 | **PVQD — Perceptual Voice Qualities Database** — [data.mendeley.com/datasets/9dz247gnyb/4](https://data.mendeley.com/datasets/9dz247gnyb/4) | 296 WAVs, CAPE-V sustained vowels + sentences, expert perceptual ratings | CC BY 4.0 | ★★ | Perceptually rated material to check that CPP/H1–H2/tilt readouts order voices the way listeners do — a *validity* check of the host measures (ADR 0002 compare mode), not a diagnostic use (ADR 0005). |
-| 19 | **Saarbrücken Voice Database** — [stimmdb.coli.uni-saarland.de](https://stimmdb.coli.uni-saarland.de/) | > 2 000 speakers (687 healthy, 1 356 patients, 71 pathologies), **audio + EGG** | site terms — verify | ★ | EGG-paired vowels at several pitches for the pitch estimators and the H1–H2 definitions; the pathology labels are *not* used (ADR 0005). |
+| 19 | **Saarbrücken Voice Database** (Pützer & Barry) — [Zenodo 16874898](https://zenodo.org/records/16874898) · [stimmdb.coli.uni-saarland.de](https://stimmdb.coli.uni-saarland.de/) | 2 225 sessions from 1 853 speakers (869 normal / 1 356 pathological sessions; 71 pathology labels in 186 combinations), **audio + EGG** *(counts computed from the site's index CSV, 2026-08-21 — the old "687 healthy, 1 356 patients" was sessions read as patients)* | **CC BY 4.0** *(verified 2026-08-21 — Zenodo record rights `cc-by-4.0`; the site has no terms page)* | ★ | EGG-paired vowels at several pitches for the pitch estimators and the H1–H2 definitions; the pathology labels are *not* used (ADR 0005). |
 
 ## E. Noise corpora — the SNR axis
 
@@ -182,7 +182,7 @@ Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `free, 
 | 16 | request | SMC Lab, National University of Singapore — request |
 | 17 | free (GET) | [mtg.github.io/saraga](https://mtg.github.io/saraga/) · `mirdata.initialize("saraga_carnatic")` |
 | 18 | free (GET) | [data.mendeley.com/datasets/9dz247gnyb/4](https://data.mendeley.com/datasets/9dz247gnyb/4) |
-| 19 | free, reg. | (verify terms) [stimmdb.coli.uni-saarland.de](https://stimmdb.coli.uni-saarland.de/) |
+| 19 | free (CC BY 4.0) | [zenodo.org/records/16874898](https://zenodo.org/records/16874898) — bulk `data.zip` 17.9 GB + `healthy.zip` 6.0 GB + 71 per-pathology zips, `.nsp` + EGG; per-session browsing at [stimmdb](https://stimmdb.coli.uni-saarland.de/) |
 | 20 | free (GET) | [zenodo.org/records/1227121](https://zenodo.org/records/1227121) |
 | 21 | free (GET) | [openslr.org/17](https://www.openslr.org/17/) |
 | 22 | free (GET) | (CC BY-NC — research tables only) [github.com/karolpiczak/ESC-50](https://github.com/karolpiczak/ESC-50) |
