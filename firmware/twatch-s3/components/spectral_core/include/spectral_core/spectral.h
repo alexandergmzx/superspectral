@@ -1,8 +1,12 @@
 /* SPDX-FileCopyrightText: 2026 Alexander Gomez
  * SPDX-License-Identifier: Apache-2.0
  *
- * spectral_core - public API sketch (ADR 0006: FFT normalisation and window
+ * spectral_core - public API (ADR 0006: FFT normalisation and window
  * conventions, single-source spec shared by the watch and the host).
+ * ADR 0006 is WRITTEN as of 2026-08-21 and ratifies the conventions in
+ * this header verbatim; where it goes further than the header (own
+ * cplx2real, fft2r-only, DC-blocker form, smoothing domain) the record
+ * is the authority.
  *
  * STATUS: declarations only. Bodies land in src/ during roadmap E1; the
  * contract below is what host-tests/ and the golden-file manifest
@@ -103,7 +107,9 @@ typedef int (*spectral_rfft_fn)(void *user, const float *in, float *out, size_t 
 
 typedef struct {
     uint32_t fft_size;    /* N: power of two, 256..8192            */
-    uint32_t hop;         /* samples between frames (N/2 = 50 %)  */
+    uint32_t hop;         /* samples between frames. NOT N/2: every
+                           * shipped preset overlaps 69-94 % (hop is
+                           * interval_ms * fs / 1000, ADR 0010 V7). */
     float sample_rate_hz; /* 16000 / 32000 / 48000 (ADR 0003)      */
     spectral_window_t window;
     spectral_scale_t scale;

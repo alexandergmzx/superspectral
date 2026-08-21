@@ -51,7 +51,9 @@ Three properties of that picture are contracts, not drawing conventions:
 
 The split is not stylistic: esp-dsp cannot build on the ESP-IDF `linux` target (Xtensa `.S` files registered unconditionally, ANSI sources including `esp_attr.h`), which is why `spectral_core` is the piece that must stay dependency-free ([ADR 0013](../adr/0013-native-linux-simulator-target.md), [`host-tests/README.md`](../../host-tests/README.md)).
 
-## 3. Conventions: what is fixed, and what ADR 0006 still owes
+## 3. Conventions: what is fixed
+
+> **ADR 0006 is written** ([`0006-fft-normalisation-and-window-conventions.md`](../adr/0006-fft-normalisation-and-window-conventions.md), `proposed` 2026-08-21). Everything this section used to list as "still owed" now has an answer; the table below is unchanged because ADR 0006 ratified it verbatim rather than restating it.
 
 Fixed today, because an accepted ADR or a committed header says so:
 
@@ -66,7 +68,15 @@ Fixed today, because an accepted ADR or a committed header says so:
 | Bandwidth | `enbw_hz` is mandatory per preset; the words "wideband"/"narrowband" are banned from preset files | [ADR 0010](../adr/0010-preset-schema.md) decision 2 |
 | Analysis bandwidth ≠ display rate | `interval_ms` is the hop; `display.refresh_hz_target` is frames pushed | [ADR 0010](../adr/0010-preset-schema.md) decision 4 |
 
-Still owed by ADR 0006, and therefore **not** stated anywhere in this note as settled: the periodic-window construction (§7.1), the `1/N` vs `1/√N` bookkeeping that `spectral.h` sketches but no record ratifies, the fast-log error budget (§10), the domain in which smoothing and hold are applied (§12 OQ8), and whether a Gaussian window is added for Praat comparability (roadmap Q34).
+Settled by [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) on 2026-08-21, each with its decision number there:
+
+| Was owed | Now |
+|---|---|
+| periodic-window construction (§7.1) | **D1** — cosine sum from the preset's own `coefficients`, never `dsps_wind_*`; table checksummed into the golden manifest. The deciding measurement: preset `nuttall` differs from SciPy's `nuttall` by 0.0163, so name-based construction is unsafe |
+| the `1/N` vs `1/√N` bookkeeping `spectral.h` sketches | **D2** — ratified verbatim; the transform is unnormalised and `spectral_core` applies S1/S2. Closed forms `S1 = N·a₀`, `S2 = N(a₀² + Σa_k²/2)` make it testable without a reference |
+| fast-log error budget (§10) | **D9** — its own tolerance row, `≤ 0.005 dB (prov.)`, exhaustively verified; M0 ships `log10f` |
+| smoothing/hold domain (§12 OQ8) | **D8** — linear power, never dB (dB-domain averaging biases ≈ 2.5 dB low) |
+| Gaussian window (roadmap Q34) | **D9 deferred by name** — needs the T7b Praat-comparability result first |
 
 One correction this note must carry rather than repeat: **the microphone's 61.5 dB(A) SNR does not cap the displayed spectral dynamic range.** An N-point FFT spreads broadband noise over N/2 bins, so a tonal component sits roughly `10·log10((N/2)/NENBW)` above the floor the broadband figure suggests — about +30 dB at N = 4096. The mic SNR bounds *wideband level* accuracy ([`spectral.h`](../../firmware/twatch-s3/components/spectral_core/include/spectral_core/spectral.h) header note; [validation README](../validation/README.md) "Displayed spectral dynamic range"; 05 #1).
 
@@ -237,19 +247,19 @@ Nothing below is decided in this note. Each row names where the decision belongs
 
 | # | Question | Routed to |
 |---|---|---|
-| OQ1 | Periodic window: generate `len+1` and drop the last sample, or compute the cosine sum in `spectral_core` from the preset's coefficients? Is the table checksummed into the golden manifest? (§7.1) | [ADR 0006](../adr/README.md) backlog |
-| OQ2 | Raise `CONFIG_DSP_MAX_FFT_SIZE` above 4096 for margin, or accept the exact fit and correct [`xiao-edge-audio_notes.md`](../reference-projects/notes/xiao-edge-audio_notes.md)? (§7.2) | ADR 0006; correction owed per [esp-dsp notes](../reference-projects/notes/esp-dsp_notes.md) §13 |
-| OQ3 | Does the backend carry both radix kernels, and is it worth re-picking preset sizes so the default analysis size sits on the `4^k` fast path? (§6) | ADR 0006 · [ADR 0010](../adr/0010-preset-schema.md) amendment |
-| OQ4 | Own `cplx2real` half-bin twiddles (≈ 16 KB) or esp-dsp's `dsps_fft4r_init_fc32` table (64 KB, PSRAM by default)? (§4.1, §5c) | ADR 0006 · [`spectral_fft_backend`](../../firmware/twatch-s3/components/spectral_fft_backend/README.md) |
-| OQ5 | Reconcile the 112 KB research estimate with the ≈ 160 KB / ≈ 104 KB itemisation, and correct the `10·N` rule of thumb. (§4.1) | roadmap **H13** measurement; ADR 0006 |
+| ~~OQ1~~ | **Closed 2026-08-21 — [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) D1.** Cosine sum from the preset's `coefficients`; window table checksummed into the golden manifest (schema minor bump when the generator lands). Generating `N+1` and dropping a sample is only equivalent for the families SciPy names, and preset `nuttall` is not one of them (0.0163 apart). *(was: Periodic window: generate `len+1` and drop the last sample, or compute the cosine sum in `spectral_core` from)* | ADR 0006 D1 |
+| ~~OQ2~~ | **Closed — ADR 0006 D6.** `CONFIG_DSP_MAX_FFT_SIZE` stays 4096: it bounds `N_c`, not `N_real`. Correction still owed to `xiao-edge-audio_notes.md` §3. *(was: Raise `CONFIG_DSP_MAX_FFT_SIZE` above 4096 for margin, or accept the exact fit and correct [`xiao-edge-audio_n)* | ADR 0006 D6 |
+| ~~OQ3~~ | **Closed — ADR 0006 D6.** `fft2r` for every size in v1; the default real-4096 (`N_c` = 2048) is not a power of four and could never use radix-4. Revisit on an H13 cycle count. *(was: Does the backend carry both radix kernels, and is it worth re-picking preset sizes so the default analysis siz)* | ADR 0006 D6 |
+| ~~OQ4~~ | **Closed — ADR 0006 D5, on source evidence.** Our own `cplx2real`: esp-dsp's refuses to run unless `dsps_fft4r_initialized` (its first statement) even though it takes a `table` argument, forcing a 64 KB table that `CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=16384` then sends to PSRAM; and it computes every output bin through a `double` `0.5` literal. Ours is `4·(N_c+2)` B, float-only. *(was: Own `cplx2real` half-bin twiddles (≈ 16 KB) or esp-dsp's `dsps_fft4r_init_fc32` table (64 KB, PSRAM by default)* | ADR 0006 D5 |
+| OQ5 | *(Half closed by [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) D5: with our own `cplx2real` the table cost is ≈ 8 / 16 / 32 KB at real-2048 / 4096 / 8192, so the 112 KB estimate is superseded rather than reconciled. What remains is the **measurement**.)* Reconcile the 112 KB research estimate with the ≈ 160 KB / ≈ 104 KB itemisation, and correct the `10·N` rule of thumb. (§4.1) | roadmap **H13** measurement; ADR 0006 |
 | OQ6 | Which decimating filter (biquad cascade vs `dsps_fird_f32`), and what is the inter-stage group-delay alignment rule? (§8) | `dsp/design/decimation-cascade.md` ([`../../dsp/design/README.md`](../../dsp/design/README.md)) |
-| OQ7 | The fast-log approximation and its **maximum error**, against the 0.01 dB tolerance row. (§10) | ADR 0006 + a row in [`golden-files.md`](../validation/golden-files.md) |
-| OQ8 | Are smoothing, averaging and hold applied in linear power or in dB? Neither the preset schema (§8, "does not restate the formula") nor the planned `fft-normalization.md` ("never defines display smoothing") claims the formula — it is currently unowned. | ADR 0006 or a preset-content ADR |
-| OQ9 | **No ADR number is allocated for the f0 estimator choice** (MPM vs YIN vs dywapitchtrack, lag range, voicing, octave guard). Fold into ADR 0006 or allocate a new backlog number. (§9) | [ADR index](../adr/README.md) backlog |
+| ~~OQ7~~ | **Closed — ADR 0006 D9.** Own tolerance row, `≤ 0.005 dB (prov.)`, exhaustive host verification; M0 ships exact `log10f`. *(was: The fast-log approximation and its **maximum error**, against the 0.01 dB tolerance row. (§10))* | ADR 0006 D9 |
+| ~~OQ8~~ | **Closed — ADR 0006 D8.** Linear power, never dB. *(was: Are smoothing, averaging and hold applied in linear power or in dB? Neither the preset schema (§8, "does not r)* | ADR 0006 D8 |
+| ~~OQ9~~ | **Routed 2026-08-21 — [ADR 0020 allocated](../adr/README.md)** in the backlog, not folded into 0006: an estimator with its own accuracy claim is a separate reviewable decision. *(was: **No ADR number is allocated for the f0 estimator choice** (MPM vs YIN vs dywapitchtrack, lag range, voicing,)* | ADR 0020 |
 | OQ10 | Convert all `N/2 + 1` bins to dB, or only the ≈ 240 rendered columns? Couples the DSP stage to the display mapping and to what a take records. (§10) | ADR 0006 ↔ ADR 0007 |
 | ~~OQ11~~ | **Closed 2026-08-21.** [`sdkconfig.defaults.esp32s3`](../../firmware/twatch-s3/sdkconfig.defaults.esp32s3)'s PSRAM comment said FFT scratch goes to PSRAM, contradicting tenet 3 and [ADR 0018](../adr/0018-first-reference-project-study.md). Corrected, and the comment now explains why the 16384-byte `SPIRAM_MALLOC_ALWAYSINTERNAL` threshold is what keeps the fft2r twiddle table internal. (§5) | done |
-| OQ12 | `spectral_config_t.hop`'s doc comment says `N/2 = 50 %`; no shipped preset uses it (69–94 % overlap). Correction owed to [`spectral.h`](../../firmware/twatch-s3/components/spectral_core/include/spectral_core/spectral.h). (§4) | firmware; no decision needed |
-| OQ13 | Add a Gaussian window (Praat's convention) and/or a genuinely wideband preset (N ≈ 128–256)? Both were routed out of [ADR 0010](../adr/0010-preset-schema.md). | ADR 0006 · roadmap **Q34** |
+| ~~OQ12~~ | **Closed — ADR 0006.** `spectral_config_t.hop`'s "`N/2` = 50 %" comment is wrong for every shipped preset (69–94 % overlap); corrected in `spectral.h` in the ADR 0006 commit. *(was: `spectral_config_t.hop`'s doc comment says `N/2 = 50 %`; no shipped preset uses it (69–94 % overlap). Correcti)* | ADR 0006 |
+| ~~OQ13~~ | **Deferred by name — ADR 0006 D9.** Gaussian window needs the T7b Praat-comparability result first. *(was: Add a Gaussian window (Praat's convention) and/or a genuinely wideband preset (N ≈ 128–256)? Both were routed)* | ADR 0006 D9 / Q34 |
 
 Thresholds that would rewrite parts of this note if they fire: **T2** (mic not acoustically capable ⇒ host-first pivot, every timbre metric leaves the watch), **T3** (48 kHz fails ⇒ the schema's reserved rate is removed), **T4** (scroll axis fails ⇒ 30 Hz for all presets, which changes every frames/s column in §11). See [`../roadmap/documentation-roadmap.md`](../roadmap/documentation-roadmap.md) §4.
 
