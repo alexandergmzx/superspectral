@@ -141,7 +141,7 @@ jobs:
           idf-build-apps build -p "$FIRMWARE_DIR" -t "$IDF_TARGET" --recursive \
             --config-rules "sdkconfig.ci.${{ matrix.config }}=${{ matrix.config }}" \
             --build-dir "build_@t_@w" --check-warnings --keep-going \
-            --size-json --collect-app-info "app_info_${{ matrix.config }}.json" \
+            --size-json-filename size.json --collect-app-info "app_info_${{ matrix.config }}.json" \
             --junitxml "build-${{ matrix.config }}.xml"
       - name: dependencies.lock unchanged by the build
         run: git diff --exit-code -- "$FIRMWARE_DIR/dependencies.lock"
