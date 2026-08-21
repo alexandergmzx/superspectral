@@ -133,11 +133,11 @@ repos:
       #    guard is that no component REQUIRES esp_wifi, pitfall H11),
       #    BT_ENABLED (components/bt/Kconfig), ESP_CONSOLE_USB_SERIAL_JTAG (components/esp_stdio/Kconfig).
       - id: sdkconfig-invariants
-        name: sdkconfig.defaults keeps SECURE_*=n, radio=n, console=USB-Serial-JTAG
+        name: sdkconfig.defaults keeps SECURE_*=n, coredump+rollback=y, console=USB-Serial-JTAG; CMakeLists trims COMPONENTS
         language: system
         entry: >-
           bash -c 'f=firmware/twatch-s3/sdkconfig.defaults; rc=0;
-          for want in CONFIG_SECURE_BOOT=n CONFIG_SECURE_FLASH_ENC_ENABLED=n CONFIG_BT_ENABLED=n CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y;
+          for want in CONFIG_SECURE_BOOT=n CONFIG_SECURE_FLASH_ENC_ENABLED=n CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y;
           do grep -qxF "$want" "$f" || { echo "$f lacks the line $want"; rc=1; }; done;
           grep -qE "^set\(COMPONENTS main\)" firmware/twatch-s3/CMakeLists.txt || { echo "firmware/twatch-s3/CMakeLists.txt lacks set(COMPONENTS main) - ADR 0017: no lwIP/Wi-Fi/BT in the build"; rc=1; };
           if grep -nE "^CONFIG_(SECURE_BOOT|SECURE_FLASH_ENC_ENABLED|ESP_WIFI_ENABLED|BT_ENABLED)=y" firmware/twatch-s3/sdkconfig.defaults* firmware/twatch-s3/sdkconfig.ci.* 2>/dev/null;

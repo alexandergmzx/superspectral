@@ -112,5 +112,6 @@ CONFIG_ESP_BROWNOUT_DET_LVL_SEL_7=y
 # below are kept for intent and are harmlessly ignored (2026-08-21: verified
 # that the trimmed build drops CONFIG_ESP_WIFI_ENABLED, which is promptless
 # and could not have been set to n any other way). SX1262 stays in reset with
-# ALDO4 off.
-CONFIG_BT_ENABLED=n
+# ALDO4 off. No CONFIG_BT_ENABLED line here: with `bt` out of the component set
+# the symbol is unknown and kconfgen's warning fails idf-build-apps
+# --check-warnings in CI (first seen 2026-08-21).

@@ -14,7 +14,7 @@ idf_component_register(
     INCLUDE_DIRS  "."
     REQUIRES      twatch_bsp ui spectral_core spectral_fft_backend
                   audio_source display_backend
-    PRIV_REQUIRES esp_timer nvs_flash esp_app_format app_update)
+    PRIV_REQUIRES esp_timer nvs_flash esp_app_format app_update espcoredump)   # espcoredump: keep core-dump-to-flash in the trimmed build (ADR 0015, 0017)
 
 # Project-own warning set (ADR-level policy, see sdkconfig.defaults). The S3
 # FPU is single precision: -Wdouble-promotion is the high-value one.
