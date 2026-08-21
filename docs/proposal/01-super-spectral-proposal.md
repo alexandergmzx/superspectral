@@ -112,13 +112,13 @@ Licensing follows the same line: Apache-2.0 for the repository, firmware, docume
 | 8192 | 2.0 / 3.9 / 5.9 Hz | 512 / 256 / 171 ms | 8.89 % |
 | 16384 | 1.0 / 2.0 / 2.9 Hz | 1024 / 512 / 341 ms | ≈29 % (extrapolated) |
 
-**Internal SRAM is the binding resource,** at roughly **10·N bytes** per real-FFT size (workspace 4N + twiddle 2N + window 4N + int16 input ring 2N), with a special case on the S3: when the complex half-size is ≤ 1024, esp-dsp uses a const ROM twiddle table and allocates no heap, so real N ≤ 2048 costs no twiddle memory.
+**Internal SRAM is the binding resource,** at **12·N bytes per real-FFT size on the radix-2 kernel and 18·N on radix-4** — the "10·N" rule of thumb inherited from the research does not match its own itemisation and is not used here (workspace 4N + twiddle 2N + window 4N + int16 input ring 2N), with a special case on the S3: when the complex half-size is ≤ 1024, esp-dsp uses a const ROM twiddle table and allocates no heap, so real N ≤ 2048 costs no twiddle memory.
 
 | Real N | Total internal SRAM `(prov.)` | Verdict |
 |---|---|---|
 | 2048 | 24 KB | trivial |
 | 4096 | 56 KB | comfortable |
-| **8192** | **112 KB** | **comfortable ceiling — the largest preset** |
+| **8192** | **≈ 112–144 KB** | **the largest preset; the spread is the FFT kernel's twiddle table (radix-4 costs 64 KB, radix-2 16 KB) and is unresolved — [03-dsp-pipeline §4.1](../architecture/03-dsp-pipeline.md), ADR 0006** |
 | 16384 | 224 KB | hard ceiling (LVGL small, no radio) |
 | 32768 | 448 KB | not viable |
 

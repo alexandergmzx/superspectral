@@ -114,7 +114,7 @@ Unless stated otherwise every field is **required**. `additionalProperties` is `
 | Field | Type | Notes |
 |---|---|---|
 | `sample_rate_hz` | 16000 \| 32000 \| **48000 (reserved)** | 32 kHz is the default ([ADR 0003](../../docs/adr/0003-microphone-path.md) decision 4). **48000 is present in the enum but rejected by the watch loader** until [experiment 0001](../../docs/validation/experiments/0001-pdm-mic-in-situ-characterization.md) clause 4 shows the SPM1423 tolerates a 3.072 MHz PDM clock; if that test fails, 48000 leaves the enum in a MAJOR bump. A **host-only** preset may use 48000 today — the gate is on the capture path, and the host reads files, not microphones |
-| `fft_size` | 512 … 16384 | real transform length N. 16384 is host-only: 8192 costs 112 KB of internal SRAM and 16384 costs 224 KB, the hard ceiling with LVGL resident |
+| `fft_size` | 512 … 16384 | real transform length N. 16384 is host-only: real-8192 costs ≈ 112–144 KB of internal SRAM and real-16384 ≈ 192–224 KB — the spread is the radix-2 vs radix-4 twiddle table, all figures `(prov.)` and unmeasured ([03-dsp-pipeline §4.1](../../docs/architecture/03-dsp-pipeline.md)) |
 | `window` | object | §4.3 |
 | `resolution` | object | §4.4 |
 | `interval_ms` | integer 1–1000 | analysis hop. `interval_ms × sample_rate_hz` must be a multiple of 1000 (rule V7) |

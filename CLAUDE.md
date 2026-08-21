@@ -107,7 +107,7 @@ A full layout summary lives in [`README.md`](README.md).
 
 1. **All real-time DSP stays on the watch.** The host never sees live audio; it sees takes. Latency and refresh are therefore properties of the firmware alone.
 2. **The microphone decides everything.** One PDM mic on I2S0, 16-bit, software DC removal, no hardware high-pass on the S3. Its in-situ response through the case is measured, not assumed; every level or band-ratio readout is relative/within-session until a calibration chain says otherwise.
-3. **Internal SRAM is the binding resource.** FFT working buffers (≤ 112 KB for real-8192) are internal and 16-byte aligned; PSRAM is for history, fonts and LVGL assets only, never DMA.
+3. **Internal SRAM is the binding resource.** FFT working buffers (real-8192 costs ≈ 112–144 KB depending on whether it runs on the radix-2 or radix-4 kernel — `(prov.)`, see [`docs/architecture/03-dsp-pipeline.md`](docs/architecture/03-dsp-pipeline.md) §4.1) are internal and 16-byte aligned; PSRAM is for history, fonts and LVGL assets only, never DMA.
 4. **The analyzer canvas may bypass LVGL** (raw `esp_lcd` + ST7789 hardware vertical scroll) to reach 50 Hz; LVGL renders chrome. Gated on verifying the scroll axis against `MADCTL` (ADR 0007).
 5. **Recovery before features.** Boot guard, USJ console, OTA rollback, partition offsets frozen (ADR 0014/0015) ship from the first firmware commit.
 6. **Validation is part of the design.** Every architectural choice maps to a measurable acceptance metric in [`docs/validation/`](docs/validation/), reported on both measurement paths, with an external anchor and a stated uncertainty.

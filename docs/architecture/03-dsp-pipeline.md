@@ -101,6 +101,18 @@ That table is the source of the `≤ 112 KB` figure in [CLAUDE.md](../../CLAUDE.
 1. **The rule of thumb undercounts its own table.** The itemisation sums to `14·N` bytes (112 KB = 14 × 8192), not `10·N`; the prose "int16 input ring 2N" and the table's `4N` input-ring column disagree. Nothing downstream uses `10·N`, so this is a wording defect in the research note, but it is the reason no document should quote the rule of thumb without the table.
 2. **Reading esp-dsp's actual allocations gives a different number.** The [esp-dsp study notes](../reference-projects/notes/esp-dsp_notes.md) §4.1 itemise the real-input `fc32` pipeline byte by byte and land at **≈ 159.8 KB** for real-8192 — because `dsps_cplx2real_fc32` requires `dsps_fft4r_init_fc32`'s **64 KB** twiddle table *even on the radix-2 path*, and the research estimate does not include it. The same note gives the documented route back under the ceiling: supply our own `cplx2real` half-bin twiddles (`4·(N_c+2)` bytes = 16 392 B instead of 65 536), which drops real-8192 to **≈ 104 KB** and removes the fft4r dependency from the radix-2 path entirely.
 
+3. **A third itemisation, read from the allocation calls, explains *why* the first two disagree — the kernel changes the twiddle cost by 4×.** `dsps_fft4r_init_fc32` allocates `max_fft_size * sizeof(float) * 4` = **16 bytes per complex point**, while `dsps_fft2r_init_fc32` allocates `table_size * sizeof(float)` = **4 bytes per complex point** (both verified in the vendored clone at `modules/fft/float/dsps_fft{2,4}r_fc32_ansi.c`). Radix-4 needs `N_c` to be a power of four, so the kernel a preset can use alternates with N:
+
+   | Real N | N_c | signal buf | twiddle (kernel) | window | magnitudes | total | bytes/N |
+   |---:|---:|---:|---:|---:|---:|---:|---:|
+   | 1024 | 512 | 4 KB | 2 KB (fft2r) | 4 KB | 2 KB | **12 KB** | 12·N |
+   | 2048 | 1024 | 8 KB | 16 KB (fft4r) | 8 KB | 4 KB | **36 KB** | 18·N |
+   | 4096 | 2048 | 16 KB | 8 KB (fft2r) | 16 KB | 8 KB | **48 KB** | 12·N |
+   | **8192** | 4096 | 32 KB | **64 KB (fft4r)** | 32 KB | 16 KB | **144 KB** | 18·N |
+   | 16384 | 8192 | 64 KB | 32 KB (fft2r) | 64 KB | 32 KB | **192 KB** | 12·N |
+
+   Two consequences the earlier estimates hide. **(a)** Real-8192 lands on radix-4, whose table alone is 64 KB, so its true cost is ≈ 144 KB rather than 112 KB — a third of the way past the estimate, against an internal-SRAM budget that also has to hold I²S DMA, the LVGL partial buffers and the SPI bounce buffer. **(b)** Nothing forces radix-4: `fft2r` accepts any power of two, so real-8192 on `fft2r` would pay 16 KB of table instead of 64 KB, trading memory for speed. That is a real design choice, it is not made anywhere yet, and it belongs to **ADR 0006** with a measurement behind it, not to this note.
+
 **Neither figure is measured on target.** Both stay `(prov.)` until the on-target measurement of roadmap **H13** (`dsp_get_cpu_cycle_count()` + a heap census per preset). Reconciling them is open question **OQ4/OQ5** below; the [`spectral_fft_backend` README](../../firmware/twatch-s3/components/spectral_fft_backend/README.md)'s "~32 KB for n = 4096 (prov.)" is already flagged as a correction owed by the study notes §13.
 
 ## 5. Why the FFT working buffers are internal SRAM, 16-byte aligned
