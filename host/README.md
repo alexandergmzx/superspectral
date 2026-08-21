@@ -1,6 +1,6 @@
 # Host — Linux companion (GPL-3.0-or-later)
 
-The **offline path** of the companion architecture (ADR 0002, pre-registered in [`../docs/adr/README.md`](../docs/adr/README.md)): everything the founding research document assigned to the Python backend — Praat-grade formants, pitch golden files, LTAS/SPR over whole takes, H1–H2, DTW alignment against a Demucs-separated reference stem — runs here, on recorded takes, never in real time.
+The **offline path** of the companion architecture ([ADR 0002](../docs/adr/0002-companion-architecture.md), accepted): everything the founding research document assigned to the Python backend — Praat-grade formants, pitch golden files, LTAS/SPR over whole takes, H1–H2, DTW alignment against a Demucs-separated reference stem — runs here, on recorded takes, never in real time.
 
 ## The licence boundary
 

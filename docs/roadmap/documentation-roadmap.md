@@ -26,7 +26,7 @@ Two things swarm specified and never did are done here deliberately: the **refer
 
 ### The companion decision
 
-Super Spectral is a **companion** to the Linux analyzer in [`../research/00-linux-analyzer-architecture-and-build-guide.md`](../research/00-linux-analyzer-architecture-and-build-guide.md): the watch is the live-capture and real-time-display front end (spectrum, spectrogram, f0, band energy, take recording); the host keeps the heavy science (Praat-grade Burg formants with FormantPath, LTAS/SPR over whole takes, H1–H2 with Iseli–Alwan correction, DTW, Demucs). This is the decision that makes the research question answerable on a 61.5 dB(A) microphone and a 470 mAh (prov.) cell; it is pre-registered as [ADR 0002](../adr/README.md) and fixes the feature split in proposal §3.
+Super Spectral is a **companion** to the Linux analyzer in [`../research/00-linux-analyzer-architecture-and-build-guide.md`](../research/00-linux-analyzer-architecture-and-build-guide.md): the watch is the live-capture and real-time-display front end (spectrum, spectrogram, f0, band energy, take recording); the host keeps the heavy science (Praat-grade Burg formants with FormantPath, LTAS/SPR over whole takes, H1–H2 with Iseli–Alwan correction, DTW, Demucs). This is the decision that makes the research question answerable on a 61.5 dB(A) microphone and a 470 mAh (prov.) cell; it is fixed by [ADR 0002](../adr/0002-companion-architecture.md) (accepted 2026-08-20) and by proposal §3.
 
 ### The three conventions every phase enforces
 
@@ -102,7 +102,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
 
 - **Owner:** Claude; Alexander reviews before E1.
 - **Inputs:** D0; devenv_synth (2,230 lines) + devenv_critic corrections (A1–A9, gaps B1–B12); read-only spot checks against the host's `~/.espressif/v6.0.1/esp-idf` tree.
-- **Outputs:** `.envrc` (committed IDF pin; `direnv allow` is a user step); `firmware/twatch-s3/{CMakeLists.txt, partitions.csv, sdkconfig.defaults, sdkconfig.defaults.esp32s3, sdkconfig.ci.{qemu,release,analyzer}, main/{CMakeLists.txt, idf_component.yml, Kconfig.projbuild, app_main.c}}` and component stubs; `.clangd`, `.clang-format`, `.pre-commit-config.yaml`; [`../devenv/`](../devenv/README.md) — `setup.md`, `env.lock.md` (template), `upgrade-procedure.md`, `first-flash-checklist.md`, `brick-runbook.md`, `backup-policy.md`, `coredump-runbook.md`, `pitfalls.md`; [`../hw/`](../hw/README.md) — `twatch-s3-pins.md`, `efuse-baseline.json` (placeholder "not yet read"), `vendor-partition-table.md` (placeholder); [ADR 0001](../adr/0001-toolchain-esp-idf-v6-pinned-environment.md) **Status: proposed**; `tools/env-lock.sh`, `tools/flash.sh` stubs.
+- **Outputs:** `.envrc` (committed IDF pin; `direnv allow` is a user step); `firmware/twatch-s3/{CMakeLists.txt, partitions.csv, sdkconfig.defaults, sdkconfig.defaults.esp32s3, sdkconfig.ci.{qemu,release,analyzer}, main/{CMakeLists.txt, idf_component.yml, Kconfig.projbuild, app_main.c}}` and component stubs; `.clangd`, `.clang-format`, `.pre-commit-config.yaml`; [`../devenv/`](../devenv/README.md) — `setup.md`, `env.lock.md` (template), `upgrade-procedure.md`, `first-flash-checklist.md`, `brick-runbook.md`, `backup-policy.md`, `coredump-runbook.md`, `pitfalls.md`; [`../hw/`](../hw/README.md) — `twatch-s3-pins.md`, `efuse-baseline.json` (placeholder "not yet read"), `vendor-partition-table.md` (placeholder); [ADR 0001](../adr/0001-toolchain-esp-idf-v6-pinned-environment.md) **Status: proposed** at the time of this output, **accepted 2026-08-20** once the E1 gate passed on hardware; `tools/env-lock.sh`, `tools/flash.sh` stubs.
 - **Definition of done**
   - [ ] Every `CONFIG_*` symbol named in `sdkconfig.defaults*` resolves to a Kconfig definition in the v6.0.x tree (grep against the read-only local tree; symbol names only, never line numbers).
   - [ ] `partitions.csv` offsets + sizes sum to exactly `0x1000000`; app partitions are 64 KB-aligned; `gen_esp32part.py` dry-run accepts it.
@@ -149,7 +149,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
 - **Definition of done**
   - [x] `docs/hw/efuse-baseline.json` and `docs/hw/vendor-partition-table.md` committed; factory backup sha256 recorded (in `docs/hw/README.md` ledger and `vendor-partition-table.md`; `backup-policy.md` points there). *(2026-08-20)*
   - [x] Recovery path demonstrated: rollback and boot-guard race both pass (experiment 0002 Status → validated). *(2026-08-21: rollback 4/4, race 10/10 + 5/5.)*
-  - [x] `VDD_SPI_FORCE` value recorded (`1`, TIEH = 3.3 V → GPIO45 free); ADR 0016 branch = "free PWM" (draft pending, D5); backlight code was written only after this read. *(2026-08-20)*
+  - [x] `VDD_SPI_FORCE` value recorded (`1`, TIEH = 3.3 V → GPIO45 free); ADR 0016 branch = "free PWM" ([ADR 0016](../adr/0016-backlight-gpio45-vdd-spi-strap.md), accepted 2026-08-20); backlight code was written only after this read. *(2026-08-20)*
   - [ ] Mic/amp rail question (H2/Q14) answered on paper and recorded in `architecture/06-power-budget.md` rail map.
   - [x] `ota_0` holds the golden image (gate stage-2b build, sha256 in experiment 0002); `tools/flash.sh` refuses to target `ota_0` without `--recovery-image` and was the only flashing path used in 0002. *(2026-08-21)*
 
@@ -185,7 +185,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
 - **Definition of done**
   - [ ] `architecture/06-power-budget.md` rail map has no `TBD` rail for any powered part on the BOM.
   - [ ] BOM complete with min/max cost and a TOTAL row carrying any deviation justification.
-  - [ ] ADR 0018 written; at least two `_notes.md` exist.
+  - [x] ADR 0018 written; at least two `_notes.md` exist — four do (`xiao-edge-audio`, `lilygolib-axp2101`, `esp-dsp`, `sensorlib`). *(2026-08-21)*
   - [ ] Q8–Q20 rows in the routing table moved to **closed** or explicitly **deferred (ADR 0017)**.
 
 ### D5 — ADRs
@@ -277,7 +277,7 @@ The research left 47 domain questions (domainMap §7, **Q1–Q47**) and 18 hardw
 
 | ID | Question (short) | Route | Lands in | Closes when |
 |---|---|---|---|---|
-| H1 | eFuse baseline — `VDD_SPI_FORCE`? (★ blocking: GPIO45 = backlight = VDD_SPI strap on a 1.8 V flash) | **E2 #3** + **ADR 0016** | `docs/hw/efuse-baseline.json`; `adr/0016` | E2 DoD; ADR 0016 drafted with the matching branch |
+| H1 | eFuse baseline — `VDD_SPI_FORCE`? (★ was blocking: GPIO45 = backlight = VDD_SPI strap, *if* the flash were the 1.8 V W25Q128JW the schematic names) | **E2 #3** + **ADR 0016** | `docs/hw/efuse-baseline.json`; `adr/0016` | **Retired 2026-08-20.** `VDD_SPI_FORCE = 1` (TIEH, 3.3 V) and the shipped die reads `ef 4018`, a 3.3 V JV-class part — GPIO45 is free for PWM. [ADR 0016](../adr/0016-backlight-gpio45-vdd-spi-strap.md), accepted |
 | H2 | Which rail powers the SPM1423 and the MAX98357A (GPIO47/48 are VDD_SPI-domain on R8V)? | **E2 #9** (paper first) + ADR 0003 + `architecture/06-power-budget.md` | rail map | E2 DoD |
 | H3 | Does the go/no-go gate build pass on v6.0.2? | **E1 step 3** → ADR 0001 accepted / v5.5.5 fallback | `adr/0001` | E1 DoD |
 | H4 | What does the device enumerate as after the first native-IDF flash (`303a:821b` → `303a:1001`)? | **E2 #7** + E1 step 5 (symlink rule covers both PIDs) | `docs/devenv/setup.md` | E2 |
@@ -306,7 +306,7 @@ Each is a measurable outcome with a pre-committed consequence, so the plan chang
 
 | # | Threshold (measured where) | If it trips | Consequence (pre-committed) | Recorded in |
 |---|---|---|---|---|
-| T1 | **E1 gate build** (`esp-dsp==1.8.2` + `lvgl==9.5.0` + `esp_lvgl_port==2.9.0` + `esp_lcd_touch_ft5x06==1.1.1` + `driver/i2s_pdm.h` under v6.0.2) | does not build | Fall back to **v5.5.5** in its own tools root (`~/esp/idf/v5.5.5`, `~/esp/tools/v5.5.5`); accept EOL 2028-01-21; schedule the v6.x migration for 2027 via `upgrade-procedure.md`; `CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS=y` only as a crutch while fixing a single component, then removed | ADR 0001 (Status stays *proposed* until the fallback builds) |
+| T1 | **E1 gate build** (`esp-dsp==1.8.2` + `lvgl==9.5.0` + `esp_lvgl_port==2.9.0` + `esp_lcd_touch_ft5x06==1.1.1` + `driver/i2s_pdm.h` under v6.0.2) | does not build | Fall back to **v5.5.5** in its own tools root (`~/esp/idf/v5.5.5`, `~/esp/tools/v5.5.5`); accept EOL 2028-01-21; schedule the v6.x migration for 2027 via `upgrade-procedure.md`; `CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS=y` only as a crutch while fixing a single component, then removed | **Retired 2026-08-20:** the gate built under v6.0.2 and ran on the watch, so no fallback was needed and [ADR 0001](../adr/0001-toolchain-esp-idf-v6-pinned-environment.md) is accepted |
 | T2 | **Mic acoustically capable through the case** (exp 0001: in-situ response vs reference mic; resonance in 2.5–5 kHz; EIN) | response deviates beyond the fittable-EQ envelope, or a case resonance corrupts the ring/twang band, or EIN fails the Švec & Granqvist floor | **Host-first pivot**: the watch becomes capture + live preview only; every timbre metric (SPR, FHE, ring ratio) moves to host-offline on takes; RQ restated to f0 + latency + autonomy; proposal §7.1 rewritten | ADR 0002 amendment; proposal §1/§7 |
 | T3 | **Mic clocks at 3.072 MHz** (Phase 1: capture at 48 kHz / DSR_8S, check for dropouts, noise-floor rise, clock-related spurs) | fails or is marginal | **Cap at 32 kHz / DSR_8S** (2.048 MHz); 16 kHz Nyquist still covers ring (2.5–3.5 kHz), twang (3.5–5 kHz) and the 5–8 kHz noise band; preset schema loses the 48 kHz option | ADR 0003; ADR 0010 |
 | T4 | **ST7789 hardware vertical scroll axis** (E2: `VSCRDEF`/`VSCSAD` vs `MADCTL` rotation; the fixed spectrum strip must fall in TFA/BFA) | the time axis does not align with the native scroll axis, or the driver cannot issue the commands even via `esp_lcd_panel_io_tx_param()` | Analyzer canvas reverts to full-frame blits; refresh target becomes **~30 Hz** for all presets (50 Hz `live_singing` dropped from the RQ); power budget re-derived | ADR 0007; RQ refresh bound |
@@ -338,7 +338,7 @@ TRACK D │                                │             │             │
   D5    │               ░░░░░░░ ADRs 0002–0019 ────────┤ 0001–0006 accepted
   D6    │                        ░░░ validation frozen ═╣ GATE → M0
 TRACK E │                                │             │             │
-  E0    ██ env spec ─────────────┤ this pass; ADR 0001 proposed      │
+  E0    ██ env spec ─────────────┤ this pass; ADR 0001 accepted      │
   E1    │  ░░ install + 30-min gate ┤ ADR 0001 accepted · lock · cleanup
   E2    │      ░░░ first contact ───┤ eFuse JSON · vendor table · exp 0002
 FIRMWARE (gated on the D6 gate)          │ M0 PDM→FFT  │ M1 canvas   │ M2 presets

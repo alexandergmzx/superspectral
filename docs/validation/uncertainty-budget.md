@@ -100,7 +100,7 @@ small and honest; as an absolute number it inherits every row of Model B twice.
 ## What this file is not
 
 It is not a calibration certificate and does not make the watch a measuring
-instrument in the IEC 61672 sense — ADR 0005 (no clinical claim, pre-registered in the [ADR backlog](../adr/README.md) as `0005-no-clinical-claim.md`) and
+instrument in the IEC 61672 sense — [ADR 0005](../adr/0005-no-clinical-claim.md) (no clinical claim, accepted) and
 [`README.md`](README.md) both say the readouts are relative unless a calibrator is in the chain.
 It is the discipline that keeps the project's own numbers honest.
 

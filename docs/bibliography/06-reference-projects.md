@@ -2,7 +2,7 @@
 
 Other people have already built most of the pieces: PDM capture on this silicon, FFT→spectrogram on a small SPI TFT, the board's own drivers, the host-side evaluation stack. Read their code, take their good ideas, learn from their failures — and **check the licence before a single line is copied**.
 
-**Licence policy (ADR 0004 — split licensing, pre-registered in the [ADR backlog](../adr/README.md) as `0004-split-licensing.md`; stated in the root [`NOTICE`](../../NOTICE)).** Firmware, tooling and docs are Apache-2.0; only the [`host/`](../../host/README.md) tree is GPL-3.0-or-later. The **License** and **Apache-2.0-compatible?** columns are therefore mandatory and are evaluated for the *firmware link line*:
+**Licence policy ([ADR 0004](../adr/0004-split-licensing.md) — split licensing, accepted; stated in the root [`NOTICE`](../../NOTICE)).** Firmware, tooling and docs are Apache-2.0; only the [`host/`](../../host/README.md) tree is GPL-3.0-or-later. The **License** and **Apache-2.0-compatible?** columns are therefore mandatory and are evaluated for the *firmware link line*:
 
 | Upstream licence | Apache-2.0-compatible? | What that means here |
 |---|---|---|
@@ -18,7 +18,7 @@ Priority glyphs (★★★ / ★★ / ★) open each **What to take** cell. Entr
 
 ## Tier 0 — clone before writing code
 
-The projects whose code maps one-to-one onto a firmware component. Each gets a `_notes.md` and, for the first three, a project-study ADR (ADR 0018 in the [backlog](../adr/README.md); roadmap phase D4).
+The projects whose code maps one-to-one onto a firmware component. Each gets a `_notes.md` and, for the first three, a project-study ADR ([ADR 0018](../adr/0018-first-reference-project-study.md), accepted; roadmap phase D4).
 
 | # | Project | What to take | License | Apache-2.0-compatible? | Clone |
 |---|---------|--------------|---------|:----------------------:|-------|

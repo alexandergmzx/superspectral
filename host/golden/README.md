@@ -1,6 +1,6 @@
 # Golden files — Praat/parselmouth reference outputs (GPL-3.0-or-later)
 
-Generator and manifest for the reference outputs that the watch's DSP is regressed against: for each input WAV, the f0 contour, formants and spectra that Praat (through parselmouth) computes with **pinned** settings. The firmware's job is to match these to a stated tolerance on the digital-injection path ([`../../docs/validation/README.md`](../../docs/validation/README.md), two-path rule); the strategy is ADR 0009 (backlog) and the tolerance table lives in [`../../docs/validation/golden-files.md`](../../docs/validation/golden-files.md).
+Generator and manifest for the reference outputs that the watch's DSP is regressed against: for each input WAV, the f0 contour, formants and spectra that Praat (through parselmouth) computes with **pinned** settings. The firmware's job is to match these to a stated tolerance on the digital-injection path ([`../../docs/validation/README.md`](../../docs/validation/README.md), two-path rule); the strategy is [ADR 0009](../../docs/adr/0009-golden-file-strategy.md) (accepted) and the tolerance table lives in [`../../docs/validation/golden-files.md`](../../docs/validation/golden-files.md).
 
 ## Why a manifest, and why it pins what it pins
 

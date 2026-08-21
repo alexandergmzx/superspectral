@@ -97,7 +97,7 @@ The repo is in Phase 0: documentation first, firmware as configuration stubs onl
 
 ## License
 
-**Split licensing, on purpose** (ADR 0004, pre-registered in [`docs/adr/README.md`](docs/adr/README.md); stated in [`NOTICE`](NOTICE)):
+**Split licensing, on purpose** ([ADR 0004](docs/adr/0004-split-licensing.md), accepted; stated in [`NOTICE`](NOTICE)):
 
 - **Apache-2.0** — the repository default: firmware, DSP core, protocols, documentation, tooling, host tests. See [`LICENSE`](LICENSE). Permissive so the firmware stays upstreamable to ESP-IDF/Zephyr and reusable by other permissive projects; the firmware link line admits only MIT/BSD/Apache components, with copyright lines carried in `NOTICE` and SPDX headers on every file.
 - **GPL-3.0-or-later** — [`host/`](host/) only, under its own [`host/LICENSE`](host/LICENSE). The Linux companion imports parselmouth/Praat (GPLv3) in-process, which a permissive licence cannot do. No code crosses the `host/` boundary in either direction: firmware never depends on `host/`, and `host/` is never linked into firmware.

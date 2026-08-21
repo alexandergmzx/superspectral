@@ -4,7 +4,7 @@ Local landing zone for the open-source projects catalogued in [`../bibliography/
 
 ## Policy: catalogue here, clone on demand
 
-Every entry in file 06 is a living repository (esp-dsp, LilyGoLib, SensorLib, Parselmouth, …). The repo-wide convention — stated in [`CLAUDE.md`](../../CLAUDE.md) and repeated in the thematic bibliography files — is **"code repos are cloned on demand, not vendored."** Vendoring would add gigabytes, entangle foreign git history, and — decisive here — drag GPL, AGPL, LGPL and unlicensed code into an Apache-2.0 tree (see the licence table at the top of file 06 and ADR 0004, pre-registered in the [ADR backlog](../adr/README.md) as `0004-split-licensing.md`).
+Every entry in file 06 is a living repository (esp-dsp, LilyGoLib, SensorLib, Parselmouth, …). The repo-wide convention — stated in [`CLAUDE.md`](../../CLAUDE.md) and repeated in the thematic bibliography files — is **"code repos are cloned on demand, not vendored."** Vendoring would add gigabytes, entangle foreign git history, and — decisive here — drag GPL, AGPL, LGPL and unlicensed code into an Apache-2.0 tree (see the licence table at the top of file 06 and [ADR 0004](../adr/0004-split-licensing.md), accepted).
 
 So the default is a **catalogue**, not a mirror:
 

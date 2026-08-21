@@ -2,7 +2,7 @@
 
 - **Project:** `clutchitggs/xiao-edge-audio` — "XIAO ESP32-S3 Sense — Real-Time Audio Spectrum Analyzer" ([bibliography 06 #3](../../bibliography/06-reference-projects.md))
 - **Studied commit:** `3b8de194f8deb93b5a732185878bbc58bf53abfa` (2026-05-01, "README polish: badges, fix fps inconsistency, tighten perf-table footnote"; the shallow clone holds this single commit). Clone: `docs/reference-projects/clones/xiao-edge-audio/` (gitignored).
-- **Licence:** **MIT**, confirmed from `LICENSE` ("Copyright (c) 2026 Tal Nagar", standard MIT text). Apache-2.0-compatible ⇒ code may be reused on the firmware link line with attribution in `NOTICE` (ADR 0004, [backlog](../../adr/README.md)). Nothing below is copied verbatim; what transfers is design.
+- **Licence:** **MIT**, confirmed from `LICENSE` ("Copyright (c) 2026 Tal Nagar", standard MIT text). Apache-2.0-compatible ⇒ code may be reused on the firmware link line with attribution in `NOTICE` ([ADR 0004](../../adr/0004-split-licensing.md), accepted). Nothing below is copied verbatim; what transfers is design.
 - **Studied:** 2026-08-21, against ESP-IDF v6.0.2 (`~/esp/idf/v6.0.2`, the pinned tree — [ADR 0001](../../adr/0001-toolchain-esp-idf-v6-pinned-environment.md)) and the esp-dsp clone at `3c8ac0f` (master, 2026-05-12; our pin is `~1.8.2`). IDF facts below were read from the v6.0.2 sources, not from the project's README (which targets v5.1+).
 - **Feeds:** ADR 0018 (first project-study ADR), ADR 0003 (mic path), ADR 0006 (FFT conventions), components [`audio_source`](../../../firmware/twatch-s3/components/audio_source/README.md) and [`spectral_fft_backend`](../../../firmware/twatch-s3/components/spectral_fft_backend/README.md).
 
@@ -83,7 +83,7 @@ Source layout (all under `firmware/`): `main/audio_capture.{c,h}` (I2S PDM RX), 
 
 ### 2.6 The browser side (for completeness, not for transfer)
 
-Off-screen `<canvas>` 600 × 256 used as a column ring; one column per frame; linear frequency axis (row → bin by nearest index); dB → RGB through a hand-rolled 4-stop black→blue→magenta→yellow gradient over [−100, 0] dB (`dbToRgb`). None of it addresses RGB565, perceptual uniformity (ADR 0011 backlog: cividis/batlow LUT + ordered dither) or hardware scroll (ADR 0007).
+Off-screen `<canvas>` 600 × 256 used as a column ring; one column per frame; linear frequency axis (row → bin by nearest index); dB → RGB through a hand-rolled 4-stop black→blue→magenta→yellow gradient over [−100, 0] dB (`dbToRgb`). None of it addresses RGB565, perceptual uniformity ([ADR 0011](../../adr/0011-spectrogram-colormap.md), proposed: cividis LUT + ordered dither) or hardware scroll (ADR 0007).
 
 ## 3. What transfers to Super Spectral
 
