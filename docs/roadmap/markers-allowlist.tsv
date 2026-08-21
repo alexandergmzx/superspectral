@@ -6,6 +6,8 @@
 #
 # The owner is the point. Replace every AUTO-GENERATED with a real one, and
 # lower a count in the same commit that removes a marker.
+.github/workflows/ci.yml	3	prose describing the marker gate and the (verify) class it checks
+.pre-commit-config.yaml	4	prose describing the marker gate; two hook revs marked VERIFY before first use
 CHANGELOG.md	1	historical record
 CLAUDE.md	4	the constitution quotes the proposal; follows the RQ freeze
 README.md	2	follows the documents it indexes
@@ -65,3 +67,4 @@ protocols/presets/README.md	1	provisional preset values — freeze with experime
 protocols/specs/README.md	1	provisional preset values — freeze with experiment 0001
 protocols/specs/preset-schema.md	3	provisional preset values — freeze with experiment 0001
 protocols/specs/presets.schema.json	1	provisional preset values — freeze with experiment 0001
+python-scripts/README.md	5	prose describing check_markers.py and the marker class

@@ -62,6 +62,15 @@ SCAN_SUFFIXES = (".md", ".yaml", ".yml", ".csv", ".h", ".json", ".toml")
 SKIP_PARTS = ("/clones/", "/managed_components/", "/build/", ".ocr")
 SKIP_PREFIXES = ("scratch/", "docs/research/")
 
+# This tool and its two lists contain every marker string by construction --
+# they are the definition, not instances of it. Scanning them would mean
+# allowlisting the allowlist, which is circular and hides real growth.
+SKIP_SELF = (
+    "python-scripts/check_markers.py",
+    "docs/roadmap/markers-allowlist.tsv",
+    "docs/roadmap/markers-closed-2026-08-21.tsv",
+)
+
 
 def repo_root() -> str:
     return subprocess.run(
@@ -84,6 +93,8 @@ def tracked_files(root: str) -> list[str]:
         if any(f.startswith(p) for p in SKIP_PREFIXES):
             continue
         if any(p in "/" + f for p in SKIP_PARTS):
+            continue
+        if f in SKIP_SELF:
             continue
         keep.append(f)
     return keep
