@@ -20,6 +20,8 @@ House conventions (carried over from `swarm`): the title is a **claim**, not a t
 ## Records
 
 - [0001](0001-toolchain-esp-idf-v6-pinned-environment.md) — ESP-IDF v6.0.2 native, pinned: manual clone + per-minor tools root + committed `.envrc`; tilde pins + `dependencies.lock`; no Arduino in any phase; Zephyr rejected; v5.5.5 escape hatch; gate build required. **accepted** (2026-08-20, after the E1 gate passed on hardware)
+- [0014](0014-partition-layout-frozen.md) — The 16 MB partition layout is frozen: two 4 MB OTA slots, no factory app, `ota_0` is the golden recovery image. **accepted**
+- [0015](0015-anti-brick-policy.md) — Anti-brick policy for a USB-Serial-JTAG-only board: the recovery path is sacred and every layer of it is tested. **accepted**
 - [0016](0016-backlight-gpio45-vdd-spi-strap.md) — GPIO45 backlight PWM is safe on this unit: VDD_SPI is forced to 3.3 V by eFuse. **accepted**
 - [0017](0017-no-radio-in-v1-trimmed-component-set.md) — No radio in v1: the build contains only `main` and what it requires (no Wi-Fi, BT, lwIP, OpenThread). **accepted**
 
@@ -39,7 +41,5 @@ Pre-registered from the documentation roadmap ([`../roadmap/documentation-roadma
 - 0011 — Spectrogram colormap: a cividis/batlow-class perceptually uniform map, pre-quantized to an RGB565 LUT with ordered dithering. Grounded by Nuñez et al. 2018, Crameri et al. 2020.
 - 0012 — Hands-free interaction model: wrist-raise arming via BMA423, haptic confirmation via DRV2605L; the screen is never touched while singing. Grounded by the watchOS / Wear OS design guidelines.
 - 0013 — Native-Linux simulator target (LVGL simulator + the DSP core on host) as the UI design loop and golden-file harness. Idea only from My-TTGO-Watch (GPL-2.0, no code).
-- 0014 — **Partition layout frozen**: `ota_0`/`ota_1` 4 MB each, no factory partition, `presets` littlefs 1 MB, `takes` FAT, `coredump` 60 K, `nvs_keys`, `phy_init` retained; `ota_0` holds the golden recovery image and development builds flash to `ota_1` only; changing offsets breaks every fielded unit. Grounded by the partition-tables guide and the devenv critique (B2).
-- 0015 — **Anti-brick policy**: 3 s unconditional boot guard, `_Static_assert` on every pin ≠ 19/20 plus a CI grep, rollback with mark-valid only after display + touch + PMU + USB are confirmed, sleep gating, console permanently on USB-Serial-JTAG, eFuses read-only for life, a deliberate decision on the AXP2101 4 s PMU watchdog. Grounded by the USB-Serial-JTAG console guide and the espefuse docs.
 - 0018 — First reference-project study ADR: takeaways from xiao-edge-audio, LilyGoLib register sequences, SensorLib. Grounded by bibliography file 06.
 - 0019 — Build System v1 now (`project.cmake`); migrate to Build System v2 when it leaves Technical Preview. Grounded by the build-system-v2 guide.

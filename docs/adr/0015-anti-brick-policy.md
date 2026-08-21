@@ -1,0 +1,31 @@
+# 0015 — Anti-brick policy for a USB-Serial-JTAG-only board: the recovery path is sacred and every layer of it is tested
+
+- **Status:** accepted
+- **Date:** 2026-08-21
+- **Context:** The T-Watch S3 exposes **no GPIO** and its BOOT button is on the internal PCB. The only flash/debug path is esptool (or OpenOCD) driving the chip's USB-Serial-JTAG (USJ) controller on GPIO19/20. Espressif's USJ console guide lists the ways firmware loses that path: reconfiguring GPIO19/20, disabling the USJ peripheral, deep sleep (the device disappears from the host), light sleep (re-enumeration may need a cable pull), and a crash loop faster than USB enumeration. LilyGO's documented recovery is to remove the battery, hold the internal BOOT button and press the crown — a 20-minute teardown with flex-cable risk. The eFuse read of 2026-08-20 confirmed the path is currently intact (`DIS_USB_JTAG`, `DIS_USB_SERIAL_JTAG`, `DIS_DOWNLOAD_MODE` all `False`; no secure boot, no flash encryption — [`docs/hw/efuse-baseline.json`](../hw/efuse-baseline.json)).
+- **Decision:** Layered, and each layer either enforced by the toolchain or tested on hardware:
+  1. **Unconditional boot guard** — `vTaskDelay(CONFIG_SPECTRAL_BOOT_GUARD_MS)` (default 3 000 ms) is the first statement of `app_main`, before any peripheral. Never reduced, even at ship time. *Tested:* experiment 0002 hypothesis B — against an image that aborts right after the guard, esptool connected 10/10 (default-reset) and 5/5 (usb-reset), 0.6 s each.
+  2. **GPIO19/20 are never configured** — `_Static_assert` on every pin constant in `twatch_pins.h`; the `no-usb-pins` pre-commit grep; no `gpio_reset_pin()` loops.
+  3. **Console permanently on USJ** — `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y` and `CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION=y`, asserted by the `sdkconfig-invariants` hook. No UART fallback exists, so an NVS/LittleFS log ring buffer is the only non-USJ observability and is a Phase-1 deliverable.
+  4. **OTA rollback is the safe mode** — `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y`, `ota_0` = golden image, development builds go to `ota_1` armed (`tools/flash.sh`). An image calls `esp_ota_mark_app_valid_cancel_rollback()` **only after** the display has rendered, touch answers, the PMU chip-ID reads `0x4A` and USB has enumerated. *Tested:* hypothesis A — an image that never marks itself valid is aborted by the bootloader on the second reset and `ota_0` boots, 4/4; the rolled-back state is stable.
+  5. **Sleep is gated** — no `esp_deep_sleep_start()` or light-sleep entry unless: uptime ≥ N s **and** no USB host detected **and** (during development) the `SPECTRAL_DEV_SLEEP_ARMED` flag is on; always with a timer wake. Light sleep is disabled while a host is attached (item 3).
+  6. **Watchdogs panic, they do not log** — `CONFIG_ESP_TASK_WDT_PANIC=y` (Kconfig default merely logs), 10 s, both idle tasks watched; `CONFIG_BOOTLOADER_WDT_ENABLE=y`. A reset is strictly better than a wedge: it gives the ROM another enumeration window.
+  7. **`SPIRAM_IGNORE_NOTFOUND=n`** — a wrong PSRAM config aborts loudly in the bootloader over USJ rather than OOM-ing an hour later.
+  8. **eFuses are read-only for the life of the project** — never `set-flash-voltage`, never burn `DIS_USB_JTAG`/`DIS_USB_SERIAL_JTAG`, never enable secure boot or flash encryption; `SECURE_BOOT=n` / `SECURE_FLASH_ENC_ENABLED=n` asserted by the hook; the per-unit eFuse baseline is read and committed before the first custom flash.
+  9. **Second escape hatch** — JTAG over the same USJ (`openocd -f board/esp32s3-builtin.cfg -c "program_esp_bins …"`); `esptool --before usb-reset --after watchdog-reset` when the CDC side is confused (note: `watchdog-reset` re-enumerates the port, so do not chain commands on a fixed device path). Runbook: [`docs/devenv/brick-runbook.md`](../devenv/brick-runbook.md).
+  10. **AXP2101 PMU watchdog: deliberately NOT armed in v1.** XPowersLib's init arms a 4 s PMU watchdog that power-cycles the SoC if not fed; we do not, because an unfed PMU watchdog during a long flash write or a debugger halt would reset the chip mid-operation. Revisit when the firmware has a heartbeat task (ADR-gated).
+  11. **Whole-flash backup before the first custom flash** of every unit ([first-flash checklist](../devenv/first-flash-checklist.md)); this unit's is sha256 `1b6f26d7…`, verified by read-back.
+- **Alternatives:**
+  - *Trust that the case can always be opened.* Rejected: it can, once or twice; the gasket and flex do not survive a habit.
+  - *A factory recovery partition.* Rejected ([ADR 0014](0014-partition-layout-frozen.md)): selecting it needs the internal button.
+  - *Flash encryption / secure boot "for professionalism".* Rejected: irreversible, and on this board a mistake removes the only recovery path.
+  - *Shorter boot guard to speed up boot.* Rejected until measured otherwise: 3 s costs nothing a user notices on a watch that takes 1 s to enumerate, and the race test was run at exactly this value.
+- **Consequences:**
+  - (+) Every bricking class that is *preventable by software* is prevented statically or self-heals; the two dynamic layers (guard, rollback) have hardware test evidence and a re-run trigger.
+  - (+) A bad development image costs two resets, not a teardown.
+  - (−) A 3 s guard on every boot, forever.
+  - (−) The rules are partly procedural (`tools/flash.sh` only; eFuse discipline; backup before first flash). Hooks catch the config side; the procedural side relies on the checklists.
+  - (−) No PMU watchdog means a genuinely hung SoC with a dead task watchdog stays hung until the battery drains or the crown is long-pressed (the AXP2101 power-off, 6 s) — acceptable for v1.
+  - Flagged as a validation item: experiment 0002 is re-run after any change to `partitions.csv`, the guard, rollback config, or the IDF pin.
+
+  Reference basis: ESP-IDF USB Serial/JTAG Console guide, OTA/app_update reference, espefuse documentation ([bibliography 02](../bibliography/02-application-notes.md) and [11](../bibliography/11-esp-idf-platform-and-toolchain.md)); devenv critique B2/B7/B9; [experiment 0002](../validation/experiments/0002-rollback-and-boot-guard-race.md); [`docs/hw/efuse-baseline.json`](../hw/efuse-baseline.json).
