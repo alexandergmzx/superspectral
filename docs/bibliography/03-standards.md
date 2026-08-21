@@ -141,40 +141,40 @@ Not in any thematic file (home here only): #5, #8–9 (acoustics background), #2
 > **📥 Filed locally (D3 pass, 2026-08-20):** #1 ANSI S1.11-2004 (Public.Resource.Org copy; image scan, OCR'd by `doc_ocr`) → [`../standards/ansi-asa/ansi-asa_s1-11_octave-band-filters_2004.pdf`](../standards/ansi-asa/ansi-asa_s1-11_octave-band-filters_2004.pdf) — committed (incorporated by reference into US federal regulation, `redistributable=yes`). Nothing else in this file was attempted this pass (the free ITU / BIPM / EUR-Lex / ETSI / W3C texts are **OPEN-TODO** in [`acquisition-status.md`](acquisition-status.md)).
 > **Paid standards are never committed to the repository** even when purchased (single-user licences): file them locally under [`../standards/<body>/`](../standards/README.md), track only the `_notes.md` and the sha256-keyed row in [`../OCR/manifest.tsv`](../OCR/README.md).
 
-Keyed to the entry numbers above. Access vocabulary: **free** · **free, reg.** (free after registration / click-through) · **free (GET)** (HTML page; snapshot to PDF) · **paid** · **PORTAL** (search the body's store; no stable deep link given here). Paid IEC/ISO texts typically cost CHF 100–350 each; check institutional access first. Links gathered in the 2026-08-20 research session; when one rots, the document identifier is authoritative — search it on the issuing body's store.
+Keyed to the entry numbers above. Access vocabulary: **free** · **free, reg.** (free after registration / click-through) · **free (GET)** (HTML page; snapshot to PDF) · **paid** · **PORTAL** (search the body's store; no stable deep link given here) · the qualifier **(CDN-BLOCK)** means the host answered a scripted fetch with 403/a bot challenge on 2026-08-21 and must be opened in a browser (legend in [`acquisition-status.md`](acquisition-status.md)). Paid IEC/ISO texts typically cost CHF 100–350 each; check institutional access first. Links gathered in the 2026-08-20 research session; when one rots, the document identifier is authoritative — search it on the issuing body's store.
 
 | # | Access | Link |
 |---|--------|------|
 | 1 | free | <https://law.resource.org/pub/us/cfr/ibr/002/ansi.s1.11.2004.pdf> (Public.Resource.Org copy of the text incorporated by reference) |
-| 2 | paid | <https://webstore.iec.ch/en/publication/5708> (IEC 61672-1:2013) · ANSI adoption with free preview: <https://webstore.ansi.org/standards/asa/asaansis12014partiec616722013> |
+| 2 | paid (CDN-BLOCK) | <https://webstore.iec.ch/en/publication/5708> (IEC 61672-1:2013) · ANSI adoption with free preview: <https://webstore.ansi.org/standards/asa/asaansis12014partiec616722013> |
 | 3 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61672-2:2013" and "IEC 61672-3:2013" |
-| 4 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61260-1:2014" · ANSI adoption: <https://webstore.ansi.org/standards/asa/asaansis111partiec612602014> |
+| 4 | paid (CDN-BLOCK) | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61260-1:2014" · ANSI adoption: <https://webstore.ansi.org/standards/asa/asaansis111partiec612602014> |
 | 5 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61260-3:2016" |
 | 6 | paid | <https://webstore.iec.ch/en/publication/30045> (IEC 60942:2017) |
 | 7 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61094-4" |
-| 8 | paid | <https://www.iso.org/standard/83117.html> (ISO 226:2023) |
-| 9 | paid | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 532-1:2017", "ISO 532-2:2017" · [dinmedia.de](https://www.dinmedia.de/) — search "DIN 45692" |
+| 8 | paid (CDN-BLOCK) | <https://www.iso.org/standard/83117.html> (ISO 226:2023) |
+| 9 | paid (CDN-BLOCK) | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 532-1:2017", "ISO 532-2:2017" · [dinmedia.de](https://www.dinmedia.de/) — search "DIN 45692" |
 | 10 | free | <https://www.itu.int/rec/T-REC-P.58> |
 | 11 | free | <https://www.itu.int/rec/T-REC-P.51> |
 | 12 | free | <https://www.itu.int/rec/T-REC-P.56> |
 | 13 | free | <https://www.itu.int/rec/T-REC-P.501> |
 | 14 | free | <https://www.itu.int/rec/R-REC-BS.1770> (pick the "-5" edition) |
-| 15 | free | <https://tech.ebu.ch/publications/sqamcd> (document + track downloads) |
-| 16 | paid | <https://www.iso.org/standard/3601.html> (ISO 16:1975; the content — A4 = 440 Hz — is public knowledge; purchase only if a normative citation is required) |
+| 15 | free (CDN-BLOCK) | <https://tech.ebu.ch/publications/sqamcd> (document + track downloads) |
+| 16 | paid (CDN-BLOCK) | <https://www.iso.org/standard/3601.html> (ISO 16:1975; the content — A4 = 440 Hz — is public knowledge; purchase only if a normative citation is required) |
 | 17 | free | <https://www.itu.int/rec/R-REC-BT.1359> |
-| 18 | paid | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 26101-1:2021" and "ISO 3745:2012" |
-| 19 | paid | [webstore.ansi.org](https://webstore.ansi.org/) — search "ANSI/ASA S12.2-2019" |
+| 18 | paid (CDN-BLOCK) | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 26101-1:2021" and "ISO 3745:2012" |
+| 19 | paid (CDN-BLOCK) | [webstore.ansi.org](https://webstore.ansi.org/) — search "ANSI/ASA S12.2-2019" |
 | 20 | free | <https://www.bipm.org/en/committees/jc/jcgm/publications> (JCGM 100:2008 and JCGM 200:2012 PDFs) |
-| 21 | paid / free | ISO 7250-1:2017 via [iso.org/obp](https://www.iso.org/obp/ui) (paid) · ANSUR II public data: <https://www.openlab.psu.edu/ansur2/> (free) · DINED: <https://dined.io.tudelft.nl/> (free) |
-| 22 | paid | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 9241-210:2019", "ISO 9241-112:2017" |
-| 23 | free | <https://www.w3.org/TR/WCAG22/> |
+| 21 | paid (CDN-BLOCK) / free | ISO 7250-1:2017 via [iso.org/obp](https://www.iso.org/obp/ui) (paid) · ANSUR II public data: <https://www.openlab.psu.edu/ansur2/> (free) · DINED: <https://dined.io.tudelft.nl/> (free) |
+| 22 | paid (CDN-BLOCK) | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 9241-210:2019", "ISO 9241-112:2017" |
+| 23 | free (CDN-BLOCK) | <https://www.w3.org/TR/WCAG22/> |
 | 24 | free | <https://www.etsi.org/deliver/etsi_en/301500_301599/301549/> (pick the V3.2.1 PDF) |
 | 25 | free | <https://eur-lex.europa.eu/eli/dir/2014/53/oj> |
 | 26 | free | <https://www.etsi.org/deliver/etsi_en/300300_300399/300328/> (pick the current version directory) |
 | 27 | free | <https://www.etsi.org/deliver/etsi_en/301400_301499/30148901/> · <https://www.etsi.org/deliver/etsi_en/301400_301499/30148917/> |
 | 28 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 62479:2010"; EN 50663 via national CENELEC members |
 | 29 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 62133-2:2017" |
-| 30 | free | <https://unece.org/transport/dangerous-goods> → "UN Manual of Tests and Criteria" (Rev. 8), Part III §38.3 |
+| 30 | free (CDN-BLOCK) | <https://unece.org/transport/dangerous-goods> → "UN Manual of Tests and Criteria" (Rev. 8), Part III §38.3 |
 | 31 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 62368-1:2023" |
 | 32 | free | <https://eur-lex.europa.eu/eli/reg/2017/745/oj> (Annex VIII, Chapter III, Rule 11) |
 | 33 | free | <https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en> → "MDCG 2019-11" PDF |
@@ -193,3 +193,5 @@ Keyed to the entry numbers above. Access vocabulary: **free** · **free, reg.** 
 ## Disclosure
 
 Entries 1, 2, 4, 6, 8, 10–17, 20, 23, 25, 32–33, 35, 38–39 and 42 have identifiers and URLs from the 2026-08-20 research session (the critic pass live-verified the ANSI S1.11-2004 copy, the MDR Rule 11 / MDCG 2019-11 framing, the RED chip-down FAQ, the BIPM GUM page, the ITU-T P.56 and ITU-R BS.1770 listings; the domain map captured the IEC 61672-1, IEC 60942, ISO 226 and ISO 16 store pages and the ITU-T P.51/P.58/P.501 and EBU SQAM links). Every row marked **(verify)** in its Identifier cell (3, 5, 7, 9, 18, 19, 21, 22, 24, 26–31, 34, 43) carries a model-recalled edition year or version number that must be checked against the store listing before purchase or citation; the standards themselves are real and their relevance does not depend on the edition. Deep links into webstore.iec.ch and iso.org are given only where the session captured them (#2, #6, #8, #16); the others are search instructions by design, because those stores renumber their catalogue pages. Licence texts (#36–41) and the W3C/EUR-Lex/FDA pages are stable canonical URLs. Nothing in this file has been filed yet (roadmap D3).
+
+**Link layer re-checked live on 2026-08-21** (HTTP status only — no PDF was downloaded, and no identifier, edition year or priority was changed). Every URL in the *Acquisition links* table was resolved with redirects followed. Resolving normally (HTTP 200): #1 (law.resource.org S1.11 PDF), #3/#5/#6/#7/#28/#29/#31 (webstore.iec.ch, including the #2 and #6 deep links), #10–#14 and #17 (itu.int), #20 (bipm.org), #21's ANSUR II and DINED links, #24/#26/#27 (etsi.org), #25/#32/#35 (eur-lex), #33 (health.ec.europa.eu), #34 (fda.gov), #36–#41 (apache.org, gnu.org, spdx.org, reuse.software, the two esp-sr/esp-adf LICENSE files), #42 (doi.org/10.1038/sdata.2016.18 → "The FAIR Guiding Principles for scientific data management and stewardship", *Scientific Data* 2016 — matches), #43, #44. Answering 403 to a scripted fetch and therefore marked **(CDN-BLOCK)** in the Access cell: iso.org (#8, #9, #16, #18, #21, #22), webstore.ansi.org (#2, #4, #19), tech.ebu.ch (#15), w3.org (#23), unece.org (#30). Those URLs were left unchanged — the 403 is a bot challenge, not a dead page. No URL in this file was found dead, so nothing was replaced. What remains **model-recalled**: every edition year and version number flagged "(verify)" in an Identifier cell (a 403 store page cannot confirm one), and the search instructions in the Link cells — a live check of a search URL proves the store is up, not that the catalogue entry exists.

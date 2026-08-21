@@ -132,18 +132,18 @@ When a file lands, add `📥 Filed locally: <relative path>` to the entry in its
 > **📥 Filed locally (D3 pass, 2026-08-20)** — by home file: D1 ST7789V3 preliminary V0.0 → [01](01-datasheets.md#acquisition-links) (#13); Howard et al. 2004, Wilson et al. 2007, McPherson et al. 2016, Liu & Heer 2018 → [05](05-papers.md#acquisition-links) (#68, #71, #84, #81). No R/S snapshots were taken. Paper links are in [05 — Acquisition links](05-papers.md#acquisition-links); the table below covers the local S/R/P/D entries only.
 > **Browser-only:** R1–R4 and S3 are living web pages (print-to-PDF with the capture date in the filename).
 
-Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` · `mirror` · `free, reg.` · `REPO` · `PORTAL`; qualifiers live in the Link cell.
+Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` · `mirror` · `free, reg.` · `REPO` · `PORTAL`; qualifiers live in the Link cell, except **(CDN-BLOCK)**, which sits in the Access cell and means the host answered a scripted fetch with 403 or a sign-in challenge on 2026-08-21 and must be opened in a browser (legend in [`acquisition-status.md`](acquisition-status.md)).
 
 | # | Access | Link |
 |---|--------|------|
 | S1 | free | [itu.int/rec/R-REC-BT.1359](https://www.itu.int/rec/R-REC-BT.1359) |
-| S2 | paid | [iso.org — ISO 9241-210:2019](https://www.iso.org/standard/77520.html) · [ISO 9241-112:2017](https://www.iso.org/standard/64840.html) (verify record numbers) |
-| S3 | free | [w3.org/TR/WCAG22](https://www.w3.org/TR/WCAG22/) (HTML; print-to-PDF) |
+| S2 | paid (CDN-BLOCK) | [iso.org — ISO 9241-210:2019](https://www.iso.org/standard/77520.html) · [ISO 9241-112:2017](https://www.iso.org/standard/64840.html) (verify record numbers) |
+| S3 | free (CDN-BLOCK) | [w3.org/TR/WCAG22](https://www.w3.org/TR/WCAG22/) (HTML; print-to-PDF) |
 | S4 | free (GET) | [etsi.org — EN 301 549](https://www.etsi.org/deliver/etsi_en/301500_301599/301549/) (pick the latest version directory) |
 | R1 | free | [singandsee.com/research-visual-feedback](https://www.singandsee.com/research-visual-feedback) (living page — print-to-PDF) |
 | R2 | free | [vocevista.com](https://www.vocevista.com/) — product and "method" pages (living page — print-to-PDF; verify current URL) |
 | R3 | free | [developer.apple.com — Designing for watchOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-watchos) (living page — print-to-PDF) |
-| R4 | free | [developer.android.com — Wear OS quality guidelines](https://developer.android.com/docs/quality-guidelines/wear-app-quality) · [Wear OS design principles](https://developer.android.com/design/ui/wear) (living pages — print-to-PDF) |
+| R4 | free (CDN-BLOCK) | [developer.android.com — Wear OS quality guidelines](https://developer.android.com/docs/quality-guidelines/wear-app-quality) · [Wear OS design principles](https://developer.android.com/design/ui/wear) (living pages — print-to-PDF) |
 | P1 | free | KTH TMH software pages (search "Madde Granqvist"; hosting has moved — verify) |
 | P2 | REPO | see [06](06-reference-projects.md) #37 |
 | D1 | mirror | see [01](01-datasheets.md) (ST7789V3) |
@@ -151,3 +151,5 @@ Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` 
 ## Disclosure
 
 Written 2026-08-20. **Live-verified that day:** the WinSingad PDF (imerc.org), the Sing&See research index, Hoppe et al. 2006 (DOI and venue), Wilson et al. 2008 (venue, pages, author PDF), the 2022 Applied Sciences review (DOI), the 2026 arXiv survey, Jack et al. 2018, Nuñez et al. 2018, Crameri et al. 2020, Liu & Heer 2018. **Model-recalled:** the ITU-R BT.1359 tolerance figures quoted in S1 (check the current edition), the ISO record numbers for S2, the VoceVista and Madde URLs, the Öster thesis (existence and year flagged "verify" in 05 #75), the Apple/Google page URLs (they move with each OS release). The gaps marked "—" (refresh-vs-perception on a small screen, sunlight legibility, hands-busy interaction) are genuine: no source was found in this session and none is being invented; they are routed to the O3/O4 studies and to a D3 search task. Nothing in this file has been filed or OCR'd yet.
+
+**Link layer re-checked live on 2026-08-21** (HTTP status only — no PDF was downloaded; no figure, tolerance, record number or priority was changed). Resolving normally: S1 (itu.int BT.1359 listing), S4 (etsi.org EN 301 549 directory), R1 (singandsee.com research page), R2 (vocevista.com), R3 (developer.apple.com watchOS HIG). Marked **(CDN-BLOCK)**, URL left unchanged: S2 (both iso.org record pages answer 403 to scripts), S3 (w3.org/TR/WCAG22 answers 403 to scripts), R4 (both developer.android.com pages bounce a scripted fetch into a `accounts.google.com` sign-in probe and never return the page). No URL in this file was dead, so nothing was replaced. The paper DOIs cited by this file were checked at `doi.org` from [05](05-papers.md) — Hoppe et al. 2006 (`10.1111/j.1365-2729.2006.00178.x`), Welch et al. 2005 (`10.1080/14613800500169779`), Howard et al. 2004 (`10.1080/14015430410000728`), Leong & Cheng 2014 (`10.1111/jcal.12046`), the 2022 *Applied Sciences* review (`10.3390/app122110781`), Jack et al. 2018 (`10.1525/mp.2018.36.1.109`), Nuñez et al. 2018 (`10.1371/journal.pone.0199239`), Crameri et al. 2020 (`10.1038/s41467-020-19160-7`), Liu & Heer 2018 (`10.1145/3173574.3174172`) — all resolve and all landing titles match. Still **model-recalled**: the BT.1359 tolerance figures (the ITU listing page resolves; the numbers inside it were not read), the S2 ISO record numbers (a 403 store page cannot confirm them), P1's Madde/KTH hosting, and the Öster thesis.
