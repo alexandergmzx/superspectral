@@ -1,6 +1,6 @@
 # T-Watch S3 firmware (ESP-IDF v6.0.x, native)
 
-The on-device half of Super Spectral: PDM capture → windowed FFT → spectrum / spectrogram / f0 / band-energy display, all in real time on the LilyGO T-Watch S3 (ESP32-S3-R8, 8 MB octal PSRAM, 16 MB 1.8 V flash, one Knowles SPM1423 PDM mic, 240×240 ST7789V3). Offline science stays on the host ([`host/`](../../host/README.md), ADR 0002).
+The on-device half of Super Spectral: PDM capture → windowed FFT → spectrum / spectrogram / f0 / band-energy display, all in real time on the LilyGO T-Watch S3 (ESP32-S3-R8, 8 MB octal PSRAM, 16 MB flash reading JEDEC `ef 4018` (W25Q128JV-class, **3.3 V** — the schematic says the 1.8 V `W25Q128JW`; it does not describe this unit), one Knowles SPM1423 PDM mic, 240×240 ST7789V3). Offline science stays on the host ([`host/`](../../host/README.md), ADR 0002).
 
 **Decision.** Pure ESP-IDF, pinned to **v6.0.2** by [ADR 0001](../../docs/adr/0001-toolchain-esp-idf-v6-pinned-environment.md): no Arduino in any phase, Zephyr rejected (no Espressif PDM driver, board unmaintained), v5.5.5 kept as an escape hatch, and a 30-minute gate build required before feature code. **Trade-off:** we write the AXP2101/board layer ourselves instead of inheriting LilyGoLib's, in exchange for an Apache-2.0-clean link line, the only toolchain in which the PDM microphone works, and the longest support runway of any shipped IDF line (v6.0 EOL 2028-09-20).
 

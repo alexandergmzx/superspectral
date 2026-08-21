@@ -20,7 +20,8 @@ datasheets/
 ├── nxp/pcf8563/                   # RTC
 ├── ti/drv2605l/                   # haptic driver
 ├── semtech/sx1262/                # LoRa transceiver (held in reset in v1, ADR 0017)
-├── winbond/w25q128jw/             # 1.8 V serial NOR flash
+├── winbond/w25q128jw/             # serial NOR flash: the schematic says JW (1.8 V),
+│                                 # the silicon reads ef 4018 = JV-class 3.3 V (ADR 0016)
 ├── ap-memory/psram/               # APS6408L octal PSRAM (in-package)
 ├── seiko/ms412fe/                 # RTC backup coin cell
 ├── everlight/ir12-21c/            # IR emitter
