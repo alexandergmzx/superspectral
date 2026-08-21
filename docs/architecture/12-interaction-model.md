@@ -150,8 +150,19 @@ Four questions belong to the author and are stated in full in [ADR 0012](../adr/
 
 Engineering questions that are open but are not the author's to decide:
 
-- The BMA423's running current with the feature engine enabled is not yet in the power budget; [01 #22](../bibliography/01-datasheets.md) has to be read for it before the ≥ 3 h autonomy claim is honest.
-- The DRV2605L start-up time out of BLDO2 is unread, so "enable on demand" vs "leave the rail on" is currently undecidable.
+- The BMA423's running current with the feature engine enabled is not yet in the power budget, and the obvious fix is closed: **Bosch has delisted the BMA423 datasheet and its sensor-API repository** (found in the 2026-08-21 link sweep), so [01 #22](../bibliography/01-datasheets.md) cannot be read from the vendor and `docs/datasheets/bosch/bma423/` is empty. Either a second source is found or the figure is measured on the rail. The ≥ 3 h autonomy claim is not honest until one of those happens.
+- The DRV2605L start-up time out of BLDO2 **has now been read** (datasheet SLOS854D, filed under [`docs/datasheets/ti/drv2605l/`](../datasheets/README.md); §6.7 Switching Characteristics, §6.5 Electrical Characteristics, §8.5.4 auto-calibration). The decision is no longer blocked on a number, only on a preference:
+
+  | | |
+  |---|---:|
+  | `t(start)`, GO bit or external trigger → output | **0.7 ms** typ |
+  | `t(start)`, EN high → output (PWM/analog modes) | **1.5 ms** typ |
+  | I²C accepted after power-up | **≥ 250 µs** (§8.6 step 1) |
+  | `I(SD)` shutdown, V(EN) = 0 | 4 µA typ / **7 µA max** |
+  | `I(standby)` STANDBY = 1 | 4.1 µA typ / **7 µA max** |
+  | `I_Q` quiescent, STANDBY = 0, no signal | 0.5 mA typ / **0.65 mA max** |
+
+  On this board BLDO2 *is* the enable — there is no EN GPIO — so "gate the rail" costs a full re-init on every buzz: ≥ 250 µs before the first I²C write, then ≤ 1.5 ms to output, **and** the auto-calibration compensation must be restored, because the datasheet says to "repeat the calibration process upon subsequent power ups" or to store the results in host memory and rewrite them (§8.5.4.2). "Leave it on" costs ≤ 7 µA in STANDBY. Against a 470 mAh cell that is ≈ 0.0015 % per hour — i.e. the rail policy is a **latency and complexity** choice, not a battery one. Still [ADR 0012](../adr/0012-hands-free-interaction.md)'s call, now on numbers.
 - `t_guard` (§5) needs a bench measurement.
 
 ## 9. Interaction with sleep and the anti-brick policy

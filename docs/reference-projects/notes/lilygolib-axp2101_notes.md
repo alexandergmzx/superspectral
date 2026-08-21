@@ -219,7 +219,7 @@ Sent by `esp_lcd_panel_io_tx_param()` **after** `esp_lcd_panel_init()` has alrea
 | `0xD0` | `A4 A1` | PWCTRL1 | |
 | `0xE0` | 14 bytes | PVGAMCTRL | positive gamma |
 | `0xE1` | 14 bytes | NVGAMCTRL | negative gamma |
-| `0xE4` | `1D 00 00` | GATECTRL | `NL = 0x1D` ⇒ 240 gate lines, `SCN = 0` *(reading per the ST7789 `GATECTRL` definition — **unconfirmed**: [01 #13](../../bibliography/01-datasheets.md) has not been read for `E4h`, and its annotation now says so)* |
+| `0xE4` | `1D 00 00` | GATECTRL | `NL = 0x1D` ⇒ 240 gate lines, `SCN = 0` *(**confirmed 2026-08-21** against the ST7789V3 preliminary spec §9.2.28: `NL[5:0]` sets gate lines in steps of 8 — `0x00` = 8 lines … `0x27` = 320 — so `0x1D` = (29+1)×8 = **240**; `SCN[5:0]` sets the first scan line in the same steps, `0x00` = **Gate 0**. The third byte `0x00` is `TMG=0`, `SM=0`, `GS=0`: gate scan direction 0→319, local-mirror mode, and `SM=0` is **interlace** scan — worth knowing before the ADR 0007 scroll work, since it is a 240-line window on a 320-gate controller)* |
 | `0xFF` | — | terminator | |
 
 There is **no `0x21` (INVON)** in the active list — inversion comes from `esp_lcd_panel_invert_color(panel, true)`, which is what our gate does. A disabled `#if 0` alternative list in the same file *does* include `0x21` and a different `0x36` value (`0x08`), i.e. a different colour order; it is dead code for a different panel lot.

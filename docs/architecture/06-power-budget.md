@@ -35,17 +35,35 @@ Two structural consequences of that picture, before any number:
 
 `Analysis mode` = the `live_singing` preset running continuously: PDM capture at 32 kHz, FFT + f0 on core 1, canvas at 50 Hz, backlight on, radio off. Every current cell is `TBD` on purpose.
 
+**How to read the `TBD`s in this table (added 2026-08-21).** They are not all the same
+kind of unknown, and conflating them is how a budget stays unfinished. Two classes:
+
+- **`TBD (datasheet)`** — a number that exists on a page somebody has to read. On
+  2026-08-21 every one of these that could be closed from a document **already filed
+  under `docs/datasheets/`** was closed: ALDO3 (FT6336U and ST7789) and BLDO2
+  (DRV2605L). None remain.
+- **`TBD (measured, …)`** — a number that does not exist on any page, because it is a
+  property of *this* board running *this* firmware: rail currents in analysis mode,
+  backlight draw at usable brightness, usable battery capacity. These wait for the
+  instrument, and no amount of reading closes them.
+
+Two rows are blocked on a third thing — **acquisition**: the panel-module sheet
+([01 #15](../bibliography/01-datasheets.md)) is not filed, and Bosch has **delisted**
+the BMA423 datasheet and its sensor API, so `docs/datasheets/bosch/bma423/` is empty
+and the running current with the feature engine enabled cannot be read from anywhere
+we hold. Those say so where they appear.
+
 | Rail | Powers | Boot state | v1 policy | Current, analysis mode | Filled by |
 |---|---|---|---|---|---|
 | **DC1** | ESP32-S3 core, and through VDD_SPI the flash + in-package PSRAM *(prov. — that DC1 feeds the SoC's 3.3 V supplies is the rail map's reading, confirmed against the schematic in D3/D4)* | boot-on | never written by firmware | `TBD` — §3 bounds it from below | Phase 1, differential workload |
 | **ALDO2** | display backlight (GPIO45 LEDC, 5 kHz/8-bit) | boot-on | enabled last, duty ramped ([ADR 0016](../adr/0016-backlight-gpio45-vdd-spi-strap.md)) | `TBD` — **plausibly the largest single term** | Phase 1, swept duty 0→255 |
-| **ALDO3** | ST7789V3 panel + FT6336U touch, 3300 mV | boot-on | enabled first, ≥ 10 ms settle, before any SPI/I²C traffic | `TBD` (panel and touch separately unread: [01 #13](../bibliography/01-datasheets.md), [01 #16](../bibliography/01-datasheets.md)) | Phase 1 + acq [01 #15](../bibliography/01-datasheets.md) |
+| **ALDO3** | ST7789V3 panel + FT6336U touch, 3300 mV | boot-on | enabled first, ≥ 10 ms settle, before any SPI/I²C traffic | **≈ 10 mA typ** for controller + touch, from the filed sheets (read 2026-08-21): FT6336U `Iopr` **4 mA** typ / `Imon` 1.5 mA / `Islp` 50 µA (§DC, VDDA = 2.8 V, MCLK 17.5 MHz); ST7789 `IDD` **6.0 mA** typ / 7.5 mA max in Normal mode with a black image, 5.0/6.0 partial+idle, 0.015/0.03 sleep-in. **Two caveats, both load-bearing:** the **V3** preliminary spec's own Table 3 is literally `TBD` in every cell, so the 6.0 mA is the **ST7789V v1.3** sheet used as a proxy; and its typical is at VDD = 2.75 V while this rail runs at 3.30 V. The LCD **glass/panel module** is a separate term that appears in no filed sheet. `TBD (measured, Phase 1)` for the rail as built. | Phase 1 + acq [01 #15](../bibliography/01-datasheets.md) |
 | **ALDO4** | SX1262 LoRa | boot-on | **off** — [ADR 0017](../adr/0017-no-radio-in-v1-trimmed-component-set.md), radio held in reset | 0 by construction (verify the rail is actually off) | E2/Phase 1 check |
-| **BLDO2** | DRV2605L enable (the rail *is* the enable — no GPIO) | boot-on | on only while haptics are needed | `TBD`; the driver's start-up time out of BLDO2 is unread, so "gate the rail" vs "leave it on" is undecidable ([12 §8](12-interaction-model.md)) | acq [01 #25](../bibliography/01-datasheets.md) + Phase 1 |
+| **BLDO2** | DRV2605L enable (the rail *is* the enable — no GPIO) | boot-on | on only while haptics are needed | **≤ 7 µA** in STANDBY, **≤ 0.65 mA** quiescent while driving (SLOS854D §6.5, read 2026-08-21); in-situ `TBD (measured, Phase 1)`. Re-enabling costs ≥ 250 µs to I²C-ready + ≤ 1.5 ms to output + a calibration restore (§6.7, §8.5.4.2), so the rail policy is a latency choice, not a battery one ([12 §8](12-interaction-model.md)) | acq [01 #25](../bibliography/01-datasheets.md) + Phase 1 |
 | **DLDO1** | MAX98357A amplifier *(prov. — two vendor witnesses, [study notes](../reference-projects/notes/lilygolib-axp2101_notes.md) §6.3)* | vendor leaves it off | disabled at boot; safe — it does **not** silence the mic | 0 in v1 (no playback path) | schematic, D3/D4 |
 | **VBACKUP** | PCF8563 RTC via MS412FE coin cell (≈ 1 mAh, [01 #19](../bibliography/01-datasheets.md)) | — | backup charge on/off is a decision, not a default | `TBD`; the vendor measures the backup charger at **≈ +200 µA** (code comment, [study notes](../reference-projects/notes/lilygolib-axp2101_notes.md) §3.7) | Phase 1 |
 | *(always-on 3.3 V)* | **SPM1423 PDM mic** *(prov.)* | on before firmware | not gateable | I_DD **500 µA typ / 600 µA max** at VDD = 1.8 V, F_CLOCK = 2.4 MHz ([01 #9](../bibliography/01-datasheets.md) Rev D) — our rail is 3.3 V *(prov.)* and our clock 2.048 MHz, so this is an indication, not our number | Phase 1 |
-| *(I²C0 loads)* | BMA423 (feature engine on), PCF8563 | on | wrist-raise is a wake source ([ADR 0012](../adr/0012-hands-free-interaction.md), proposed) | `TBD` — [01 #22](../bibliography/01-datasheets.md) has not been read for the feature-engine running current ([12 §8](12-interaction-model.md)) | acq + Phase 1 |
+| *(I²C0 loads)* | BMA423 (feature engine on), PCF8563 | on | wrist-raise is a wake source ([ADR 0012](../adr/0012-hands-free-interaction.md), proposed) | `TBD (acquisition)` — [01 #22](../bibliography/01-datasheets.md) has not been read for the feature-engine running current, and **cannot be**: Bosch delisted the BMA423 datasheet and its sensor-API repository (found 2026-08-21), so `docs/datasheets/bosch/bma423/` is empty. Needs a second source or a measurement ([12 §8](12-interaction-model.md)) | acq + Phase 1 |
 | DC2–DC5, ALDO1, BLDO1, CPUSLDO, DLDO2 | nothing on this board | Zephyr: DC3/ALDO1 boot-on | **explicitly disabled** by our driver — the vendor leaves DC3, DC4 and BLDO1 on ([study notes](../reference-projects/notes/lilygolib-axp2101_notes.md) §3.3) | quiescent only; the saving is itself `TBD` | Phase 1, rails on vs off |
 
 ## 3. The one term with a datasheet — and why it is still a floor, not a value
