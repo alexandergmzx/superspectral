@@ -101,6 +101,12 @@
                   4096,
                   8192
                 ]
+              },
+              "sample_rate_hz": {
+                "$comment": "ADR 0003 decision 5: 48 kHz is gated on the PDM clock test (roadmap T3). Until it runs, no watch preset may ask for it.",
+                "not": {
+                  "const": 48000
+                }
               }
             }
           },
@@ -276,7 +282,7 @@
       ],
       "properties": {
         "sample_rate_hz": {
-          "description": "Nominal PCM rate. 48000 is RESERVED and rejected by the watch loader until experiment 0001 clause 4 passes (ADR 0003 decision 5); a host-only preset may use it today.",
+          "description": "Nominal PCM rate. 48000 is RESERVED until experiment 0001 clause 4 passes (ADR 0003 decision 5): the V2 branch above rejects it for any preset targeting the watch, and the watch loader repeats the check because a preset can also arrive over the wire. A host-only preset may use it today.",
           "enum": [
             16000,
             32000,

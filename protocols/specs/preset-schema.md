@@ -69,7 +69,7 @@ A take is written with a preset, and months later the host has to know *exactly*
 | Indent | two spaces per level |
 | Separators | `,` at end of line, `": "` between key and value |
 | Arrays | one element per line; array **order is significant** and is never sorted (`overlays` is display order) |
-| Numbers | decimal only — no exponent, no leading `+`, no trailing `.`; at most 6 decimal places |
+| Numbers | decimal only — no exponent, no leading `+`, no trailing `.`; **rounded** (half-even) to at most 6 decimal places, never truncated. Truncation is what makes a derived value miss the V9 tolerance from the correct side: `live_singing`'s `enbw_hz` is 15.6590078125 exactly, and the truncated `15.659007` is 8.1×10⁻⁷ away — inside V9's 1×10⁻⁶ but outside the 5×10⁻⁷ the rule below promises |
 
 The number rule is what makes this portable: the schema constrains every numeric field to a range in which the shortest round-trip decimal is identical in Python's `repr`, in ECMAScript's `Number::toString` and in a C `printf("%.17g")` round-trip, so the sorted-keys/indent form above is unambiguous without importing a full canonicalisation scheme (RFC 8785 JCS is the fallback if the schema ever admits a field where they could differ; it is not a bibliography entry yet).
 
@@ -226,7 +226,7 @@ Doing this immediately surfaces something the presets had hidden. At 32 kHz a Ha
 | Preset | N | window | `window_duration_ms` | `enbw_hz` | Against the classical pair |
 |---|---:|---|---:|---:|---|
 | `diction_consonants` | 1024 | hann | 32.0 | **46.875** | ≈ Koenig **narrowband** (45 Hz) |
-| `live_singing` | 4096 | blackman_harris | 128.0 | 15.659007 | 3× narrower than narrowband |
+| `live_singing` | 4096 | blackman_harris | 128.0 | 15.659008 | 3× narrower than narrowband |
 | `stem_analysis` | 8192 | hann | 170.666667 | 8.789062 | |
 | `sustained_pitch_lab` | 8192 | blackman_harris | 256.0 | 7.829504 | |
 | `room_noise_floor` | 8192 | hann | 256.0 | 5.859375 | |
@@ -242,7 +242,7 @@ The watch **validates and rejects**; it never coerces, never clamps, never subst
 |---|---|---|
 | V0 | The file's bytes are exactly its canonical form (§3) | pre-commit hook / host writer |
 | V1 | `id` equals the file's basename without `.json` | loader |
-| V2 | A `watch` preset: `fft_size ≤ 8192`, `sample_rate_hz ≠ 48000` (until the gate opens), `refresh_hz_target` present, no host-only overlay | schema + loader |
+| V2 | A `watch` preset: `fft_size ≤ 8192`, `sample_rate_hz ≠ 48000` (until the gate opens), `refresh_hz_target` present, no host-only overlay | schema + loader — all four are in the schema's V2 branch since 2026-08-21; the loader repeats them because a preset can also arrive over the wire |
 | V3 | A `host` block implies `host ∈ targets` | schema |
 | V4 | `freq_scale == "log"` implies `freq_min_hz > 0` | schema |
 | V5 | `smoothing > 0` iff `averaging == "exponential"`; otherwise exactly 0 | schema |
@@ -253,7 +253,7 @@ The watch **validates and rejects**; it never coerces, never clamps, never subst
 | V9 | every `resolution` field recomputed from `sample_rate_hz`, `fft_size`, `interval_ms`, `enbw_bins` (tolerance 1×10⁻⁶); `0 ≤ freq_min_hz < freq_max_hz ≤ sample_rate_hz / 2` | loader |
 | V10 | every pointer in `provisional` resolves to an existing field | loader |
 
-The 1×10⁻⁶ tolerance is exactly what the "at most 6 decimal places" canonical-form rule guarantees: rounding to 6 places can move a value by at most 5×10⁻⁷.
+The 1×10⁻⁶ tolerance is exactly what the canonical-form number rule guarantees: **rounding** to 6 places moves a value by at most 5×10⁻⁷, so a correctly written file sits at half the tolerance and the other half absorbs the float arithmetic. Truncating instead of rounding spends the margin: it can move a value by up to 1×10⁻⁶, i.e. the whole budget.
 
 ## 7. The six presets as shipped
 
@@ -261,7 +261,7 @@ Sample rate 32 kHz everywhere except the host-only preset ([ADR 0003](../../docs
 
 | id | targets | N | window | hop | refresh | `enbw_hz` | averaging / hold | overlays | CPU (one core) |
 |---|---|---:|---|---:|---:|---:|---|---|---|
-| `live_singing` | watch, host | 4096 | blackman_harris | 20 ms | 50 Hz | 15.659007 | exp 0.25 / — | f0, peaks, ring, clipping | ≈ 6.2 % |
+| `live_singing` | watch, host | 4096 | blackman_harris | 20 ms | 50 Hz | 15.659008 | exp 0.25 / — | f0, peaks, ring, clipping | ≈ 6.2 % |
 | `vowel_formant_study` | watch, host | 8192 | hann | 40 ms | 25 Hz | 5.859375 | none | f1f2, envelope, peaks | ≈ 4.5 % (derived) |
 | `sustained_pitch_lab` | watch, host | 8192 | blackman_harris | 40 ms | 25 Hz | 7.829504 | exp 0.15 / — | f0, vibrato, peaks | ≈ 4.5 % |
 | `diction_consonants` | watch, host | 1024 | hann | 10 ms | 50 Hz | 46.875 | none | peaks, clipping | ≈ 2.6 % |
@@ -290,7 +290,7 @@ Windows, coherent gain and ENBW: Harris 1978, Nuttall 1981 and Heinzel, Rüdiger
 | Hook | What it proves | Where |
 |---|---|---|
 | Schema validation of `protocols/presets/*.json` | every shipped preset is loadable | [`python-scripts/check_presets.py`](../../python-scripts/check_presets.py), the pre-commit `presets-rules` hook and the `python-scripts` CI job. `jsonschema` 4.10.3 `Draft202012Validator`; **6/6 accepted** (2026-08-21) |
-| Negative-case suite | the loader *rejects* every malformed preset. **41 mutations, 41/41 rejected** (2026-08-21) — 27 by the schema (unknown top-level or `analysis` field, off-enum window / `spectrum_type` / `weighting`, symmetric window `form`, `schema_version` 2.x or non-semver, missing `enbw_hz` / `id` / `targets`, empty `targets`, `db_floor` above the ceiling, negative `dc_blocker_hz`, `smoothing` > 1, `fft_size` not a power of two, a one-coefficient window, `mic_eq` `ref` without a sha256, and — because the schema encodes the conditionals too — V2's N = 16384 and missing `refresh_hz_target`, V3, V4, V5, V6 and V6b) and **14 only by the rules** (V1 `id` ≠ filename; V2 48 kHz on a watch preset; V7 a fractional hop and an analysis rate that is not an integer multiple of `refresh_hz_target`; V8 a mutated coefficient, another family's coefficients under this name, a stale `coherent_gain_db` or `enbw_bins`; V9 a stale `enbw_hz`, `bin_width_hz` or `hop_samples` and `freq_max_hz` above Nyquist; V10 a dangling pointer and an out-of-range array index). Every case also asserts that **the rule that owns it fires**, so a rule the schema happens to shadow is still exercised: coverage spans V1–V10 and V6b | same script; run `--verbose` to list each case and what caught it |
+| Negative-case suite | the loader *rejects* every malformed preset. **41 mutations, 41/41 rejected** (2026-08-21) — 28 by the schema (unknown top-level or `analysis` field, off-enum window / `spectrum_type` / `weighting`, symmetric window `form`, `schema_version` 2.x or non-semver, missing `enbw_hz` / `id` / `targets`, empty `targets`, `db_floor` above the ceiling, negative `dc_blocker_hz`, `smoothing` > 1, `fft_size` not a power of two, a one-coefficient window, `mic_eq` `ref` without a sha256, and — because the schema encodes the conditionals too — V2's N = 16384, its 48 kHz ban and its missing `refresh_hz_target`, V3, V4, V5, V6 and V6b) and **13 only by the rules** (V1 `id` ≠ filename; V7 a fractional hop and an analysis rate that is not an integer multiple of `refresh_hz_target`; V8 a mutated coefficient, another family's coefficients under this name, a stale `coherent_gain_db` or `enbw_bins`; V9 a stale `enbw_hz`, `bin_width_hz` or `hop_samples` and `freq_max_hz` above Nyquist; V10 a dangling pointer and an out-of-range array index). Every case also asserts that **the rule that owns it fires**, so a rule the schema happens to shadow is still exercised: coverage spans V1–V10 and V6b | same script; run `--verbose` to list each case and what caught it |
 | Rules V0–V10 recomputation | the derived constants in the file agree with the coefficients and with `(N, f_s, interval_ms)` to 1×10⁻⁶, and the bytes are the canonical form | same script (V0 is checked against the file's bytes, so it runs on the shipped presets only); also a `spectral_core` host test **(planned)**, because the C loader must reject the same files |
 | Round-trip through the store | a preset written by the host, mounted on LittleFS and read by the watch hashes to the same sha256 | QEMU/target test (planned), with the take-transfer spec |
 | Frame-rate feasibility | the `refresh_hz_target` of every watch preset is actually sustained | *Sustained refresh* and *Dropped-frame rate* rows of [`../../docs/validation/README.md`](../../docs/validation/README.md) — the phototransistor cross-check, not the firmware counter alone |

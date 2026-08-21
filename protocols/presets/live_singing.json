@@ -9,7 +9,7 @@
     "interval_ms": 20,
     "resolution": {
       "bin_width_hz": 7.8125,
-      "enbw_hz": 15.659007,
+      "enbw_hz": 15.659008,
       "hop_samples": 640,
       "window_duration_ms": 128.0
     },
