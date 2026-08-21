@@ -13,10 +13,10 @@
 
 | Unit | State | Notes |
 |---|---|---|
-| U0 session setup | IN PROGRESS 01:48 | branch created; this plan; then absorb workflow `w9e08cb66` (D4 notes + 7 ADRs) |
+| U0 session setup | **PARTLY DONE** 01:52 | `06a4f74` — branch + this plan. **Correction:** workflow `w9e08cb66` did not survive the interrupt at 01:41:33 — three of its four study agents died mid-tool-call and the ADR phase never began. It was resumed as `wipguewn1` (the finished study replays from cache). Absorbing its output is still open. |
 | U3 D5 engineering ADRs (0009, 0010, 0011, 0012) | pending | |
 | U4 D6 validation freeze (paper side) | pending | |
-| U5 D3 acquisition follow-ups | pending | |
+| U5 D3 acquisition follow-ups | **DONE** 02:05 | `fc41e7d` — both quarantines resolved (mir_eval was the wrong paper, now correct and committed; XL2 re-fetched whole). YIN + Sundberg 1994: 5xx twice each, paths closed. Added `python-scripts/check_links.py` as the commit gate. |
 | U6 bibliography live-verification | pending | |
 | U7 D2 proposal prose (DRAFT) | pending | |
 | U8 handback | pending | mandatory, starts 07:00 at the latest |
