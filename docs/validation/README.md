@@ -1,0 +1,100 @@
+# Validation plan
+
+Three-phase experimental validation as described in §4 of the [proposal](../proposal/01-super-spectral-proposal.md). Every target below is provisional `(prov.)` until D6 of the [roadmap](../roadmap/documentation-roadmap.md) freezes this table; the roadmap's routing table sends "measure this" questions here by row.
+
+## The two-path rule (read before any number is reported)
+
+Every metric that involves the signal chain is reported **on two paths, separately, in every table**:
+
+1. **Digital-injection path** — a corpus WAV (or synthetic signal) is written straight into the firmware's PCM ring buffer through the `file_blob` audio source; the microphone is bypassed. It measures *algorithm* error. **This is the only path on which a "≤ 5 cents vs Praat" claim is legitimate.**
+2. **Acoustic path** — the same signal is reproduced through a calibrated source at a fixed geometry (mouth simulator per ITU-T P.51 / HATS per ITU-T P.58, or a reference monitor at a stated distance and angle), captured simultaneously by the watch and a reference microphone, then time-aligned. It measures the *whole chain*: case, port, microphone, PDM→PCM, clock, algorithm.
+3. *(optional)* **Injection ⊛ RIR** — the corpus convolved with a measured room impulse response (OpenAIR, BUT ReverbDB) and injected. Isolates room effects from microphone effects at zero bench cost.
+
+Reporting only path 2 hides algorithm bugs behind acoustics; reporting only path 1 is not a wearable result at all. The headline research-question bounds name both paths explicitly (±20 cents acoustic, ≤ 5 cents injection).
+
+## Phases
+
+Week ranges follow the project-phase table in the [root README](../../README.md); Phase 0 (weeks 0–3) is documentation and environment and produces no measurements.
+
+| Phase | Weeks | Focus | Deliverables | Document |
+|---|---|---|---|---|
+| 1 | 4–7 | **Component characterization** — mic in-situ response and EIN vs reference; SPL calibration vs calibrator; sample-rate error vs GPSDO; esp-dsp + decimation cycle counts per preset; display refresh ceiling; per-preset and per-rail current | **the mic EQ filter and the clock-correction constant** — every later number depends on both | [`experiments/0001-pdm-mic-in-situ-characterization.md`](experiments/0001-pdm-mic-in-situ-characterization.md), `phase1-components.md` (planned) |
+| 2 | 8–11 | **Bench validation** — injection path across Tier-1/2 corpora with `mirdata` + `mir_eval`; golden-file regression vs parselmouth; acoustic path through the mouth simulator at the factorial matrix | the 108-trial dataset (prov.), CEP-style percentiles of cents error (not just means), Bland–Altman plots for level metrics | `phase2-bench.md` (planned) |
+| 3 | 12–16 | **In-use validation & release** — live singers wearing the watch with simultaneous reference mic (optional EGG); 1-hour autonomy runs per preset; wrist/sleeve sensitivity envelope; SPR/FHE repeatability within subject and session | the wrist-position envelope, autonomy table, replication guide | `phase3-in-use.md` (planned) |
+| — | — | Cross-cutting metrics and acceptance | this table | [`golden-files.md`](golden-files.md), [`experiments/`](experiments/README.md) |
+
+**Factorial matrix (prov., pending a power analysis):** 6 presets × 3 SPL (60 / 75 / 90 dB SPL at the reference point) × 3 mouth-to-watch distances (15 / 30 / 45 cm, to be replaced by an anthropometric distribution from ISO 7250-1 / ANSUR II) × 2 arm angles = **108 trials** on the acoustic path; each trial is also run on the injection path as its own control.
+
+## Acceptance metrics (prov.)
+
+Targets are `relational operator + number + spaced unit`. **Anchor** names the external document that justifies the number (citation addresses `NN #k` resolve in [`../bibliography/`](../bibliography/README.md); thematic files 08/09/10 carry letter prefixes). **How to measure** is the operational procedure; a row without one is not frozen.
+
+| Metric | Definition | Target | Anchor | How to measure |
+|---|---|---|---|---|
+| Sample-rate error | measured PCM rate vs nominal | ≤ 200 ppm (≈ 0.35 cent of pure additive pitch bias) | ESP32-S3 datasheet (crystal tolerance; I²S clock from PLL/XTAL through a fractional divider — the S3 has **no APLL**, so the error is crystal ppm + divider resolution) — 01 | GPSDO-referenced 1000.000 Hz tone on the injection-equivalent acoustic path, or count PDM CLK on a ≤ 1 ppm frequency counter; repeat at 15 / 25 / 35 °C |
+| Peak-frequency accuracy — injection | \|f̂ − f_ref\| in cents, synthetic tones on and off bin centres, 80 Hz–8 kHz | ≤ 3 cents | Smith *SASP* (quadratic interpolation on log magnitude) — 04; Harris 1978 (scalloping loss per window) — 05 | Tier-0 sine set through `file_blob`; isolates FFT + interpolation error |
+| Peak-frequency accuracy — acoustic | same, tone reproduced acoustically | ≤ 8.7 cents (±0.5 %) | ITU-T P.51 / P.58 (reproducible source geometry) — 03 | Mouth simulator or reference monitor at the matrix geometry |
+| 1/3-octave band level | band level vs reference-mic analysis, 100 Hz–8 kHz, **post-EQ**; uncorrected also reported | ≤ ±1.5 dB — **as within-session repeatability (Bland–Altman limits of agreement / ICC) or with a GUM uncertainty budget**; not as absolute accuracy unless the reference chain is IEC 61094-4 class (roadmap threshold T6) | IEC 61260-1 / ANSI S1.11-2004 masks — 03; JCGM 100 (GUM) — 03; Bland & Altman 1986, Koo & Li 2016 — 05 | Pink noise + exponential swept sine (Farina 2000) vs an IEC-61260-compliant reference analysis; report bias, LoA, and the budget |
+| Absolute SPL | dB SPL at 1 kHz vs calibrator | ≤ ±1.5 dB (prov.; **claimed only if a Class-1 calibrator is available**, else "not claimed") | IEC 60942:2017 Class 1 — 03; Švec & Granqvist 2018 — 08 | B&K 4231 (94.0 / 114.0 dB, ±0.2 dB) through a custom port adapter; report mouth-to-mic distance with every SPL figure |
+| Noise floor / EIN | equivalent input noise, A-weighted | ≤ 35 dB(A) SPL (datasheet-derived expectation ≈ 32.5 dB(A): 94 − 61.5) | Knowles SPM1423 datasheet — 01; Švec & Granqvist 2010 (≥ 15 dB below the softest phonation) — 08 | Room ≤ 25 dB(A) or the measurement reports the room (ISO 26101 / ANSI S12.2 framing); 30 s capture, A-weighted RMS |
+| AOP / clipping flag | SPL at 10 % THD; clipping-flag true-positive rate | ≥ 108 dB SPL; flag fires 100 % above it | Knowles datasheet — design to **110 dB SPL** (Rev. A, page-verified) until the pinned revision's raster table is digitized — 01 | Stepped 1 kHz tone 90 → 115 dB SPL; THD from the reference chain; verify \|s\| ≥ 0.99 FS detector |
+| Displayed spectral dynamic range | per-bin noise floor below a full-scale tone | measured; expected ≈ broadband SNR + FFT processing gain (≈ +30 dB at N = 4096 for the 61.5 dB(A) mic) | Heinzel 2002 (NENBW, processing gain) — 05 | Tier-0 sine at −6 dBFS; median bin level 1 kHz away from the tone; per window and N |
+| RPA @ 50 / 25 / 10 cents | `mir_eval.melody.raw_pitch_accuracy` | ≥ 90 / 85 / 70 % | Raffel et al. 2014 (mir_eval) — 05; MIREX Audio Melody Extraction convention — 07; CREPE (10-cent tier) — 05 | vocadito + Dagstuhl ChoirSet (CC BY 4.0) via `mirdata`; both paths |
+| RCA − RPA | chroma minus raw accuracy | gap ≤ 2 pts (the gap **is** the octave-error rate) | mir_eval — 05 | same run |
+| Overall accuracy | `mir_eval.melody.overall_accuracy` | ≥ 88 % | mir_eval — 05 | same run |
+| VR / VFA | voicing recall / voicing false alarm | ≥ 90 % / ≤ 10 % | mir_eval — 05 | same run |
+| Median \|Δcents\| vs Praat golden file | vs parselmouth on the identical WAV | ≤ 5 cents (injection) · ≤ 20 cents (acoustic) | Boersma 1993 — 05; Jadoul et al. 2018 — 05; [`golden-files.md`](golden-files.md) | Primary regression gate; manifest pins parselmouth → bundled Praat → method → floor/ceiling → sha256 |
+| f0 range covered | lowest/highest f0 meeting the RPA target | 65 Hz (C2) – 1046 Hz (C6) | Praat pitch floor/ceiling semantics (manual) — 06; corpus ranges — 10 | Tier-0 synthetic vowels + corpus stratification by octave; the mic's measured LF corner (exp 0001) is reported alongside — a datasheet plot starting at 100 Hz is not a corner |
+| Formant F1/F2 error | vs parselmouth `To Formant (burg)` on sustained vowels | ≤ 5 % or 50 Hz, whichever is larger | Hillenbrand et al. 1995 — 05; Kent & Read — 04; Weenink 2023 (FormantPath) — 05 | 5 vowels × 3 pitches × 3 SPLs; expect and report degradation at high f0 |
+| SPR agreement | **Omori peak-to-peak** (max harmonic peak 2–4 kHz − max peak 0–2 kHz) vs host LTAS | ≤ ±1.5 dB bias, LoA reported; **relative, within-subject, within-session only** | Omori et al. 1996 — 05; Nordenberg & Sundberg 2004 (report with an SPL co-estimate) — 05; Bland & Altman 1986 — 05 | ≥ 30 takes; Bland–Altman + ICC, never `r` alone |
+| FHE agreement | frequency at 50 % cumulative energy in 2–4 kHz vs host | ≤ 50 Hz (prov.) | Müller et al. 2022 — 08 | same takes |
+| Ring-ratio agreement | 2.5–3.5 kHz / total, post-EQ | ≤ ±1.0 dB; **uncorrected value reported too** | Sundberg 1974, Bloothooft & Plomp 1986 — 05 | same takes; exposes the mic's HF response |
+| Two-tone resolution | smallest resolved Δf vs theoretical per window | within 1 bin | Harris 1978, Nuttall 1981 — 05; Heinzel 2002 — 05 | Tier-0 two-tone set at Δf = 0.5 / 1 / 2 / 4 bins, Hann vs Blackman-Harris |
+| Acoustic-to-photon latency | stimulus onset → first pixel change | ≤ 80 ms mean, ≤ 120 ms p99 | Jack et al. 2018; McPherson et al. 2016; Schmid et al. 2024 — 09 (visual biofeedback tolerates more than action–sound; the anchor says so) | Oscilloscope ch1 = drive signal, ch2 = phototransistor taped to the LCD; 100 reps per preset |
+| Analysis-to-GPIO latency | stimulus → "feature ready" toggle | ≤ preset window + 10 ms | — (internal budget; isolates DSP from render) | Same rig, GPIO toggle instead of photodiode; also yields the on-target FFT frame time (`dsp_get_cpu_cycle_count()`, trended in CI via `log_performance()`) |
+| Sustained refresh | frames actually pushed per second over 60 s | ≥ 30 Hz all presets; 50 Hz `live_singing` | `esp_lvgl_port/docs/performance.md` — 02; ST7789V3 timing — 01 | Firmware counter **plus** phototransistor cross-check on a blinking corner — do not trust the counter alone |
+| Dropped-frame rate | input buffers overwritten before processing | < 1 % over 1 h | — (RQ-3 internal) | Ring-buffer overrun counter over USB-Serial-JTAG |
+| Autonomy | full charge → PMU cutoff, per preset | ≥ 3 h | PPK2 / Otii Arc Pro specs — 01; AXP2101 E-Gauge registers — 01 | External analyzer on a battery pigtail **cross-checked against the AXP2101 coulomb counter** — disagreement is a finding, not a nuisance |
+| Energy per preset | mAh/h and mJ per analysis frame | measured, tabulated | same | Same instrument, segmented by preset; includes the marginal mAh/h per decimation stage (the trade-off-study contribution, proposal objective 4) |
+| Thermal drift | Δ(reported f0) over 60 min at constant tone | ≤ 3 cents (prov.) | — (derived from the sample-rate row) | Long soak with a calibrated tone; chip temperature logged |
+| Wrist-position envelope | Δlevel and ΔRPA across distance / angle / sleeve | reported as an **envelope, not pass/fail** | Švec & Granqvist 2018; Titze & Winholtz 1993 (4 cm / 30 cm / 1 m at 0° / 45° / 90°) — 08; Katz & d'Alessandro 2007 (singing directivity) — 08 | 3 distances × 3 arm angles × 2 sleeve conditions; the wearable-specific confound with no analogue in the Linux version |
+| Reproducibility | third party rebuilds and reruns within tolerance | yes | ESP-IDF reproducible-builds guide — 11; FAIR principles | Build-twice sha256 diff in CI; `env.lock.md`; `mirdata`-validated corpora; the golden-file manifest |
+
+When an ADR adds a requirement, append a `### <Subsystem> metrics (per ADR NNNN)` block below this table — preceded by one sentence naming the open physical question — rather than editing the base table.
+
+## Equipment (with the tolerance that matters)
+
+| Class | Item | Spec that matters | Priority |
+|---|---|---|---|
+| Level reference | **B&K Type 4231** sound calibrator | 94.0 / 114.0 dB SPL @ 1 kHz, **±0.2 dB**, IEC 60942:2017 Class 1 | ★★★ (a Class-2 calibrator is the fallback and caps absolute-SPL accuracy at ≈ ±2 dB) |
+| Reference microphone | **miniDSP UMIK-1** (per-serial factory calibration) as budget option; **Earthworks M23R / GRAS or B&K IEC 61094-4 WS2F** as the credible option | reported > 2 dB HF disagreement between UMIK-class and Earthworks-class mics — the same order as the ±1.5 dB target, hence threshold T6 | ★★★ |
+| Playback geometry | **B&K HATS 4128-C** (mouth per ITU-T P.58) or a standalone artificial mouth per **ITU-T P.51** | makes corpus playback repeatable in geometry | ★★ |
+| Test room | background ≤ 25 dB(A) | otherwise the EIN row measures the room; report the room per ISO 26101-1 / ANSI S12.2 either way | ★★★ (availability risk) |
+| Timing reference | **GPSDO 10 MHz** or a ≤ 1 ppm frequency counter | bounds the sample-rate error, a pure additive cents bias | ★★★ |
+| Latency | ≥ 2-channel oscilloscope + phototransistor / photodiode on the LCD | acoustic-to-photon | ★★★ |
+| Stimulus | signal generator or soundcard with a stated clock accuracy + amplifier + reference monitor | swept sine (Farina), two-tone, pink noise | ★★★ |
+| Energy | **Nordic PPK2** (200 nA–1 A, 100 kS/s, 0.8–5 V source) or **Qoitech Otii Arc Pro** (±(0.1 % + 50 nA) below 19 mA, 24-bit) | Otii preferred — its range covers backlight-on peaks; either needs a documented **battery-pigtail / battery-emulation procedure** for a sealed watch | ★★★ |
+| f0 ground truth | EGG (Laryngograph / Glottal Enterprises EG2-PCX2) | only if recording own singers; otherwise corpora with laryngograph-derived f0 (PTDB-TUG) or a larynx contact mic (Dagstuhl ChoirSet) | ★ |
+| Annotation | **Tony** (Sonic Visualiser + pYIN Vamp) | hand-corrected f0/note ground truth for a bespoke corpus | ★ |
+
+Instrument datasheets are catalogued in [`../bibliography/01-datasheets.md`](../bibliography/01-datasheets.md) (instruments section) and filed under `docs/datasheets/instruments/`.
+
+## Corpora (tiers, with licence)
+
+Three ledgers are kept separately and never conflated: corpus licences (here and in [`10-datasets-and-ground-truth.md`](../bibliography/10-datasets-and-ground-truth.md)), software licences (ADR 0004, `NOTICE`), and golden-file provenance ([`golden-files.md`](golden-files.md)). Every corpus used gets a `datasets/<corpus>/manifest.yaml` with sha256 per file and the licence text.
+
+| Tier | Corpus | Ground truth | Licence | Use |
+|---|---|---|---|---|
+| 0 | **Synthetic, generated in-repo** — sines on/off bin centres; linear + log sweeps; Farina exponential sweeps; two-tone at 0.5 / 1 / 2 / 4 bins; white and pink noise; Rosenberg / Liljencrants-Fant glottal-source vowels with known f0 and F1–F3; AM/FM tones at 5–7 Hz, ±1 semitone (vibrato) | exact by construction | — | must exist before any corpus is touched; the peak-frequency, two-tone, formant and vibrato rows |
+| 1 | **vocadito** (40 solo excerpts, 7 languages) · **Dagstuhl ChoirSet** (choir + quartet, larynx contact-mic channel) · **VocalSet** (20 singers, 17 techniques) · **Annotated-VocalSet** · **PVQD** | frame-level f0 · F0 per close mic · (technique labels) · annotations · CAPE-V ratings | **CC BY 4.0** | the RPA/OA/VR rows (vocadito, Dagstuhl); the timbre axis (VocalSet); PVQD as acoustic material only (ADR 0005) |
+| 2 | **PTDB-TUG** (laryngograph-derived f0) · **MDB-stem-synth** (analysis/resynthesis "perfect" f0) · **MIR-1K** · iKala · Opencpop / ACE-KiSing / M4Singer · NUS-48E · Saraga | per corpus | TU Graz terms (verify) · **CC BY-NC 4.0** · **not stated** · request · CC BY-NC · request · CompMusic terms | bench only; NC corpora quarantined from any headline figure if commercial framing is ever contemplated; MIR-1K bench-only until its terms are resolved |
+| 3 | **Saarbrücken Voice Database** (audio + EGG, pathologies) · PVQD | EGG; perceptual ratings | site terms (verify) · CC BY 4.0 | acoustic material for the LTAS / H1–H2 axis **only** — no clinical claim (ADR 0005) |
+| noise / RIR | **DEMAND**, MUSAN (noise); **OpenAIR**, **BUT ReverbDB**, ACE Challenge (RIR); VCTK, CMU ARCTIC (vowel/formant references) | — | CC BY (DEMAND, OpenAIR, VCTK); per corpus | the SNR factor (rehearsal rooms) and the optional injection ⊛ RIR path |
+
+## Experiments
+
+Per-experiment reports follow the template in [`experiments/0000-template.md`](experiments/0000-template.md) (provenance table, licensing status, quantified baseline arm, separate wire-path smoke test, interpretation). Planned: [0001 — PDM mic in-situ characterization](experiments/0001-pdm-mic-in-situ-characterization.md) (Phase 1; produces the EQ filter) and [0002 — rollback and boot-guard race](experiments/0002-rollback-and-boot-guard-race.md) (E2 week 1; proves the recovery path).
+
+## Background reading
+
+The thresholds above derive from the standards in [`../bibliography/03-standards.md`](../bibliography/03-standards.md) (IEC 61672-1/-2/-3, IEC 61260-1, IEC 60942, ITU-T P.51/P.56/P.58, JCGM 100), the methodology papers in [`05-papers.md`](../bibliography/05-papers.md) (Heinzel 2002, Harris 1978, Boersma 1993, Raffel 2014, Bland & Altman 1986), the on-wrist metrology file [`08-voice-metrology-on-the-wrist.md`](../bibliography/08-voice-metrology-on-the-wrist.md) (Švec & Granqvist 2010/2018, Titze & Winholtz 1993, the ASHA Patel 2018 and ELS Dejonckere 2001 protocols — the field's equivalent of an EPA performance-target anchor), and the corpus ledger [`10-datasets-and-ground-truth.md`](../bibliography/10-datasets-and-ground-truth.md). Latency anchors are in [`09-visual-feedback-for-singing.md`](../bibliography/09-visual-feedback-for-singing.md).
