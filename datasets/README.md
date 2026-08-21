@@ -9,6 +9,12 @@ Audio material and ground truth for the validation plan. **Raw audio is git-igno
 | `takes/` *(planned)* | — | Takes recorded by the watch and imported through the take-transfer procedure ([`../protocols/specs/`](../protocols/specs/)); raw audio gitignored, manifests tracked |
 | `reference/` *(planned)* | — | Reference-mic captures aligned with takes on the acoustic path; calibrator recordings |
 
+Currently on disk: [`corpora/manifest.yaml`](corpora/manifest.yaml) — the Tier-1/2/3
+corpora **pre-registered** (vocadito, Dagstuhl ChoirSet, VocalSet, PVQD, MDB-stem-synth,
+DEMAND) with their licences, intended validation rows and quarantine consequences, and
+empty `files:` blocks. Nothing is downloaded yet: the checksums are what the fetch adds,
+and a manifest whose `files:` list is empty is honest about that.
+
 ## `manifest.yaml` — the contract
 
 Every dataset directory carries a `manifest.yaml`; any analysis reads configuration from it and never hardcodes. Required fields:

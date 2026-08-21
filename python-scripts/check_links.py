@@ -7,11 +7,13 @@ CI runs `lycheeverse/lychee-action --offline` (.github/workflows/ci.yml); this i
 the same check with no install, for use before a commit and in unattended
 sessions:
 
-    python3 python-scripts/check_links.py            # tracked *.md, exit 1 if broken
+    python3 python-scripts/check_links.py            # every non-ignored *.md, exit 1 if broken
     python3 python-scripts/check_links.py docs/adr   # limit to a subtree
 
-What it checks: every relative Markdown link and image target in a tracked `.md`
-file resolves to an existing path. Absolute URLs, `mailto:` and pure `#anchor`
+What it checks: every relative Markdown link and image target in a `.md` file that
+git would show (tracked, or untracked and not ignored) resolves to an existing path.
+Untracked files are included on purpose: a link check that only sees staged files
+passes on a file that was never added. Absolute URLs, `mailto:` and pure `#anchor`
 links are out of scope (lychee checks those online; we do not, in an unattended
 session).
 
@@ -50,16 +52,23 @@ def _strip_code(text: str) -> str:
     return "\n".join(out)
 
 
-def tracked_markdown(root: str, subtree: str | None) -> list[str]:
-    args = ["git", "-C", root, "ls-files", "*.md"]
+def repo_markdown(root: str, subtree: str | None) -> list[str]:
+    """Tracked *and* untracked-but-not-ignored Markdown, so a file is checked the
+    moment it is written rather than only after it is staged."""
+    args = ["git", "-C", root, "ls-files", "--cached", "--others",
+            "--exclude-standard", "*.md"]
+    files = subprocess.run(args, capture_output=True, text=True, check=True).stdout.split()
+    files = sorted(set(files))
     if subtree:
-        args += ["--", subtree]
-    return subprocess.run(args, capture_output=True, text=True, check=True).stdout.split()
+        # A second pathspec would UNION with "*.md", not intersect it - filter here.
+        prefix = subtree.rstrip("/") + "/"
+        files = [f for f in files if f == subtree or f.startswith(prefix)]
+    return files
 
 
 def check(root: str, subtree: str | None = None) -> int:
     broken = 0
-    files = tracked_markdown(root, subtree)
+    files = repo_markdown(root, subtree)
     for rel in files:
         path = os.path.join(root, rel)
         try:
