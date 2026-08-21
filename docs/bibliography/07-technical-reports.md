@@ -76,7 +76,7 @@ Drop each report under [`../reports/<agency>/`](../reports/README.md) with the p
 
 ## Acquisition links
 
-> **📥 Filed locally (D3 pass, 2026-08-20):** nothing — the one document attempted, #10 NTi XL2 operating manual, arrived **truncated** (11,130,340 of 11,204,497 bytes, unreadable xref) and was quarantined to `scratch/d3-quarantine/`; re-fetch it (see [`acquisition-status.md`](acquisition-status.md)). No page snapshots were taken this pass. When one is filed, add `📥 Filed locally: ../reports/<agency>/<file>` to its row and stamp the capture date into the Identifier cell (replace `YYYY-MM-DD`).
+> **📥 Filed locally (D3 pass 2026-08-20, completed 2026-08-21):** #10 **NTi Audio XL2 operating manual** (firmware V4.93, 360 pp) → `../reports/nti-audio/nti-audio_xl2-manual_fw4.93_2026.pdf` *(local only — vendor manual, redistribution terms unstated; see the [OCR manifest](../OCR/README.md))*. The D3 pass truncated it (11,130,340 of 11,204,497 B); the 2026-08-21 re-fetch is complete and its two-part sidecar extracts cleanly. No page snapshots were taken yet. When one is filed, add `📥 Filed locally: ../reports/<agency>/<file>` to its row and stamp the capture date into the Identifier cell (replace `YYYY-MM-DD`).
 > **Not scriptable:** #9 Spectroid (Play Store resists automated fetch — manual capture on a device), #5 manuals.plus (Cloudflare), #14 ASHA portal (consent shell). #4 is a binary download from GitHub, not a PDF.
 
 Access vocabulary (as in [README](README.md)): `free` · `free (GET)` (direct URL, scriptable) · `REPO` (GitHub file) · `n/a` (written in-repo; nothing to acquire — as in [01](01-datasheets.md)). Living HTML pages are `free` with "living page — print-to-PDF" in the Link cell; the capture date goes into the filename.

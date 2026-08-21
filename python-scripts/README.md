@@ -6,6 +6,7 @@ All **Apache-2.0** Python lives here, by convention ([`CLAUDE.md`](../CLAUDE.md#
 
 ## Current contents
 
+- `check_links.py` — relative-link checker over the tracked Markdown; the local, install-free twin of CI's `lychee --offline` job. `python3 python-scripts/check_links.py [subtree]`, exit 1 if anything is broken. Skips inline code spans and fenced blocks, which a naive regex misreads as links.
 - `doc_ocr/` — turns the PDFs under `docs/` into grep-able markdown sidecars carrying a human review flag, and maintains the tracked ledger [`../docs/OCR/manifest.tsv`](../docs/OCR/manifest.tsv). Stdlib only (shells out to poppler / mutool / ocrmypdf); run as `python3 -m doc_ocr` from `doc_ocr/`. Carried over from the author's `swarm` repository with only `Settings.skip_dirs` adjusted. See [`../docs/OCR/README.md`](../docs/OCR/README.md). Tests: `cd doc_ocr && python3 -m pytest -q` (25 tests, no binary fixtures, no poppler needed) — run in CI.
 
 ## Planned packages (added as their roadmap phase needs them)
