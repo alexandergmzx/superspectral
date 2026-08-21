@@ -9,9 +9,9 @@ Generator and manifest for the reference outputs that the watch's DSP is regress
 | Field | Meaning | Example / rule |
 |---|---|---|
 | `parselmouth_version` | exact installed parselmouth | from `parselmouth.__version__`; pinned in the host lock file |
-| `praat_version` | the Praat version **bundled** by that parselmouth | from `parselmouth.PRAAT_VERSION`; never assumed equal to praat.org's current release |
+| `praat_bundled` | the Praat version **bundled** by that parselmouth | from `parselmouth.PRAAT_VERSION`; never assumed equal to praat.org's current release. (Field renamed 2026-08-21 to match [`manifest.schema.yaml`](manifest.schema.yaml) and [`../../docs/validation/golden-files.md`](../../docs/validation/golden-files.md), which are normative.) |
 | `pitch_method` | `raw` (classic autocorrelation, `To Pitch (ac)`) or `filtered` (`To Pitch (filtered ac)`) | must be stated per golden set; `cc` (cross-correlation) only if a set explicitly needs it |
-| `pitch_floor_hz`, `pitch_ceiling_hz` | Praat's floor/ceiling for the set | e.g. `60` / `1200` for singing (C2–C6 plus margin) *(prov.)*; a change here is a new golden set |
+| `pitch_floor`, `pitch_ceiling` | Praat's floor/ceiling for the set | **65 / 1100 Hz** — C2 to just above C6, matching the f0 range the [validation plan](../../docs/validation/README.md) commits to (65 Hz – 1046 Hz) *(prov.)*; a change here is a new golden set, never an edit. (Names and values aligned 2026-08-21 with [`manifest.schema.yaml`](manifest.schema.yaml); this file previously said `pitch_floor_hz`/`pitch_ceiling_hz` and 60/1200.) |
 | `time_step_s` | analysis step | `0` (Praat auto) or explicit; explicit preferred so hop aligns with the watch's frame rate |
 | `silence_threshold`, `voicing_threshold`, `octave_cost`, `octave_jump_cost`, `voiced_unvoiced_cost` | the remaining `To Pitch` parameters | recorded even when left at Praat defaults — defaults differ between `raw` and `filtered` |
 | `formant_settings` | `max_formants`, `max_formant_hz`, `window_length_s`, `preemphasis_from_hz` for `To Formant (burg)` | required when formants are part of the set; Praat's Burg order = 2·maxFormants + 2 |
