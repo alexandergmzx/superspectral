@@ -656,9 +656,14 @@ $defs:
 #     blas: <numpy.show_config() vendor + version>
 #
 #   inputs:
-#     - path: datasets/tier0/sine_440_0dBFS_48k.wav
+#     # 32 kHz first: it is the watch default (ADR 0003) and the rate every
+#     # shipped watch preset uses. The 48 kHz twin below is host-only until
+#     # experiment 0001 clause 4 passes (ADR 0003 decision 5, threshold T3),
+#     # and a golden set that exists ONLY at 48 kHz would never regress the
+#     # path the device actually runs.
+#     - path: datasets/tier0/sine_440_0dBFS_32k.wav
 #       sha256: <64 hex>
-#       sample_rate: 48000
+#       sample_rate: 32000
 #       bit_depth: 16
 #       channels: 1
 #       duration_s: 3.0
@@ -705,7 +710,7 @@ $defs:
 #     - path: host/golden/outputs/tier0-synthetic/pitch_sine_440.npy
 #       sha256: <64 hex>
 #       analysis: pitch
-#       input: datasets/tier0/sine_440_0dBFS_48k.wav
+#       input: datasets/tier0/sine_440_0dBFS_32k.wav
 #       dtype: float64
 #       shape: [298, 2]
 #       units: "s, Hz"
@@ -714,7 +719,7 @@ $defs:
 #     - path: host/golden/outputs/tier0-synthetic/spectrum_sine_440.npy
 #       sha256: <64 hex>
 #       analysis: spectrum
-#       input: datasets/tier0/sine_440_0dBFS_48k.wav
+#       input: datasets/tier0/sine_440_0dBFS_32k.wav
 #       dtype: float64
 #       shape: [2049, 2]
 #       units: "Hz, dB re full-scale sine"

@@ -21,7 +21,17 @@ generator:
   praat_bundled: <version>    # parselmouth.PRAAT_VERSION
   praat_reference: 7.0.01     # the version the T7 comparison was run against
 inputs:
-  - path: datasets/tier0/sine_440_0dBFS_48k.wav
+  # 32 kHz is the watch's default rate (ADR 0003) and the only rate any preset
+  # is set to today, so the primary Tier-0 set is generated at it. A 48 kHz
+  # twin is generated too -- it exercises the host-only stem_analysis preset --
+  # but nothing may depend on 48 kHz on the watch until experiment 0001
+  # clause 4 passes (ADR 0003 decision 5, roadmap threshold T3).
+  - path: datasets/tier0/sine_440_0dBFS_32k.wav
+    sha256: <64 hex>
+    sample_rate: 32000
+    bit_depth: 16
+    channels: 1
+  - path: datasets/tier0/sine_440_0dBFS_48k.wav   # host-only until T3 passes
     sha256: <64 hex>
     sample_rate: 48000
     bit_depth: 16

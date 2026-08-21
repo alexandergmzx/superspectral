@@ -214,12 +214,12 @@ Sent by `esp_lcd_panel_io_tx_param()` **after** `esp_lcd_panel_init()` has alrea
 | `0xC2` | `01` | VDVVRHEN | |
 | `0xC3` | `13` | VRHS | |
 | `0xC4` | `20` | VDVS | |
-| `0xC6` | `13` | FRCTRL2 | **frame-rate control** — the number that caps the panel's own refresh; map it against the ST7789V3 table ([01 #13](../../bibliography/01-datasheets.md)) before ADR 0007's 50 Hz budget leans on anything |
+| `0xC6` | `13` | FRCTRL2 | **frame-rate control** — the number that caps the panel's own refresh, which is *not* the `T_SCYCW` bus ceiling. Map it against the ST7789V3 `FRCTRL2` frame-rate table `(unread — 01 #13 has been read for `T_SCYCW`, the scroll registers, `COLMOD` and the GRAM offset, not for this one; [01 #13](../../bibliography/01-datasheets.md))` before ADR 0007's 50 Hz budget leans on anything |
 | `0xD6` | `A1` (sent **twice**) | — | not a documented ST7789 command in the public specification |
 | `0xD0` | `A4 A1` | PWCTRL1 | |
 | `0xE0` | 14 bytes | PVGAMCTRL | positive gamma |
 | `0xE1` | 14 bytes | NVGAMCTRL | negative gamma |
-| `0xE4` | `1D 00 00` | GATECTRL | `NL = 0x1D` ⇒ 240 gate lines, `SCN = 0` *(reading per the ST7789 GATECTRL definition — confirm against 01 #13)* |
+| `0xE4` | `1D 00 00` | GATECTRL | `NL = 0x1D` ⇒ 240 gate lines, `SCN = 0` *(reading per the ST7789 `GATECTRL` definition — **unconfirmed**: [01 #13](../../bibliography/01-datasheets.md) has not been read for `E4h`, and its annotation now says so)* |
 | `0xFF` | — | terminator | |
 
 There is **no `0x21` (INVON)** in the active list — inversion comes from `esp_lcd_panel_invert_color(panel, true)`, which is what our gate does. A disabled `#if 0` alternative list in the same file *does* include `0x21` and a different `0x36` value (`0x08`), i.e. a different colour order; it is dead code for a different panel lot.
