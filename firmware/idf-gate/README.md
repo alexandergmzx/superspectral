@@ -27,9 +27,10 @@ and XPowersLib's MIT `REG/AXP2101Constants.h` — **not** from arduino-esp32's L
   is not reset with the SoC). Do not rely on that: set voltages and enable explicitly.
 - ST7789 works with `rgb_ele_order = RGB`, `invert_color = true`, `set_gap(0, 0)`, 20 MHz SPI,
   `esp_lvgl_port` `swap_bytes = true`, 2 × 240×30 RGB565 DMA buffers in internal SRAM.
-- The registry `lewisxhe/sensorlib 0.4.1` contains **no AXP2101 code** (no `pmic/` sources) — the
-  "SensorLib PMIC fallback" in the research was wrong for the registry package. `twatch_bsp`
-  writes its own ~300-line driver, as ADR 0001 preferred anyway.
+- The **registry tarball** `lewisxhe/sensorlib 0.4.1` contains **no AXP2101 code** (the `src/pmic/`
+  tree and `PmicXPowers.hpp` present in the GitHub repo at the same version are stripped from the
+  component-manager package). So the "SensorLib PMIC fallback" exists upstream but not via
+  `idf_component.yml`; `twatch_bsp` writes its own ~300-line driver, as ADR 0001 preferred anyway.
 - `PROJECT_VER` is captured at **configure** time: a build from a stale configure differs from a
   fresh one only in the version stamp. Reconfigure (`fullclean`) before comparing binaries.
 
