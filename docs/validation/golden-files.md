@@ -29,16 +29,16 @@ inputs:
 analyses:
   pitch:
     method: filtered | raw     # Praat "To Pitch (filtered ac)" vs "To Pitch (raw ac)"
-    time_step: 0.01            # s
-    pitch_floor: 65            # Hz (C2)
-    pitch_ceiling: 1100        # Hz (above C6)
-    silence_threshold: 0.03
-    voicing_threshold: 0.45
-    octave_cost: 0.01
-    octave_jump_cost: 0.35
-    voiced_unvoiced_cost: 0.14
-    max_candidates: 15
-    very_accurate: false
+    time_step: 0.01            # s -- pinned; Praat's own default is 0.0 (auto)
+    pitch_floor: 65            # Hz (C2) -- widened for singing (prov.)
+    pitch_ceiling: 1100        # Hz (above C6) -- widened for singing (prov.)
+    silence_threshold: 0.09    # filtered; raw's default is 0.03
+    voicing_threshold: 0.50    # filtered; raw's default is 0.45
+    octave_cost: 0.055         # filtered; raw's default is 0.01
+    octave_jump_cost: 0.35     # same in both
+    voiced_unvoiced_cost: 0.14 # same in both
+    max_candidates: 15         # same in both
+    very_accurate: false       # same in both
   formant:
     method: burg
     time_step: 0.01

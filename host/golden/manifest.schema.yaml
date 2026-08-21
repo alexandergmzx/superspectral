@@ -669,13 +669,23 @@ $defs:
 #
 #   analyses:
 #     pitch:
-#       method: filtered           # Praat's default since 2023; state it, never inherit it
-#       time_step: 0.01            # s
-#       pitch_floor: 65            # Hz (C2)   (prov.)
-#       pitch_ceiling: 1100        # Hz (>C6)  (prov.)
-#       silence_threshold: 0.03
-#       voicing_threshold: 0.45
-#       octave_cost: 0.01
+#       # The two methods do NOT share defaults, which is the whole reason this
+#       # block exists. Praat 6.4+ manual, read 2026-08-21:
+#       #   filtered: floor 50, top 800, silence 0.09, voicing 0.50, octave 0.055
+#       #   raw:      floor 75, ceiling 600, silence 0.03, voicing 0.45, octave 0.01
+#       # (both: octave-jump 0.35, voiced/unvoiced 0.14, candidates 15,
+#       #  very accurate off, time step 0.0 = auto)
+#       #   https://www.fon.hum.uva.nl/praat/manual/pitch_analysis_by_filtered_autocorrelation.html
+#       #   https://www.fon.hum.uva.nl/praat/manual/pitch_analysis_by_raw_autocorrelation.html
+#       # Below: the filtered method with its own thresholds, and only the two
+#       # fields we deliberately widen for singing marked (prov.).
+#       method: filtered           # Praat's default method since 2023; state it, never inherit it
+#       time_step: 0.01            # s -- pinned, not Praat's auto 0.0
+#       pitch_floor: 65            # Hz (C2); filtered default is 50   (prov.)
+#       pitch_ceiling: 1100        # Hz (>C6); filtered default top is 800   (prov.)
+#       silence_threshold: 0.09    # filtered default
+#       voicing_threshold: 0.50    # filtered default
+#       octave_cost: 0.055         # filtered default (per octave)
 #       octave_jump_cost: 0.35
 #       voiced_unvoiced_cost: 0.14
 #       max_candidates: 15
