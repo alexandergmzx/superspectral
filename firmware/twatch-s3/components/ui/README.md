@@ -2,7 +2,7 @@
 
 **Decision.** The UI is split in two: LVGL 9.5 (`lvgl/lvgl ~9.5.0` via `espressif/esp_lvgl_port ~2.9.0`) for chrome — presets, readouts, note ladder, settings — and a **raw `esp_lcd` canvas** for the spectrogram/spectrum area, which LVGL is told never to repaint. **Trade-off:** two rendering paths to coordinate (a reserved region and a tick budget), in exchange for the ≥30 Hz spectrogram (50 Hz in the live-singing preset) the research question requires; the LVGL widget path alone measures ≈30 fps on this class of board. The split is provisional until the ST7789 scroll-axis check (ADR 0007).
 
-This component has **no hardware access**: inputs are `spectral_frame_t` (from [`spectral_core`](../spectral_core/README.md)) and a panel handle from [`display_backend`](../display_backend/README.md). That is what lets the widget set run in LVGL's native screenshot harness (`lv_test_screenshot_compare()`, `ref_imgs/`) with no ESP-IDF at all.
+This component has **no hardware access**: inputs are `spectral_frame_t` (from [`spectral_core`](../spectral_core/README.md)) and a panel handle from [`display_backend`](../display_backend/README.md). That is what lets the widget set run in the native-Linux simulator — LVGL over SDL, `display_backend = sdl` — with no ESP-IDF at all ([ADR 0013](../../../../docs/adr/0013-native-linux-simulator-target.md)). Screenshot regression calls `lv_test_screenshot_compare()` **directly**: LVGL's own `TEST_ASSERT_EQUAL_SCREENSHOT` macro `TEST_IGNORE`s anything that is not 800×480 at `LV_COLOR_DEPTH 32`, so on a 240×240 RGB565 screen it would silently skip every assertion.
 
 ## Planned pieces
 
