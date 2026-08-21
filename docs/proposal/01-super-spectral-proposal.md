@@ -112,23 +112,25 @@ Licensing follows the same line: Apache-2.0 for the repository, firmware, docume
 | 8192 | 2.0 / 3.9 / 5.9 Hz | 512 / 256 / 171 ms | 8.89 % |
 | 16384 | 1.0 / 2.0 / 2.9 Hz | 1024 / 512 / 341 ms | ≈29 % (extrapolated) |
 
-**Internal SRAM is the binding resource,** at **12·N bytes per real-FFT size on the radix-2 kernel and 18·N on radix-4** — the "10·N" rule of thumb inherited from the research does not match its own itemisation and is not used here (workspace 4N + twiddle 2N + window 4N + int16 input ring 2N), with a special case on the S3: when the complex half-size is ≤ 1024, esp-dsp uses a const ROM twiddle table and allocates no heap, so real N ≤ 2048 costs no twiddle memory.
+**Internal SRAM is the binding resource.** The figures below are computed from esp-dsp 1.8.2's own allocation sites ([esp-dsp notes §4.1](../reference-projects/notes/esp-dsp_notes.md)), not from the "10·N bytes" rule of thumb inherited from the research — that rule does not match even its own itemisation and is not used here. There are two figures per size because the cost turns on a single dependency: `dsps_cplx2real_fc32` needs `dsps_fft4r_init_fc32`'s twiddle table (`16·N_c` bytes, i.e. `8·N`) **even when the transform itself runs on the radix-2 kernel**, so writing our own `cplx2real` — which needs only the `4·(N_c+2)` bytes of half-bin angles — removes `6·N`. Linearly: **`12·N` with our own `cplx2real`, `18·N` with esp-dsp's tables**, plus a sub-linear bit-reversal copy. One S3 special case: at `N_c ≤ 1024` (real N ≤ 2048) the radix-2 twiddles come from a const ROM table and cost no heap at all.
 
-| Real N | Total internal SRAM `(prov.)` | Verdict |
-|---|---|---|
-| 2048 | 24 KB | trivial |
-| 4096 | 56 KB | comfortable |
-| **8192** | **≈ 112–144 KB** | **the largest preset; the spread is the FFT kernel's twiddle table (radix-4 costs 64 KB, radix-2 16 KB) and is unresolved — [03-dsp-pipeline §4.1](../architecture/03-dsp-pipeline.md), ADR 0006** |
-| 16384 | 224 KB | hard ceiling (LVGL small, no radio) |
-| 32768 | 448 KB | not viable |
+| Real N | Own `cplx2real` | esp-dsp's own tables | Verdict |
+|---|---:|---:|---|
+| 2048 | ≈ 22 KB | ≈ 36 KB | trivial |
+| 4096 | ≈ 52 KB | ≈ 78 KB | comfortable |
+| **8192** | **≈ 104 KB** | **≈ 160 KB** | **the largest preset; ADR 0006 decides which column we pay — [03-dsp-pipeline §4.1](../architecture/03-dsp-pipeline.md)** |
+| 16384 | ≈ 200 KB | ≈ 304 KB | hard ceiling (LVGL small, no radio); not in v1 |
+| 32768 | ≈ 400 KB | ≈ 592 KB | not viable — larger than the whole internal heap |
+
+These are the **FFT working set only**: the int16 input ring (`2·N`), the display-side column buffers and LVGL's own draw buffers are separate. They are computed from the library's allocation calls, not yet measured on target — roadmap Q21 closes that with `heap_caps_get_free_size()` either side of init.
 
 **PSRAM cannot rescue this, and the reason is bandwidth, not capacity.** Published ESP32-S3 octal-PSRAM measurements (06 #23, to be re-measured on target) put IRAM→IRAM `memcpy` at ≈366 MB/s against IRAM→PSRAM ≈32.5 MB/s and PSRAM→IRAM ≈56.8 MB/s. An in-place radix-2 real-4096 FFT makes ~11 passes ≈ 360 KB of traffic, which turns ~0.9 ms of arithmetic into 6–12 ms of memory stalls — a 7–13× slowdown `(prov.)`. Hence the architectural rule, already a tenet in `CLAUDE.md`: **FFT working buffers live in internal SRAM, 16-byte aligned** (the esp-dsp assembly kernels require the alignment); **PSRAM holds spectrogram history, fonts and LVGL assets, never DMA and never FFT scratch.** History is cheap: 256 bins × 1 byte × 50 columns/s = 12.8 KB/s, so 8 MB holds ≈10.4 minutes.
 
 Three further points worth stating because each is easy to get wrong, and two of them were got wrong in the research syntheses this proposal is built on:
 
-- **`sc16` fixed-point is not usable here.** The PIE integer SIMD path is much faster than `fc32`, but it applies a fixed `>>1` per stage with no block-floating-point exponent — one bit lost per stage, so real N = 2048 loses ≈30 dB of headroom and N = 8192 ≈18 dB. For a 60–90 dB spectrum display that is disqualifying without writing a block-floating-point layer first, and PIE also costs measurable extra current. **`fc32` is mandated** (ADR 0006, backlog); `sc16` is a rejected alternative with a revisit trigger.
+- **`sc16` fixed-point is not usable here.** The PIE integer SIMD path is much faster than `fc32`, but it applies a fixed `>>1` per stage with no block-floating-point exponent — one bit lost per stage of the complex-`N/2` transform, so real N = 2048 loses ≈60 dB of headroom (10 stages) and real N = 8192 ≈72 dB (12 stages) — out of a 16-bit input that leaves roughly 6 and 4 bits. Against the 90–100 dB range every shipped preset asks for (`db_floor_dbfs` of −90 or −100 under a 0 dBFS ceiling) that is disqualifying without writing a block-floating-point layer first, and PIE also costs measurable extra current. **`fc32` is mandated** (ADR 0006, backlog); `sc16` is a rejected alternative with a revisit trigger.
 - **The dynamic range of the *display* is not capped by the microphone's broadband SNR.** A common error is to read the mic's 61.5 dB(A) SNR as a 60 dB ceiling on the spectrogram. It is not: an N-point FFT distributes broadband noise over N/2 bins, so for a tonal component the per-bin floor sits roughly `10·log₁₀(N/2 / NENBW)` below the broadband figure — about **+30 dB of processing gain at N = 4096** (05 #1). The mic's SNR bounds *wideband level* accuracy; the per-bin spectral dynamic range is a separate, measurable quantity and has its own row in [`../validation/README.md`](../validation/README.md).
-- **Whether esp-dsp 1.8.2 exposes a dedicated real-FFT entry point is contradicted between sources.** The budgets above assume the complex-N/2 + `bit_rev` + `cplx2real` route with a `(prov.)` +10–20 % overhead that is **not** in the published benchmark table. Measured on target in Phase 1 (roadmap Q21) via `dsp_get_cpu_cycle_count()`, trended in CI.
+- **esp-dsp 1.8.2 has no dedicated real-FFT entry point.** The research synthesis recorded one (`fft4real`); reading the tree at v1.8.2 shows that `examples/fft4real/` is a *directory* and that no `dsps_fft4real_*` symbol exists ([esp-dsp notes §2.1](../reference-projects/notes/esp-dsp_notes.md)). The budgets above are for the route that does exist — pack into complex `N/2`, `dsps_fft2r_fc32`, `dsps_bit_rev*`, `dsps_cplx2real_fc32` — with a `(prov.)` +10–20 % overhead that is **not** in the published benchmark table. Measured on target in Phase 1 (roadmap Q21) via `dsp_get_cpu_cycle_count()`, trended in CI.
 
 ### 3.4 Display path and why 50 Hz needs the hardware scroll
 

@@ -29,6 +29,7 @@ Every dataset directory carries a `manifest.yaml`; any analysis reads configurat
 | `preprocessing` | resampling to the watch's rate, level normalisation (ITU-T P.56 active speech level for injection), channel selection — recorded so the injection path is reproducible |
 | `use` | which validation rows and which measurement path (injection / acoustic / injection⊛RIR) this dataset serves |
 | `restrictions` | NC / request-only / unstated flags and the consequence (quarantined from headline metrics, bench-only) |
+| `clinical_claim` | always the quoted string `"no"`. Not a licence field: it records that the corpus's **audio** is acoustic material while its **labels are never used as targets**, and that no sensitivity, specificity, ROC or AUC against those labels is computed or published ([ADR 0005](../docs/adr/0005-no-clinical-claim.md) rule 4). No other value is permitted; a corpus that cannot carry it does not enter the manifest. |
 
 A take's manifest additionally records the preset id + sha256, firmware `app_elf_sha256`, device id, RTC time, mic-EQ id, and the reference-mic capture it pairs with.
 
