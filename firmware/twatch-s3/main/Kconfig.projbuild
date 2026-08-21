@@ -40,4 +40,21 @@ menu "Super Spectral"
             tested on hardware (docs/validation/experiments, recipe 0002).
             Release builds are expected to flip this per ADR, never ad hoc.
 
+    menu "Test hooks (never enabled in a shipped build)"
+
+        config SPECTRAL_TEST_CRASH_AFTER_GUARD
+            bool "Crash (abort) immediately after the boot guard"
+            default n
+            help
+                Image B of docs/validation/experiments/0002: the firmware aborts on the
+                first statement after the boot guard, producing a ~3 s crash loop, to
+                prove that esptool still wins the download-mode race on a USB-Serial-JTAG
+                -only board. Build with
+                  idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.release" \
+                         -D CONFIG_SPECTRAL_TEST_CRASH_AFTER_GUARD=y build
+                and flash to ota_1 with tools/flash.sh --no-arm. The pre-commit hook
+                sdkconfig-invariants rejects =y in any committed sdkconfig file.
+
+    endmenu
+
 endmenu

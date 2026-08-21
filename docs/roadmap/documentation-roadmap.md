@@ -148,10 +148,10 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   10. Golden recovery image resident in `ota_0` from this point on; all development builds flash to `ota_1` only.
 - **Definition of done**
   - [x] `docs/hw/efuse-baseline.json` and `docs/hw/vendor-partition-table.md` committed; factory backup sha256 recorded (in `docs/hw/README.md` ledger and `vendor-partition-table.md`; `backup-policy.md` points there). *(2026-08-20)*
-  - [ ] Recovery path demonstrated: rollback and boot-guard race both pass (experiment 0002 Status → validated).
+  - [x] Recovery path demonstrated: rollback and boot-guard race both pass (experiment 0002 Status → validated). *(2026-08-21: rollback 4/4, race 10/10 + 5/5.)*
   - [x] `VDD_SPI_FORCE` value recorded (`1`, TIEH = 3.3 V → GPIO45 free); ADR 0016 branch = "free PWM" (draft pending, D5); backlight code was written only after this read. *(2026-08-20)*
   - [ ] Mic/amp rail question (H2/Q14) answered on paper and recorded in `architecture/06-power-budget.md` rail map.
-  - [ ] `ota_0` holds the golden image; `tools/flash.sh` refuses to target `ota_0`.
+  - [x] `ota_0` holds the golden image (gate stage-2b build, sha256 in experiment 0002); `tools/flash.sh` refuses to target `ota_0` without `--recovery-image` and was the only flashing path used in 0002. *(2026-08-21)*
 
 ### D2 — Binding proposal *(skeleton this pass; prose next session)*
 

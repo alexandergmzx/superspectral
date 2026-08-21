@@ -12,6 +12,7 @@
 
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_ota_ops.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -37,6 +38,19 @@ void app_main(void)
      * counter + reset-reason histogram in NVS is the follow-up (ADR 0015). */
     const esp_reset_reason_t reason = esp_reset_reason();
     ESP_LOGI(TAG, "reset reason: %d (esp_reset_reason_t)", (int) reason);
+
+    /* Which slot, which OTA state - the two facts experiment 0002 reads. */
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state = ESP_OTA_IMG_UNDEFINED;
+    (void) esp_ota_get_state_partition(running, &ota_state);
+    ESP_LOGI(TAG, "running from %s @0x%lx, ota state %d (0 NEW, 1 PENDING_VERIFY, 2 VALID, 3 INVALID, 4 ABORTED)",
+             running->label, (unsigned long) running->address, (int) ota_state);
+
+#if CONFIG_SPECTRAL_TEST_CRASH_AFTER_GUARD
+    /* Image B of experiment 0002: deliberate crash loop after the guard window. */
+    ESP_LOGE(TAG, "TEST HOOK: SPECTRAL_TEST_CRASH_AFTER_GUARD - aborting now");
+    abort();
+#endif
 
     /* ------------------------------------------------------------------
      * Bring-up order - docs/hw/twatch-s3-pins.md, ADR 0003/0007/0015/0016.

@@ -72,7 +72,8 @@ void app_main(void)
     ESP_LOGW(TAG, "boot guard: 3000 ms");
     vTaskDelay(pdMS_TO_TICKS(3000));
     const esp_partition_t *run = esp_ota_get_running_partition();
-    esp_ota_img_states_t st; esp_ota_get_state_partition(run, &st);
+    esp_ota_img_states_t st = ESP_OTA_IMG_UNDEFINED;   // stays UNDEFINED when no otadata record maps to this slot (after a rollback)
+    (void)esp_ota_get_state_partition(run, &st);
     ESP_LOGI(TAG, "idf %s, lvgl %d.%d.%d, running %s @0x%lx state %d reset %d", esp_get_idf_version(),
              LVGL_VERSION_MAJOR, LVGL_VERSION_MINOR, LVGL_VERSION_PATCH, run->label, (unsigned long)run->address, (int)st, (int)esp_reset_reason());
 

@@ -1,6 +1,6 @@
 # Recovery path: OTA rollback and the boot-guard race
 
-**Date:** 2026-08-20 (pre-registered) · **Status:** planned — runs in **E2 week 1**, before any feature code ([roadmap](../../roadmap/documentation-roadmap.md) E2 #8). An untested safety net is not a safety net; on a board with zero exposed GPIO and the BOOT button inside the case, this is the single most important thing to verify on real hardware.
+**Date:** 2026-08-20 (pre-registered) · **Status:** **validated 2026-08-21** (ran in E2, before any feature code) ([roadmap](../../roadmap/documentation-roadmap.md) E2 #8). An untested safety net is not a safety net; on a board with zero exposed GPIO and the BOOT button inside the case, this is the single most important thing to verify on real hardware.
 
 ## What changed / hypothesis
 
@@ -19,11 +19,11 @@ tools/flash.sh --slot ota_1 build/super_spectral.bin
 
 | | |
 | --- | --- |
-| Golden image in `ota_0` | commit TBD, `PROJECT_VER` TBD, sha256 TBD — the first image that rendered a frame, read the PMU and enumerated USB |
-| Test images | commit TBD; A = `app_main` returns after the guard without calling `esp_ota_mark_app_valid_cancel_rollback()`; B = null dereference on the first statement after `vTaskDelay(pdMS_TO_TICKS(CONFIG_SPECTRAL_BOOT_GUARD_MS))` |
+| Golden image in `ota_0` | `firmware/idf-gate/` stage-2b build (commit 794736e tree, `App version: 495f248`), sha256 `f6f0e6661d5a7a1398c07360aa41c49561edd8c3a33826896b0d3c28e613e1a0` (copy in `~/superspectral-backups/2026-08-20/golden-ota0_*.bin`) — the first image that rendered a frame, read the PMU and enumerated USB; marks itself VALID only after a PENDING_VERIFY boot |
+| Test images | `firmware/twatch-s3` at this commit; A = the skeleton itself (`app_main` logs and idles after the guard, never calls `esp_ota_mark_app_valid_cancel_rollback()`), sha256 `12852f71ee5268de92c4c1d07c52bed394fe26aab796929f41a2842e5d9e8773`; B = same tree with `CONFIG_SPECTRAL_TEST_CRASH_AFTER_GUARD=y` (a scratch `sdkconfig.crash` overlay — **not** `-D CONFIG_…` on the idf.py line, which is a CMake variable and is ignored), `abort()` on the first statement after `vTaskDelay(pdMS_TO_TICKS(CONFIG_SPECTRAL_BOOT_GUARD_MS))` |
 | ESP-IDF | `v6.0.2` @ SHA from `env.lock.md` |
-| Host | `esptool` v5 (hyphenated commands), `/dev/ttyTWATCH` udev symlink, no USB hub, known-good cable |
-| Device | unit s/n / MAC TBD; `docs/hw/efuse-baseline.json` committed **before** this test (E2 #3); factory backup sha256 recorded off-repo |
+| Host | esptool 5.3.1 (IDF v6.0.2 venv), `/dev/ttyACM0` (udev symlink not yet installed), device behind a hub on bus 3-3.1 (worked anyway), the cable that took the 16 MB backup |
+| Device | MAC `48:27:e2:e9:b0:8c`, chip rev v0.2; `docs/hw/efuse-baseline.json` committed before this test; factory backup sha256 `1b6f26d7…` recorded in `docs/hw/README.md` |
 
 ## Licensing status
 
@@ -48,7 +48,18 @@ Rollback protects against an image that boots and fails its health check; it doe
 
 ## Evaluation
 
-*(to be filled when the experiment runs)*
+**Hypothesis A — rollback (4/4 PASS).** Procedure per run: `tools/flash.sh --port /dev/ttyACM0` writes A to `ota_1` (0x420000), switches `otadata` to `ota_1` and arms it (`ota_state = ESP_OTA_IMG_NEW`, verified in the script's own read-back). Boot 1 (USB reset): `boot: Loaded app from partition at offset 0x420000` → `running from ota_1 @0x420000, ota state 1 (PENDING_VERIFY)` — the bootloader promoted NEW → PENDING_VERIFY. Boot 2 (USB reset, **no host action**): `Loaded app from partition at offset 0x20000` → the golden image ran, I²C scan `0x19 0x34 0x51 0x5A` / `0x38`, `GATE_STAGE2B_FRAME_SENT`, frame on the panel. Repeated ×3, then a fourth time as the recovery from hypothesis B. Raw `otadata` after a rollback (`esptool read-flash 0xF000 0x2000`, decoded with `otatool.py read_otadata`): **both** copies `ota_seq = 2, state = ABORTED (0x04)` — the bootloader writes the aborted record to both sectors, so no record refers to `ota_0` any more and later boots log `No factory image, trying OTA 0`. Two further resets in that state both booted `ota_0`: **the rolled-back state is stable.** Consequence for app code: `esp_ota_get_state_partition()` on the running `ota_0` then returns an error and leaves the out-parameter untouched — initialise it to `ESP_OTA_IMG_UNDEFINED` (the skeleton does; the gate image printed an uninitialised `0` until fixed in this commit).
+
+**Hypothesis B — boot-guard race (10/10 + 5/5 PASS).** B flashed to `ota_1` with `tools/flash.sh --no-arm` (state UNDEFINED, so rollback cannot mask the loop). Observed loop: `Loaded app … 0x420000` → guard → `TEST HOOK … aborting now` → `abort() was called` → `Rebooting…` → `rst:0xc (RTC_SW_CPU_RST)`, period ≈ 3.5 s (3 000 ms guard + ≈ 0.5 s boot). Against that loop, `esptool -c esp32s3 -p /dev/ttyACM0 --before default-reset --after hard-reset flash-id` (the strategy `idf.py flash` uses) succeeded **10/10**, each in **0.6 s** wall-clock; `--before usb-reset` succeeded **5/5**. The enumeration window is therefore ≥ 2.9 s of the 3.5 s cycle — far above the ≥ 2 s pass threshold. Recovery used the armed path: flash A → PENDING_VERIFY → reset → `ota_0`.
+
+| Metric | Target | Result |
+|---|---|---|
+| Rollback without host action | within 2 resets, ×3 | 2 resets, **4/4** |
+| Rolled-back state stable across further resets | boots `ota_0` | 2/2 (`No factory image, trying OTA 0`) |
+| esptool wins the race against a 3 s-guard crash loop | 10/10, window ≥ 2 s | **10/10 (default-reset), 5/5 (usb-reset)**, 0.6 s connects |
+| Golden image intact afterwards | renders, PMU OK, USB OK | yes — `GATE_STAGE2B_FRAME_SENT`, frame confirmed |
+
+**Wire-path smoke test (after the last recovery):** golden image booted from `ota_0`, `AXP2101 IC_TYPE=0x4A`, frame rendered, host sees `303a:1001` on `/dev/ttyACM0` within the boot window.
 
 ### Baseline (what the vendor procedure costs)
 
@@ -59,5 +70,7 @@ LilyGO's documented recovery — remove the battery, hold the internal BOOT butt
 After the last recovery, the golden image in `ota_0` boots, renders a frame, reads the AXP2101 chip ID, and the host sees `303a:1001` on `/dev/ttyTWATCH` within 3 s of reset.
 
 ## Interpretation and follow-up
+
+The safety net holds for *this* partition table, *this* guard (3 000 ms) and *this* bootloader (IDF v6.0.2). What it proves: a bad development image in `ota_1` costs two resets, never a teardown; a crash loop does not lock esptool out. What it does not prove: anything about an image that disables USB-Serial-JTAG, touches GPIO19/20 or deep-sleeps before the guard — those are prevented statically (`twatch_pins.h` asserts, pre-commit, ADR 0015), not dynamically. Two process facts fell out: (1) after a rollback `otadata` no longer references `ota_0`, so the golden image must never *depend* on reading its own state; (2) `tools/flash.sh` must stay the only way development builds reach the device — `idf.py flash` would overwrite `ota_0`. Re-run this experiment after any change to `partitions.csv`, `CONFIG_SPECTRAL_BOOT_GUARD_MS`, `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE`, or the IDF pin (the upgrade procedure already lists it).
 
 *(to be filled)* — the result fixes the guard value in `Kconfig.projbuild` for the life of the project and is cited by ADR 0015; the brick runbook ([`../../devenv/brick-runbook.md`](../../devenv/brick-runbook.md)) is updated with the measured enumeration window.
