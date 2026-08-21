@@ -15,9 +15,9 @@
 |---|---|---|
 | U0 session setup | **PARTLY DONE** 01:52 | `06a4f74` — branch + this plan. **Correction:** workflow `w9e08cb66` did not survive the interrupt at 01:41:33 — three of its four study agents died mid-tool-call and the ADR phase never began. It was resumed as `wipguewn1` (the finished study replays from cache). Absorbing its output is still open. |
 | U3 D5 engineering ADRs (0009, 0010, 0011, 0012) | pending | |
-| U4 D6 validation freeze (paper side) | pending | |
+| U4 D6 validation freeze (paper side) | **DONE** 01:58 | `d5f15e0` — GUM uncertainty budget (3 models; the sample-rate term is row 1 and the reference-mic term is what blocks an accuracy claim) + `datasets/corpora/manifest.yaml` pre-registering 6 corpora with quarantine consequences. Experiment 0001 was already at full recipe quality, so it needed no work. |
 | U5 D3 acquisition follow-ups | **DONE** 02:05 | `fc41e7d` — both quarantines resolved (mir_eval was the wrong paper, now correct and committed; XL2 re-fetched whole). YIN + Sundberg 1994: 5xx twice each, paths closed. Added `python-scripts/check_links.py` as the commit gate. |
-| U6 bibliography live-verification | pending | |
+| U6 bibliography live-verification | IN PROGRESS 01:55 | background agent, 90-min box |
 | U7 D2 proposal prose (DRAFT) | pending | |
 | U8 handback | pending | mandatory, starts 07:00 at the latest |
 
