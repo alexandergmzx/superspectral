@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Super Spectral CI. Phase 0 ("documentation & environment") runs the docs
-# and Python jobs only. The firmware job is written but gated `if: false`
+# and Python jobs, plus the firmware job (enabled in E1, 2026-08-20) —
 # until roadmap E1 commits firmware/twatch-s3/dependencies.lock — see
 # docs/roadmap/documentation-roadmap.md (E1) and ADR 0001.
 #
@@ -103,11 +103,10 @@ jobs:
 
   firmware:
     name: firmware build (${{ matrix.config }})
-    # Enable after roadmap E1 commits dependencies.lock and the digest above
-    # has been re-derived. Until then the job documents the intended pipeline:
-    # digest-pinned container, idf-build-apps multi-config, build-twice sha256
-    # diff, size report, SBOM create + CVE check.
-    if: false
+    # Enabled 2026-08-20 (roadmap E1): dependencies.lock committed, digest
+    # re-derived with `docker buildx imagetools inspect` the same day.
+    # Pipeline: digest-pinned container, idf-build-apps multi-config,
+    # build-twice sha256 diff, size report, SBOM create + CVE check.
     runs-on: ubuntu-24.04
     container:
       image: espressif/idf:v6.0.2@sha256:0d8c9773d48a327233f9c1d7c654ff0bcf133ae24503ea2e97a57cfe02b8cb67

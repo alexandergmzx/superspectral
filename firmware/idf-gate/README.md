@@ -38,8 +38,9 @@ and XPowersLib's MIT `REG/AXP2101Constants.h` — **not** from arduino-esp32's L
 ```sh
 cd firmware/idf-gate
 idf.py set-target esp32s3 && idf.py build            # stage 1
-idf.py -p "$ESPPORT" app-flash                        # stage 2 (never flashes ota_0 via tools/flash.sh rules? — this IS the recovery-image
-                                                      #   candidate; see ADR 0014 before flashing anything else)
+idf.py -p "$ESPPORT" flash                            # stage 2 — first flash of a fresh unit (bootloader + table + ota_0)
+# On a unit that already carries the golden recovery image in ota_0, flash to ota_1 instead:
+#   tools/flash.sh build/idf60_gate.bin                 (refuses ota_0 unless --recovery-image)
 ```
 
 Read the log with `idf.py monitor` (or any 115200 terminal on the USB-Serial-JTAG port). Then look at
