@@ -385,6 +385,7 @@
       ],
       "properties": {
         "name": {
+          "$comment": "NAME TRAP, measured 2026-08-21. These names identify the coefficient sets in preset-schema.md section 4.3 and NOTHING ELSE; never resolve them through a library. (a) scipy.signal.windows.nuttall is [0.3635819, 0.4891775, 0.1365995, 0.0106411] -- SciPy's `nuttall` IS this enum's `blackman_nuttall`, and this enum's `nuttall` [0.355768, 0.487396, 0.144232, 0.012604] has no SciPy name; building it via get_window('nuttall') is 0.0163 wrong at every sample. (b) Praat has none of these except hann: Sound_multiplyByWindow offers rectangular, triangular, parabolic, Hanning, Hamming, Gaussian and Kaiser only. The `coefficients` array in this same object is the contract; a loader MUST use it (rule V8) and MUST NOT look the name up anywhere.",
           "enum": [
             "hann",
             "blackman",

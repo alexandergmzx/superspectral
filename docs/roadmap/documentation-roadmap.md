@@ -207,7 +207,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
 - **Documentation-phase definition of done (the gate to M0)**
   - [ ] Every ★★★ document filed + 📥 stamped, or ledgered with a reason tag.
   - [ ] `doc_ocr` manifest covers 100 % of filed PDFs; the gating docs `checked`.
-  - [ ] Proposal RQ frozen; `CLAUDE.md` and `research-statement.md` quote it verbatim.
+  - [ ] Proposal RQ frozen; `CLAUDE.md` and `research-statement.md` quote it verbatim. **⚠ BLOCKED (2026-08-21): the RQ's "≥ 30 Hz for every preset" is refuted by three of the five accepted watch presets, whose 40 ms hop yields 25 analysis frames/s.** Either the bound is restated or three presets change ([proposal §1](../proposal/01-super-spectral-proposal.md), real-time bound; [ADR 0010](../adr/0010-preset-schema.md)). Owner's decision, and it must be taken *before* the freeze, not after.
   - [ ] ADRs 0001 (toolchain+env, accepted after gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim), 0006 (FFT conventions) accepted.
   - [~] E1 complete: `dependencies.lock` committed, `env.lock.md` filled, CI firmware job green *(2026-08-21)*; **old installs not yet removed** — the operator deletes `~/esp/esp-idf`, `~/esp/idf/v5.5.5`, `~/esp/tools/v5.5.5` himself (the `get_idf` alias is already retired).
   - [x] E2 complete: eFuse baseline + vendor partition table committed; rollback + boot guard tested *(2026-08-21, experiment 0002: rollback 4/4, race 10/10 + 5/5)*.

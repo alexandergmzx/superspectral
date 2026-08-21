@@ -39,7 +39,7 @@ The phase goal is a **complete, citable documentation base and a reproducible ES
 
 - [ ] **O/A** Every ★★★ document filed + 📥 stamped, or ledgered with a reason tag
 - [ ] **O** `doc_ocr` manifest covers 100 % of filed PDFs *(46/46, `doc_ocr verify` clean)*; the gating docs `checked` — the `checked` flag records a **human** read, so this one cannot be ticked by an assistant: Knowles SPM1423, ST7789V3, ESP32-S3 datasheet + TRM, HW Design Guidelines, both schematics
-- [ ] **O** Proposal RQ frozen; CLAUDE.md and research-statement quote it verbatim *(the prose is drafted and cited; the voice and the freeze are the author's)*
+- [ ] **O** Proposal RQ frozen; CLAUDE.md and research-statement quote it verbatim *(the prose is drafted and cited; the voice and the freeze are the author's)*. **⚠ Do not freeze yet:** the RQ's "≥ 30 Hz for every preset" contradicts three of the five accepted watch presets (40 ms hop → 25 frames/s). See the blocking note at [proposal §1](docs/proposal/01-super-spectral-proposal.md), real-time bound.
 - [x] ADRs 0001 (toolchain+env, accepted after the gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim) accepted — [ ] **O** 0006 (FFT conventions) **written 2026-08-21 and `proposed`**; accepting it is one reading
 - [ ] **O** E1 complete: `dependencies.lock` committed ✓, `env.lock.md` filled ✓, CI firmware job green ✓, **old installs removed** — `rm -rf ~/esp/esp-idf ~/esp/idf/v5.5.5 ~/esp/tools/v5.5.5` is your shell, not mine
 - [x] E2 complete: eFuse baseline + vendor partition table committed; rollback + boot guard tested *(experiment 0002: rollback 4/4, race 10/10 + 5/5)*
