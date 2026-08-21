@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Super Spectral - partition table for the LilyGO T-Watch S3.
+# Flash: Winbond W25Q128JW, 16 MB (0x1000000), 1.8 V part. Table at 0x8000
+# (CONFIG_PARTITION_TABLE_OFFSET), one 4 KB sector. Data partitions are
+# 0x1000-aligned; app partitions are 0x10000-aligned (gen_esp32part.py rule).
+#
+# No factory partition: with the BOOT button inside the case, recovery must be
+# automatic (bootloader rollback, CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE) and a
+# factory image would still need something to DECIDE to boot it.
+# ota_0 = golden recovery image (never overwritten by day-to-day flashing);
+# development builds flash to ota_1 only (ADR 0014, ADR 0015).
+#
+# FROZEN BY ADR 0014: CHANGING APP OFFSETS OR SIZES LATER INVALIDATES OTA ON
+# EVERY FIELDED UNIT. phy_init is retained for a future radio (ADR 0017).
+# nvs_keys is reserved now so NVS encryption can be enabled without
+# repartitioning; add the "encrypted" flag only when it is actually used.
+#
+# Arithmetic (verified with python + gen_esp32part.py, 2026-08-20):
+#   data block  0x9000 .. 0x12000 is contiguous (nvs, otadata, phy_init);
+#   0x12000 .. 0x20000 (56 KB) is the 64 KB alignment pad in front of ota_0.
+#   It is deliberately left unnamed: nvs/otadata may grow into it later
+#   WITHOUT moving an app offset. Everything from 0x20000 on is contiguous:
+#   0x921000 + 0x6D0000 = 0xFF1000; 0xFF1000 + 0xF000 = 0x1000000 (16 MB).
+#   DECIDED (fix round 2): the table is NOT gap-free from 0x9000 and is not
+#   meant to be. Filling the pad (e.g. moving nvs_keys to 0x12000) would buy
+#   4 KB and cost a re-freeze of every offset under ADR 0014. The pre-commit
+#   hook `partitions-arithmetic` checks overlap/alignment/total only and
+#   allows this gap by design; gen_esp32part.py accepts it (verified again
+#   2026-08-20 against the local v6.0.1 tree, --flash-size 16MB).
+#
+# Name,      Type, SubType,  Offset,    Size,      Flags
+nvs,         data, nvs,      0x9000,    0x6000,
+otadata,     data, ota,      0xF000,    0x2000,
+phy_init,    data, phy,      0x11000,   0x1000,
+ota_0,       app,  ota_0,    0x20000,   0x400000,
+ota_1,       app,  ota_1,    0x420000,  0x400000,
+nvs_keys,    data, nvs_keys, 0x820000,  0x1000,
+presets,     data, littlefs, 0x821000,  0x100000,
+takes,       data, fat,      0x921000,  0x6D0000,
+coredump,    data, coredump, 0xFF1000,  0xF000,

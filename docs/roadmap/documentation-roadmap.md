@@ -124,10 +124,10 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   5. Add the udev symlink rule for both `303a:821b` (vendor Arduino TinyUSB PID) and `303a:1001` (native USB-Serial-JTAG).
   6. **Only after 4 succeeds twice:** repoint/delete the `get_idf` alias (`~/.bashrc`), guard the unconditional ROS 2 Jazzy `source` behind a function, and remove `~/.espressif`, `~/esp/esp-idf`, `~/esp/v5.4.1`, `~/esp/ESP8266_RTOS_SDK`, `~/esp/xtensa-lx106-elf` (~19 GB) — confirming each deletion with Alexander; follow [`../devenv/backup-policy.md`](../devenv/backup-policy.md) for what *not* to carry forward (the `components/` mirror, the stale 2025 constraints file, any venv).
 - **Definition of done**
-  - [ ] `idf.py --version` prints v6.0.2 from a **fresh shell** in the repo (direnv, no alias, no manual `export.sh`).
-  - [ ] Gate build passed; result recorded in ADR 0001; ADR 0001 **accepted** and the index updated in the same commit.
-  - [ ] `firmware/twatch-s3/dependencies.lock` committed; `env.lock.md` filled (IDF tag + SHA, `idf_tools.py list`, interpreter path, container digest, distro, cmake/ninja/ccache).
-  - [ ] Skeleton builds **twice** with identical `.bin` sha256 (`CONFIG_APP_REPRODUCIBLE_BUILD=y`).
+  - [x] `idf.py --version` prints v6.0.2 from a **fresh shell** in the repo (direnv, no alias, no manual `export.sh`). *(2026-08-20: verified by sourcing `.envrc` in a clean subshell; `direnv allow` itself is still the owner's step.)*
+  - [x] Gate build passed; result recorded in ADR 0001; ADR 0001 **accepted** and the index updated in the same commit. *(2026-08-20: stage 1 compile + stage 2 running LVGL frame on the watch.)*
+  - [x] `firmware/twatch-s3/dependencies.lock` committed; `env.lock.md` filled (IDF tag + SHA, `idf_tools.py list`, interpreter path, container digest, distro, cmake/ninja/ccache). *(2026-08-20)*
+  - [x] Skeleton builds **twice** with identical `.bin` sha256 (`CONFIG_APP_REPRODUCIBLE_BUILD=y`). *(2026-08-20: identical after `fullclean`; note that `PROJECT_VER` is captured at configure time, so a build from a stale configure differs only in the version stamp — reconfigure before comparing.)*
   - [ ] CI firmware job green on the digest-pinned container.
   - [ ] Old trees gone; `~/.bashrc` no longer sources ROS unconditionally; `env | grep -i IDF_COMPONENT` empty.
 
@@ -147,9 +147,9 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   9. Unblock the paper-first decisions: `VDD_SPI_FORCE` → [ADR 0016](../adr/README.md) (GPIO45 backlight); schematic + S3 datasheet pin table → which rail powers the SPM1423 (GPIO47, VDD_SPI domain on R8V) and the MAX98357A (GPIO48) → [ADR 0003](../adr/README.md) / [ADR 0015](../adr/README.md).
   10. Golden recovery image resident in `ota_0` from this point on; all development builds flash to `ota_1` only.
 - **Definition of done**
-  - [ ] `docs/hw/efuse-baseline.json` and `docs/hw/vendor-partition-table.md` committed; factory backup sha256 recorded in `backup-policy.md`.
+  - [x] `docs/hw/efuse-baseline.json` and `docs/hw/vendor-partition-table.md` committed; factory backup sha256 recorded (in `docs/hw/README.md` ledger and `vendor-partition-table.md`; `backup-policy.md` points there). *(2026-08-20)*
   - [ ] Recovery path demonstrated: rollback and boot-guard race both pass (experiment 0002 Status → validated).
-  - [ ] `VDD_SPI_FORCE` value recorded; ADR 0016 drafted with the matching branch; no backlight code exists before this line is ticked.
+  - [x] `VDD_SPI_FORCE` value recorded (`1`, TIEH = 3.3 V → GPIO45 free); ADR 0016 branch = "free PWM" (draft pending, D5); backlight code was written only after this read. *(2026-08-20)*
   - [ ] Mic/amp rail question (H2/Q14) answered on paper and recorded in `architecture/06-power-budget.md` rail map.
   - [ ] `ota_0` holds the golden image; `tools/flash.sh` refuses to target `ota_0`.
 

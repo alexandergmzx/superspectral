@@ -1,0 +1,9 @@
+## E1 gate — exact versions from ADR 0001 (no tilde: the gate tests THESE bytes)
+dependencies:
+  idf: ">=6.0.0,<6.1.0"
+  espressif/esp-dsp: "==1.8.2"
+  lvgl/lvgl: "==9.5.0"
+  espressif/esp_lvgl_port: "==2.9.0"
+  espressif/esp_lcd_touch_ft5x06: "==1.1.1"
+  joltwallet/littlefs: "==1.22.3"
+  lewisxhe/sensorlib: "==0.4.1"

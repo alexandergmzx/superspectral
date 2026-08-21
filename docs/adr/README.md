@@ -19,7 +19,7 @@ House conventions (carried over from `swarm`): the title is a **claim**, not a t
 
 ## Records
 
-- [0001](0001-toolchain-esp-idf-v6-pinned-environment.md) — ESP-IDF v6.0.2 native, pinned: manual clone + per-minor tools root + committed `.envrc`; tilde pins + `dependencies.lock`; no Arduino in any phase; Zephyr rejected; v5.5.5 escape hatch; gate build required. **proposed** (accepted when the E1 gate build passes)
+- [0001](0001-toolchain-esp-idf-v6-pinned-environment.md) — ESP-IDF v6.0.2 native, pinned: manual clone + per-minor tools root + committed `.envrc`; tilde pins + `dependencies.lock`; no Arduino in any phase; Zephyr rejected; v5.5.5 escape hatch; gate build required. **accepted** (accepted when the E1 gate build passes)
 
 ## Backlog of ADRs to write
 
