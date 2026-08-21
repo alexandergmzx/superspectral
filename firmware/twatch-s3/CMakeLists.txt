@@ -44,9 +44,44 @@ string(SUBSTRING "${_git_desc}" 0 31 PROJECT_VER)
 message(STATUS "Super Spectral firmware version: ${PROJECT_VER} (git: ${_git_desc})")
 
 # ---- Build system v1 --------------------------------------------------------
+# ---- Component set (ADR 0017: no radio in v1) --------------------------------
+# Build only `main` and whatever it transitively REQUIRES. Without this line the
+# build system links every component in the IDF tree (bt, esp_wifi, lwip,
+# openthread, mbedtls, esp_https_ota ...): ~50 unused libraries, the promptless
+# CONFIG_ESP_WIFI_ENABLED=y, and -fanalyzer false positives inside lwIP.
+# Managed components declared in main/idf_component.yml are still pulled in.
+set(COMPONENTS main)
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(superspectral)
 
 # Every build log states which IDF built it (docs/devenv/env.lock.md cross-check).
 idf_build_get_property(_idf_ver IDF_VER)
 message(STATUS "ESP-IDF ${_idf_ver} from $ENV{IDF_PATH} (pin: ADR 0001, .envrc)")
+
+# ---- Static analyzer scope: our code only -------------------------------------
+# sdkconfig.ci.analyzer turns on GCC -fanalyzer globally. Third-party code is
+# not ours to fix and trips it (esp-dsp 1.8.2: va_start without va_end in
+# aes3_tie_log.c, unchecked malloc results in dsps_*_init.c - real but inert
+# for us; reported upstream 2026-08-21). Append -fno-analyzer to every managed
+# component (registry components are named vendor__name) so the analyzer
+# config stays BLOCKING for main/ and components/ and silent elsewhere.
+idf_build_get_property(_all_comps BUILD_COMPONENTS)
+foreach(_c IN LISTS _all_comps)
+    if(_c MATCHES "__")
+        idf_component_get_property(_lib ${_c} COMPONENT_LIB)
+        if(TARGET ${_lib})
+            get_target_property(_type ${_lib} TYPE)
+            if(NOT _type STREQUAL "INTERFACE_LIBRARY")   # header-only components have no objects
+                target_compile_options(${_lib} PRIVATE -fno-analyzer)
+            endif()
+        endif()
+    endif()
+endforeach()
+# esp_lvgl_port registers an INTERFACE component and compiles its sources in a
+# separately named STATIC target (`lvgl_port_lib`, see its CMakeLists.txt), so
+# the loop above cannot see it. Any managed component that uses the same trick
+# needs its own line here.
+if(TARGET lvgl_port_lib)
+    target_compile_options(lvgl_port_lib PRIVATE -fno-analyzer)
+endif()

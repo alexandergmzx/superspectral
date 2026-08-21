@@ -110,10 +110,9 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: espressif/idf:v6.0.2@sha256:0d8c9773d48a327233f9c1d7c654ff0bcf133ae24503ea2e97a57cfe02b8cb67
-    # analyzer is advisory: GCC -fanalyzer false-positives inside ESP-IDF's lwIP
-    # (see firmware/twatch-s3/sdkconfig.ci.analyzer) until ADR 0017 trims the
-    # component set. The other three configs gate the merge.
-    continue-on-error: ${{ matrix.config == 'analyzer' }}
+    # All four configs gate the merge. The analyzer config is blocking again
+    # since ADR 0017 trimmed the component set and the top-level CMakeLists
+    # scoped -fanalyzer to project + IDF code (registry components excluded).
     strategy:
       fail-fast: false
       matrix:

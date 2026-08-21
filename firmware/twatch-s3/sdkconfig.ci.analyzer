@@ -4,20 +4,23 @@
 # CI overlay: GCC static analyzer (-fanalyzer). Applied AFTER
 # sdkconfig.defaults(.esp32s3):
 #   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.analyzer" build
-# ADVISORY in CI (continue-on-error), confined to this one configuration.
-# Why not blocking: -fanalyzer runs over every component, and on v6.0.2 it
-# reports a false positive inside ESP-IDF's own lwIP
-# (components/lwip/lwip/src/core/tcp_out.c: "dereference of NULL 'useg'",
-# -Wanalyzer-null-dereference), which warnings-as-errors turns fatal (first CI
-# run, 2026-08-21). We cannot annotate IDF sources, so this overlay disables
-# the default -Werror promotion and the job reports instead of gating. It
-# becomes blocking again once ADR 0017 trims lwIP/esp_wifi out of the
-# component set (then only our code is analysed). Confirmed false positives
-# in OUR code are still suppressed inline with
+# BLOCKING in CI (since 2026-08-21), confined to this one configuration.
+# Scope: -fanalyzer is applied to our components and to the ESP-IDF components
+# the trimmed build pulls in (ADR 0017: set(COMPONENTS main) - no lwIP, Wi-Fi,
+# BT). Registry (managed) components get -fno-analyzer from the top-level
+# CMakeLists.txt because their findings are not ours to fix (esp-dsp 1.8.2:
+# va_start without va_end, unchecked malloc; esp_lvgl_port 2.9.0: a leak and an
+# uninitialised read on error paths - reported upstream). History: the first
+# CI run (2026-08-21) failed on a -Wanalyzer-null-dereference inside lwIP's
+# tcp_out.c before the component set was trimmed. Confirmed false positives in
+# OUR code are suppressed inline with
 # ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-...") from esp_compiler.h.
 # clang-check (IDF_TOOLCHAIN=clang) stays advisory and is not a Kconfig overlay.
+#
+# Local multi-config builds MUST give each build dir its own sdkconfig, or the
+# analyzer setting leaks into the default build through the shared ./sdkconfig:
+#   idf.py -B build_an -D SDKCONFIG=build_an/sdkconfig \
+#          -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.analyzer" build
 
 # `depends on IDF_TOOLCHAIN_GCC` (the default toolchain).
 CONFIG_COMPILER_STATIC_ANALYZER=y
-# Analyzer findings stay warnings (see above); our own -Werror per component still applies.
-CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS=y

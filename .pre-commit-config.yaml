@@ -139,7 +139,7 @@ repos:
           bash -c 'f=firmware/twatch-s3/sdkconfig.defaults; rc=0;
           for want in CONFIG_SECURE_BOOT=n CONFIG_SECURE_FLASH_ENC_ENABLED=n CONFIG_BT_ENABLED=n CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y;
           do grep -qxF "$want" "$f" || { echo "$f lacks the line $want"; rc=1; }; done;
-          grep -qE "^(# *)?CONFIG_ESP_WIFI_ENABLED=n\b" "$f" || { echo "$f lacks CONFIG_ESP_WIFI_ENABLED=n (active or commented: the symbol is promptless in v6.0.x)"; rc=1; };
+          grep -qE "^set\(COMPONENTS main\)" firmware/twatch-s3/CMakeLists.txt || { echo "firmware/twatch-s3/CMakeLists.txt lacks set(COMPONENTS main) - ADR 0017: no lwIP/Wi-Fi/BT in the build"; rc=1; };
           if grep -nE "^CONFIG_(SECURE_BOOT|SECURE_FLASH_ENC_ENABLED|ESP_WIFI_ENABLED|BT_ENABLED)=y" firmware/twatch-s3/sdkconfig.defaults* firmware/twatch-s3/sdkconfig.ci.* 2>/dev/null;
           then echo "forbidden =y above"; rc=1; fi; exit $rc'
         files: '^firmware/twatch-s3/sdkconfig\.'

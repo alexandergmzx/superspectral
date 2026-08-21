@@ -19,7 +19,9 @@ House conventions (carried over from `swarm`): the title is a **claim**, not a t
 
 ## Records
 
-- [0001](0001-toolchain-esp-idf-v6-pinned-environment.md) — ESP-IDF v6.0.2 native, pinned: manual clone + per-minor tools root + committed `.envrc`; tilde pins + `dependencies.lock`; no Arduino in any phase; Zephyr rejected; v5.5.5 escape hatch; gate build required. **accepted** (accepted when the E1 gate build passes)
+- [0001](0001-toolchain-esp-idf-v6-pinned-environment.md) — ESP-IDF v6.0.2 native, pinned: manual clone + per-minor tools root + committed `.envrc`; tilde pins + `dependencies.lock`; no Arduino in any phase; Zephyr rejected; v5.5.5 escape hatch; gate build required. **accepted** (2026-08-20, after the E1 gate passed on hardware)
+- [0016](0016-backlight-gpio45-vdd-spi-strap.md) — GPIO45 backlight PWM is safe on this unit: VDD_SPI is forced to 3.3 V by eFuse. **accepted**
+- [0017](0017-no-radio-in-v1-trimmed-component-set.md) — No radio in v1: the build contains only `main` and what it requires (no Wi-Fi, BT, lwIP, OpenThread). **accepted**
 
 ## Backlog of ADRs to write
 
@@ -39,7 +41,5 @@ Pre-registered from the documentation roadmap ([`../roadmap/documentation-roadma
 - 0013 — Native-Linux simulator target (LVGL simulator + the DSP core on host) as the UI design loop and golden-file harness. Idea only from My-TTGO-Watch (GPL-2.0, no code).
 - 0014 — **Partition layout frozen**: `ota_0`/`ota_1` 4 MB each, no factory partition, `presets` littlefs 1 MB, `takes` FAT, `coredump` 60 K, `nvs_keys`, `phy_init` retained; `ota_0` holds the golden recovery image and development builds flash to `ota_1` only; changing offsets breaks every fielded unit. Grounded by the partition-tables guide and the devenv critique (B2).
 - 0015 — **Anti-brick policy**: 3 s unconditional boot guard, `_Static_assert` on every pin ≠ 19/20 plus a CI grep, rollback with mark-valid only after display + touch + PMU + USB are confirmed, sleep gating, console permanently on USB-Serial-JTAG, eFuses read-only for life, a deliberate decision on the AXP2101 4 s PMU watchdog. Grounded by the USB-Serial-JTAG console guide and the espefuse docs.
-- 0016 — VDD_SPI / GPIO45 backlight handling — depends on the E2 eFuse read (`VDD_SPI_FORCE == 1` → free PWM; `== 0` → idle-high LEDC + a single reboot wrapper that releases the pin). Grounded by the ESP32-S3 Hardware Design Guidelines VDD_SPI table and the schematic.
-- 0017 — No radio in v1: SX1262 held in reset, ALDO4 off; `CONFIG_BT_ENABLED=n` asserted by the pre-commit `sdkconfig-invariants` hook; `CONFIG_ESP_WIFI_ENABLED` is promptless on esp32s3 in v6.0.x (`bool` / `default y if SOC_WIFI_SUPPORTED`, `components/esp_wifi/Kconfig`) and cannot be overridden — the line is kept only as a commented declaration, which the hook accepts — so the Wi-Fi guard is structural: no component `REQUIRES` `esp_wifi`/`esp_netif`/`esp_event` for networking, confirmed by `idf.py size-components` showing no `libnet80211`/`libpp`/`libbt` (pitfall H11; the `REQUIRES` grep is not yet a hook — the ADR must decide whether to add one). The `phy_init` partition is retained for a future radio. Grounded by the devenv critique (B6) and [pitfall H11](../devenv/pitfalls.md).
 - 0018 — First reference-project study ADR: takeaways from xiao-edge-audio, LilyGoLib register sequences, SensorLib. Grounded by bibliography file 06.
 - 0019 — Build System v1 now (`project.cmake`); migrate to Build System v2 when it leaves Technical Preview. Grounded by the build-system-v2 guide.
