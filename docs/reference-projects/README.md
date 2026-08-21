@@ -8,7 +8,7 @@ Every entry in file 06 is a living repository (esp-dsp, LilyGoLib, SensorLib, Pa
 
 So the default is a **catalogue**, not a mirror:
 
-- Read the code upstream or in a shallow clone; capture takeaways in `clones/<project>_notes.md` (gitignored with the clone — copy the durable findings into an ADR) and then in an ADR under [`../adr/`](../adr/README.md), per file 06's "How to use this list". The first project-study ADR is 0018 (xiao-edge-audio / LilyGoLib / SensorLib).
+- Read the code upstream or in a shallow clone; capture takeaways in a **tracked** note under [`notes/`](notes/README.md) (`<project>_notes.md`, one per project, recording the commit studied and the licence read from the repo's own `LICENSE`), so the findings survive a refreshed or deleted clone; then lift the decisions into an ADR ([0018](../adr/0018-first-reference-project-study.md) is the first).
 - When you need a working copy, shallow-clone it into `clones/` with the literal command from the table below.
 - Only genuine *self-contained artifacts* are committed, under `artifacts/<project>/` — and for this project that means **manifests**, not binaries: the LilyGoLib factory firmware is recorded as URL + release date + sha256 + flash command in `artifacts/lilygolib/`, while the `.bin` itself (which bundles LGPL and GPL code) stays off-repo next to `factory-backup.bin` per [`backup-policy.md`](../devenv/README.md). A reference-design schematic PDF belongs in [`../datasheets/`](../datasheets/README.md), not here.
 - **Never clone into `clones/`** the entries file 06 marks browse-only: `arduino-esp32` (LGPL — the pin map is derived from MIT sources and *compared* afterwards), `T-Watch-Deps` and the unlicensed cluster, the do-not-use entries, and the "Espressif MIT" field-of-use repos.
@@ -54,7 +54,8 @@ Full list (58 entries), priorities, links and the per-tier licence discussion: [
 ```
 reference-projects/
 ├── README.md                 # this catalogue
-├── clones/                   # shallow clones, gitignored, refreshed on demand (+ <project>_notes.md scratch)
+├── notes/                    # TRACKED per-project study notes (see notes/README.md)
+├── clones/                   # shallow clones, gitignored, refreshed on demand
 └── artifacts/                # tracked; small self-contained text files only
     └── lilygolib/            # factory-firmware manifest: URL · release date · sha256 · flash command · chip rev tested (binary off-repo)
 ```

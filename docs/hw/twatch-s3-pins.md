@@ -61,9 +61,21 @@ The firmware's single source of truth is [`firmware/twatch-s3/components/twatch_
 | ALDO4 | SX1262 LoRa | boot-on | **off** in v1 (ADR 0017) |
 | BLDO2 | DRV2605L enable (no GPIO enable) | boot-on | on only while haptics are needed |
 | VBACKUP | PCF8563 via MS412FE coin cell | — | — |
-| DC2, DC3, DC4, DC5, ALDO1, BLDO1, CPUSLDO, DLDO1, DLDO2 | unused on this board | Zephyr: dcdc3/aldo1 boot-on, rest boot-off | **explicitly disabled** at boot (standby current; no back-powering through a floating rail) |
+| DC2, DC3, DC4, DC5, ALDO1, BLDO1, CPUSLDO, DLDO1, DLDO2 | unused on this board **except DLDO1 — see below** | Zephyr: dcdc3/aldo1 boot-on, rest boot-off | **explicitly disabled** at boot by *our* driver (standby current; no back-powering through a floating rail). Note the vendor does **not** do this: LilyGoLib leaves DC3, DC4 and BLDO1 on ([study notes](../reference-projects/notes/lilygolib-axp2101_notes.md) §3) |
 
-Order encoded in `twatch_bsp`: set voltages → disable unused channels → ALDO3 → settle → (display init, touch init) → ALDO2 ramped → cap charge current **< 130 mA** (LilyGO guidance for the 470 mAh cell) → PMU IRQ handler. A full I²C scan hitting **all five addresses** (`0x34 0x19 0x51 0x5A` on I²C0, `0x38` on I²C1) is the "board file is correct" gate. Source: LilyGoLib `initPMU()` sequence read as a register reference; Zephyr regulator block as the second witness (its PR notes only DC/DC1 and ALDO were tested on hardware — the AXP2101 datasheet is the arbiter).
+Order encoded in `twatch_bsp` (**ours, not the vendor's** — LilyGoLib's `initPMU()` enables ALDO2 *before* ALDO3 and contains no delay anywhere; ours is derived from the failure mode, not copied): set voltages → disable unused channels → ALDO3 → settle → (display init, touch init) → ALDO2 ramped → cap charge current **< 130 mA** (LilyGO guidance for the 470 mAh cell) → PMU IRQ handler. A full I²C scan hitting **all five addresses** (`0x34 0x19 0x51 0x5A` on I²C0, `0x38` on I²C1) is the "board file is correct" gate. Source: LilyGoLib `initPMU()` sequence read as a register reference; Zephyr regulator block as the second witness (its PR notes only DC/DC1 and ALDO were tested on hardware — the AXP2101 datasheet is the arbiter).
+
+**Microphone and amplifier rails — strong evidence, pending the schematic.** The open question
+"which AXP2101 rail powers the SPM1423 and the MAX98357A" ([ADR 0003](../adr/0003-microphone-path.md)
+decision 10, roadmap Q14/H2) is half answered by reading the vendor code
+([study notes](../reference-projects/notes/lilygolib-axp2101_notes.md) §5): LilyGoLib's
+`RecordWAV` example records from the microphone **before** it calls `powerControl(POWER_SPEAK, true)`,
+and `initPMU()` disables DLDO1 while TTGO's branch carries `enableDLDO1(); //! Speaker`. That makes
+**DLDO1 the MAX98357A rail** and puts the **SPM1423 on an always-on 3.3 V rail** — i.e. the microphone
+cannot be power-gated, which is what the power budget must assume, and disabling DLDO1 at boot is safe
+and does *not* silence the microphone. This is inference from two independent code paths, not a
+schematic reading; it is confirmed or overturned when the schematic is read (D3/D4), and until then
+every consumer of this fact says so.
 
 Battery: **470 mAh @ 3.8 V** per LilyGoLib (`BATTERY_PARAMS_470mAh[]`) and Zephyr; resellers say 400 mAh — unresolved, confirm against the shipped cell before any autonomy figure is published (§4 metric "≥ 3 h").
 
