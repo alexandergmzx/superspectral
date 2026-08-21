@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Super Spectral CI. Phase 0 ("documentation & environment") runs the docs
-# and Python jobs, plus the firmware job (enabled in E1, 2026-08-20) —
-# until roadmap E1 commits firmware/twatch-s3/dependencies.lock — see
+# and Python jobs, plus the firmware job (enabled in roadmap E1 on
+# 2026-08-20, once firmware/twatch-s3/dependencies.lock was committed) — see
 # docs/roadmap/documentation-roadmap.md (E1) and ADR 0001.
 #
 # Third-party actions are pinned to full commit SHAs (the trailing comment is
