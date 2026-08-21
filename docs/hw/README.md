@@ -6,7 +6,7 @@ The hardware facts the firmware configuration depends on, kept **next to the evi
 |---|---|---|
 | [twatch-s3-pins.md](twatch-s3-pins.md) | Pin map, AXP2101 rail map, I²S allocation, strapping-pin cautions (GPIO45/VDD_SPI, GPIO47/48 domain) — derived from the LilyGO schematic and the LilyGoLib MIT hardware document, **not** from arduino-esp32's LGPL `variants/` | (prov.) until D3 files the schematic and E2 reads the eFuses |
 | [efuse-baseline.json](efuse-baseline.json) | `espefuse summary --format json` of *this* unit (112 fields, read 2026-08-20 with esptool 5.3.dev3 over `/dev/ttyACM0`) | **recorded** — human-readable copy in the off-repo backup folder |
-| [vendor-partition-table.md](vendor-partition-table.md) | The shipped partition table, decoded with `gen_esp32part.py` | placeholder — written in E2 (step 4) |
+| [vendor-partition-table.md](vendor-partition-table.md) | The shipped partition table, decoded with `gen_esp32part.py`; shipped firmware = Arduino on ESP-IDF v4.4.4 | **recorded** 2026-08-20 |
 
 ## Factory baseline ledger (filled in E2)
 
@@ -17,10 +17,10 @@ The hardware facts the firmware configuration depends on, kept **next to the evi
 | `esptool read-mac` | `48:27:e2:e9:b0:8c` | 2026-08-20 |
 | `esptool get-security-info` | TBD | |
 | `lsusb -d 303a:` before any custom flash | `303a:1001 Espressif USB JTAG/serial debug unit` on `/dev/ttyACM0` — the shipped firmware already uses the native USB-Serial-JTAG console, not TinyUSB (so the `821b` expectation was wrong for this unit) | 2026-08-20 |
-| Full-flash backup file name | `twatch-s3-factory-backup-<YYYYMMDD>.bin` (off-repo, two copies — [backup-policy.md](../devenv/backup-policy.md)) | |
-| Full-flash backup sha256 | TBD | |
-| Vendor `nvs` slice (offset, size, sha256) | TBD | |
-| Scratch-region restore test (offset, size, result) | TBD | |
+| Full-flash backup file name | `twatch-s3_factory-backup_48-27-e2-e9-b0-8c.bin` in `~/superspectral-backups/2026-08-20/` + `scratch/hw-backup/` (off-git; third copy to external storage still owed — [backup-policy.md](../devenv/backup-policy.md)) | 2026-08-20 |
+| Full-flash backup sha256 | `1b6f26d7bbb3ffae30de3765706e4be39007a6b41491d59c76d1d9b6027bee22` (16 777 216 bytes; read over USB-Serial-JTAG at ≈ 10 KB/s — budget 30 min) | 2026-08-20 |
+| Vendor `nvs` slice (offset, size, sha256) | `0x9000`, `0x5000`, `f77bc3860d050d144329f5ee4d5390025abcc5ae9be6a70775193a9d7ff219de` | 2026-08-20 |
+| Scratch-region restore test (offset, size, result) | read-back comparison instead of a write: regions `0x0` and `0x9000` (64 KB each) re-read and byte-compared → **MATCH**; a write-restore test is deferred until the first custom flash (it is then a whole-flash restore, see [vendor-partition-table.md](vendor-partition-table.md)) | 2026-08-20 |
 | Vendor factory image flashed (optional): file, sha256, source URL | TBD | |
 | `VDD_SPI_FORCE` / `VDD_SPI_TIEH` / `VDD_SPI_XPD` | **`True` / VDD_SPI connects to VDD3P3_RTC_IO (3.3 V) / `True`** → VDD_SPI is forced to 3.3 V by eFuse; GPIO45 is **not** sampled as a strap → backlight PWM is safe; GPIO47/48 are in the 3.3 V domain → ADR 0016 resolves to "free PWM" | 2026-08-20 |
 | `DIS_USB_JTAG` / `DIS_USB_SERIAL_JTAG` | `False` / `False` ✅ (also `DIS_DOWNLOAD_MODE=False`, `DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE=False`, `DIS_PAD_JTAG=False`) — recovery path intact | 2026-08-20 |

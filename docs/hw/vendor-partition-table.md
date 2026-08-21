@@ -1,51 +1,27 @@
-# Vendor partition table — as shipped
+# Vendor partition table — as shipped on unit `48:27:e2:e9:b0:8c`
 
-**Status: placeholder — decoded in phase E2** ([first-flash-checklist.md](../devenv/first-flash-checklist.md) step 4). Until then the only information is LilyGoLib's published layout description, which is a summary, not a table.
+Decoded on 2026-08-20 (E2 step 4) from the full-flash backup with
+`gen_esp32part.py` (ESP-IDF v6.0.2) on the 4 KB sector at offset `0x8000`.
+This is the map needed to interpret the backup and to selectively restore the
+vendor `nvs` if it is ever needed. Our own layout ([`../../firmware/twatch-s3/partitions.csv`](../../firmware/twatch-s3/partitions.csv), ADR 0014) is **different** — flashing our firmware overwrites this table.
 
-**Why this file exists (critic B1):** the first flash of our [`partitions.csv`](../../firmware/twatch-s3/partitions.csv) overwrites the vendor `nvs`, which on LilyGO boards can carry factory calibration and BLE identity. Without the decoded vendor table you cannot carve those regions out of the 16 MB backup, and therefore cannot restore them selectively later. Decoding is free; doing it after the first custom flash is impossible.
-
-## Procedure
-
-Run from the direnv-activated repo shell, before any custom image is flashed:
-
-```bash
-export ESPPORT=/dev/ttyTWATCH
-ET="esptool --chip esp32s3 --port $ESPPORT --baud 460800"
-STAMP=$(date -u +%Y%m%d)
-
-# 1. Read the one-sector table at the default offset 0x8000 (CONFIG_PARTITION_TABLE_OFFSET).
-$ET read-flash 0x8000 0x1000 vendor-parttable-$STAMP.bin
-
-# 2. Decode binary -> CSV (gen_esp32part.py auto-detects a binary input; prints CSV to stdout).
-python3 "$IDF_PATH/components/partition_table/gen_esp32part.py" vendor-parttable-$STAMP.bin
-
-# 3. If the vendor used a non-default table offset (the decode fails with a magic-byte error),
-#    search the backup: python3 - <<'PY'
-#    import re; d=open('twatch-s3-factory-backup-YYYYMMDD.bin','rb').read()
-#    print([hex(m.start()) for m in re.finditer(b'\xaa\x50', d) if m.start() % 0x1000 == 0][:8])
-#    PY
-#    and re-run step 2 with `--offset <found>`.
-
-# 4. Carve the data partitions you may want back (repeat per row of the decoded table):
-#    dd if=twatch-s3-factory-backup-$STAMP.bin of=vendor-<name>-$STAMP.bin bs=4096 skip=$((OFF/4096)) count=$((SIZE/4096))
-#    sha256sum vendor-<name>-$STAMP.bin
+```csv
+# ESP-IDF Partition Table
+# Name,     Type, SubType,  Offset,    Size,   Flags
+nvs,        data, nvs,      0x9000,    20K,
+otadata,    data, ota,      0xe000,    8K,
+app0,       app,  ota_0,    0x10000,   6400K,
+app1,       app,  ota_1,    0x650000,  6400K,
+spiffs,     data, spiffs,   0xc90000,  3456K,
+coredump,   data, coredump, 0xff0000,  64K,
 ```
 
-Then replace the section below with the decoded CSV **verbatim**, plus the provenance line.
+| Fact | Value |
+|---|---|
+| Shipped firmware | Arduino core on **ESP-IDF v4.4.4** (`esp-idf: v4.4.4 e8bdaf9198` in the app descriptor) — LilyGO factory image |
+| Full-flash backup | `twatch-s3_factory-backup_48-27-e2-e9-b0-8c.bin`, 16 777 216 bytes, sha256 `1b6f26d7bbb3ffae30de3765706e4be39007a6b41491d59c76d1d9b6027bee22`; two copies (`~/superspectral-backups/2026-08-20/` and repo `scratch/hw-backup/`, both off-git per [backup-policy.md](../devenv/backup-policy.md)) — **copy one to external storage** |
+| Vendor `nvs` slice | offset `0x9000`, size `0x5000`, sha256 `f77bc3860d050d144329f5ee4d5390025abcc5ae9be6a70775193a9d7ff219de` (extract with `dd if=<backup> bs=4096 skip=9 count=5`) |
+| Read-back verification | regions `0x0` and `0x9000` (64 KB each) re-read from the device after the backup and compared byte-for-byte: **MATCH** |
+| Restore procedure | `esptool -c esp32s3 -p $ESPPORT write-flash 0x0 <backup>` restores the whole device (table, both apps, spiffs, nvs); `write-flash 0x9000 <nvs-slice>` restores only the vendor NVS into *this* vendor layout |
 
-## Decoded table
-
-```text
-TBD — phase E2.
-Provenance to record: date · unit (MAC from esptool read-mac) · backup sha256 · gen_esp32part.py from ESP-IDF <tag> (<commit>)
-```
-
-## Expected shape (prov., from LilyGoLib — verify against the decode)
-
-LilyGoLib's hardware document describes the T-Watch S3 flash as 16 MB with a "3 MB APP / 9.9 MB FATFS" Arduino partition scheme. Under the arduino-esp32 `default_16MB`-style layouts that usually means `nvs` at `0x9000`, `otadata` at `0xE000`, two app slots, a `spiffs`/`fat` data partition and a `coredump` partition — but the exact names, subtypes and offsets of *this* firmware build are not known until decoded. Do not design anything on this paragraph; it exists only so that a decode that looks wildly different triggers a second look (a wrong `--offset`, or a unit that was re-flashed before it reached us).
-
-## What changes once it is decoded
-
-- [`README.md`](README.md) ledger rows for the `nvs` slice and the scratch-region restore test.
-- [ADR 0014](../adr/) (partition layout frozen) cites this file for what was overwritten and what was preserved.
-- The full restore command in the first-flash checklist is confirmed against the real table.
+Note that the vendor `app0`/`app1` slots are 6400 K each and start at `0x10000`, whereas ours are 4 MB at `0x20000`/`0x420000` with LittleFS/FAT data partitions — a restore of the vendor image is therefore a whole-flash operation, not a slot swap.
