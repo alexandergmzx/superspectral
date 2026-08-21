@@ -14,7 +14,7 @@ This project deliberately follows the method of his earlier `swarm` repository: 
 
 The **research question** binds the project (proposal §1, *provisional until D2 freezes it*):
 
-> Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a ≥30 Hz spectrogram (50 Hz for the live-singing preset) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
+> Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
 
 Authoritative source: [`docs/proposal/01-super-spectral-proposal.md`](docs/proposal/01-super-spectral-proposal.md).
 
@@ -39,9 +39,9 @@ The phase goal is a **complete, citable documentation base and a reproducible ES
 
 - [ ] **O/A** Every ★★★ document filed + 📥 stamped, or ledgered with a reason tag
 - [ ] **O** `doc_ocr` manifest covers 100 % of filed PDFs *(46/46, `doc_ocr verify` clean)*; the gating docs `checked` — the `checked` flag records a **human** read, so this one cannot be ticked by an assistant: Knowles SPM1423, ST7789V3, ESP32-S3 datasheet + TRM, HW Design Guidelines, both schematics
-- [ ] **O** Proposal RQ frozen; CLAUDE.md and research-statement quote it verbatim *(the prose is drafted and cited; the voice and the freeze are the author's)*. **⚠ Do not freeze yet:** the RQ's "≥ 30 Hz for every preset" contradicts three of the five accepted watch presets (40 ms hop → 25 frames/s). See the blocking note at [proposal §1](docs/proposal/01-super-spectral-proposal.md), real-time bound.
-- [x] ADRs 0001 (toolchain+env, accepted after the gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim) accepted — [ ] **O** 0006 (FFT conventions) **written 2026-08-21 and `proposed`**; accepting it is one reading
-- [ ] **O** E1 complete: `dependencies.lock` committed ✓, `env.lock.md` filled ✓, CI firmware job green ✓, **old installs removed** — `rm -rf ~/esp/esp-idf ~/esp/idf/v5.5.5 ~/esp/tools/v5.5.5` is your shell, not mine
+- [ ] **O** Proposal RQ frozen; CLAUDE.md and research-statement quote it verbatim *(the prose is drafted and cited; the voice and the freeze are the author's)*. The refresh-bound contradiction is resolved (2026-08-21, owner's decision — [proposal §1](docs/proposal/01-super-spectral-proposal.md)); the freeze itself is still open.
+- [x] ADRs 0001 (toolchain+env, accepted after the gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim), 0006 (FFT conventions) all **accepted** — 0006 accepted 2026-08-21 by Alexander
+- [~] E1: `dependencies.lock` committed, `env.lock.md` filled, CI firmware job green, ADR 0001 accepted — done. **Old installs partially removed 2026-08-21** by Alexander: the v5.5.5 tools root and the `~/esp/esp-idf` master snapshot are gone. `~/esp/v5.4.1` is a deliberate keep (2026-08-20 decision), not in scope. `~/.espressif` (the EIM tree, including v6.0.1) is still present — [`docs/devenv/setup.md`](docs/devenv/setup.md) §9 step 3.
 - [x] E2 complete: eFuse baseline + vendor partition table committed; rollback + boot guard tested *(experiment 0002: rollback 4/4, race 10/10 + 5/5)*
 - [x] Validation metrics table: every target has an external anchor and a measurement method *(plus the GUM uncertainty budget)*
 - [x] First reference-project ADR written ([ADR 0018](docs/adr/0018-first-reference-project-study.md)); first experiment recipe written (0001, and 0002 executed)

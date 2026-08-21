@@ -30,41 +30,22 @@ So the question is not "can an ESP32-S3 compute an FFT" — it can, comfortably 
 
 ### Research question
 
-> **RQ (prov.)** — Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a ≥30 Hz spectrogram (50 Hz for the live-singing preset) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
+> **RQ (prov.)** — Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
 
 The question follows the swarm grammar — *system class + method + primary metric + secondary constraint + bounded environment + architectural prohibition* — and carries three numeric bounds plus one prohibition. Each bound names the instrument that can refute it; a bound whose refutation procedure is not written down is a slogan.
 
 1. **Fidelity bound.** f0 within **±20 cents median absolute error and ≥ 90 % raw pitch accuracy at a 50-cent threshold** on the *acoustic* path (the whole chain: case, port, microphone, PDM→PCM, clock, estimator), and **≤ 5 cents median vs Praat** on the *digital-injection* path (the estimator alone). Two paths, reported separately, always (§4.1). The anchors are the MIREX / `mir_eval` convention for RPA (05 #53, 07 #13) and Praat/parselmouth golden files (05 #7, 05 #55; [`../validation/golden-files.md`](../validation/golden-files.md)). **Falsifiable by:** running the Tier-1 corpora (10 #1, 10 #2) through both paths and reporting `mir_eval` RPA/RCA/OA/VR/VFA plus median |Δcents| against a pinned Praat manifest. A single corpus run below 90 % RPA @ 50 c on the acoustic path refutes the bound as stated. The RCA − RPA gap is reported alongside because that gap *is* the octave-error rate (05 #9).
-2. **Real-time bound.** A spectrogram refreshed at **≥ 30 Hz** for every preset and **50 Hz for `live_singing`**, with **≤ 80 ms acoustic-to-photon latency** measured stimulus-onset-to-first-pixel with a phototransistor on the panel. The refresh figure is what the display path can sustain (§3.4); the latency anchor is the action–sound and visual-biofeedback literature (05 #83, 05 #84, 05 #85), which puts action–sound thresholds near 10 ms but tolerates considerably more for *visual* biofeedback — the 80 ms bound is deliberately conservative and is stated with its anchor rather than inherited from a desktop tool. **Falsifiable by:** an oscilloscope with the drive signal on channel 1 and a phototransistor taped to the LCD on channel 2, 100 repetitions per preset, plus a firmware frame counter that is *cross-checked* against the phototransistor and never trusted alone.
+2. **Real-time bound.** A spectrogram refreshed at **≥ 30 Hz for the presets whose analysis hop supports it**, and **50 Hz for `live_singing` and `diction_consonants`**, with **≤ 80 ms acoustic-to-photon latency** measured stimulus-onset-to-first-pixel with a phototransistor on the panel. *(Restated 2026-08-21 — owner's decision — from "≥ 30 Hz for every preset": three of the five accepted watch presets run a 40 ms hop and cannot produce 30 columns/s whatever the display path does, since [ADR 0010](../adr/0010-preset-schema.md) is accepted and the hop is the limit, not the panel. The bound now states what the presets actually commit to.)*
 
-   > **⚠ BLOCKS THE D2 FREEZE — owner's decision (raised 2026-08-21 by the branch re-audit).**
-   > *"≥ 30 Hz for every preset"* contradicts the presets [ADR 0010](../adr/0010-preset-schema.md) already
-   > accepted. Read from `protocols/presets/*.json`:
-   >
-   > | preset | `interval_ms` | analysis frames/s | `refresh_hz_target` |
-   > |---|---:|---:|---:|
-   > | `live_singing` | 20 | 50 | **50** |
-   > | `diction_consonants` | 10 | 100 | **50** |
-   > | `vowel_formant_study` | 40 | 25 | **25** |
-   > | `sustained_pitch_lab` | 40 | 25 | **25** |
-   > | `room_noise_floor` | 40 | 25 | **25** |
-   >
-   > Three of the five watch presets produce **25 new spectrogram columns per second** and cannot
-   > produce 30, whatever the display path does — the hop is the limit, not the panel. So the bound as
-   > written is unsatisfiable by construction, and it is inside the research question that
-   > [`CLAUDE.md`](../../CLAUDE.md) and [`research-statement.md`](research-statement.md) quote verbatim
-   > and that D2 is about to freeze.
-   >
-   > Two ways out, and the choice is a research-scope one, not an editorial one:
-   > **(a)** restate the bound as *"≥ 30 Hz for the presets whose hop supports it — 50 Hz for
-   > `live_singing` and `diction_consonants`"*, which reopens the RQ text before the freeze; or
-   > **(b)** shorten the three 40 ms hops to ≤ 33 ms, which is an ADR 0010 amendment plus three JSON
-   > edits plus a re-run of every derived constant, and costs CPU on the presets that were given a slow
-   > hop deliberately (`room_noise_floor` averages 25 frames linearly; a faster hop changes what it
-   > measures).
-   >
-   > It cannot be left: freezing a research question whose own presets refute it is the one thing D2
-   > exists to prevent.
+   | preset | `interval_ms` | analysis frames/s | `refresh_hz_target` |
+   |---|---:|---:|---:|
+   | `live_singing` | 20 | 50 | **50** |
+   | `diction_consonants` | 10 | 100 | **50** |
+   | `vowel_formant_study` | 40 | 25 | **25** |
+   | `sustained_pitch_lab` | 40 | 25 | **25** |
+   | `room_noise_floor` | 40 | 25 | **25** |
+
+   The refresh figures are what the display path can sustain (§3.4) and what each preset's hop can supply; the latency anchor is the action–sound and visual-biofeedback literature (05 #83, 05 #84, 05 #85), which puts action–sound thresholds near 10 ms but tolerates considerably more for *visual* biofeedback — the 80 ms bound is deliberately conservative and is stated with its anchor rather than inherited from a desktop tool. **Falsifiable by:** an oscilloscope with the drive signal on channel 1 and a phototransistor taped to the LCD on channel 2, 100 repetitions per preset scored against *that preset's own* `refresh_hz_target`, plus a firmware frame counter that is *cross-checked* against the phototransistor and never trusted alone.
 3. **Autonomy bound.** **≥ 3 h** of continuous analysis on the watch's own cell, measured full-charge-to-PMU-cutoff per preset with an external energy analyzer (01 #33, 01 #34) on a battery pigtail, cross-checked against the AXP2101 coulomb counter (01 #17) — where a disagreement between the two is a finding, not a nuisance. The cell capacity is itself unsettled: **470 mAh per the vendor library and the Zephyr board files, 400 mAh per resellers** — `TBD`, roadmap Q9/T9 ([`../hw/twatch-s3-pins.md`](../hw/twatch-s3-pins.md)). **Falsifiable by:** one 3-hour run per preset; the bound stands or falls per preset, and a preset that fails it becomes a documented operating limit rather than a hidden one.
 4. **Architectural prohibition.** All real-time DSP runs on the device; the Linux host ([`../../host/README.md`](../../host/README.md)) is used **only** for offline analysis of recorded takes. Without this clause the question is trivially answerable by streaming audio to a PC, and the result is not a wearable result. It also makes latency and refresh properties of the firmware alone, which is what makes bound 2 measurable at all.
 
@@ -74,7 +55,7 @@ A fifth thing the question deliberately does *not* claim: absolute sound pressur
 
 Five objectives, in list order; the rest of the repository refers to them as **O1–O5** (the bibliography's "Why" cells and the validation rows use those labels).
 
-1. **Design and validate an on-device DSP front end** — PDM capture, windowed FFT with stated normalisation and window conventions, time-domain f0 estimation, band-energy / FHE / SPR readouts — on the ESP32-S3, meeting the fidelity bound on both measurement paths and with every convention (S1/S2, NENBW, periodic windows, dBFS reference) pinned in a single spec shared by watch and host (05 #1, 05 #2, 05 #3; [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md), **proposed** — the engineering is evidenced, the acceptance is the owner's).
+1. **Design and validate an on-device DSP front end** — PDM capture, windowed FFT with stated normalisation and window conventions, time-domain f0 estimation, band-energy / FHE / SPR readouts — on the ESP32-S3, meeting the fidelity bound on both measurement paths and with every convention (S1/S2, NENBW, periodic windows, dBFS reference) pinned in a single spec shared by watch and host (05 #1, 05 #2, 05 #3; [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md), **accepted** 2026-08-21).
 2. **Define the companion architecture and its record-format contract** — the normative split of features between watch and host (§3.2), the on-flash take and feature records, and the preset schema ([`../../protocols/specs/README.md`](../../protocols/specs/README.md)) — so that the watch is useful with no host present and the host can reproduce every on-device number offline from the recorded take.
 3. **Build and evaluate a prototype on the wrist** with at least **N sessions × M singers** (`N`, `M` `TBD` pending a power analysis; prov. N ≥ 10 sessions, M ≥ 5 singers) under a stated wrist-position envelope, with simultaneous reference-microphone capture and the session design taken from the visual-feedback efficacy studies (05 #71, 05 #72) rather than invented.
 4. **Quantify the trade-off between preset, refresh rate and energy** — cycles, mAh/h and mJ per analysis frame per preset, including the marginal energy cost per decimation stage — so that the autonomy bound is a measured frontier rather than a single point, and so that a user-facing "long session" mode is a documented position on that frontier.
@@ -198,7 +179,7 @@ The ST7789's hardware vertical scroll (`VSCRDEF` 0x33 / `VSCSAD` 0x37, 01 #13) c
                       │  CORE 0 (UI)                                                                    │
                       │   analyzer canvas: raw esp_lcd + ST7789 VSCRDEF/VSCSAD  ─┐                      │
                       │   LVGL chrome · PMU · haptics · touch                    ├─► ST7789V3 240x240   │
-                      │   spectrogram history ──► PSRAM (~10 min)                ┘   >=30 Hz; 50 Hz LS  │
+                      │   spectrogram history ──► PSRAM (~10 min)                ┘  50/50/25/25/25 Hz   │
                       │                                                                                 │
                       │   takes ──► FAT partition          presets ──► littlefs partition               │
                       └──────────────────────────────────┬──────────────────────────────────────────────┘
@@ -360,7 +341,7 @@ All weeks are provisional and follow the project-phase table in the [root README
 | Bibliography 01–11 filed with a "Why" cell per row | [`../bibliography/README.md`](../bibliography/README.md) |
 | Validation plan, uncertainty budget and first two experiment recipes drafted | [`../validation/README.md`](../validation/README.md), [`../validation/uncertainty-budget.md`](../validation/uncertainty-budget.md) |
 
-**Still open in Phase 0:** the bulk acquisition pass (roadmap D3) including the figure digitisation of the Knowles raster tables (06 #38); hardware-fact closure and the rail map (D4); **the acceptance of [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md)** — 0002, 0003, 0004 and 0005 are accepted records, and 0006 is the last of the named six still `proposed` (D5); and the D6 freeze of the validation plan, which is the gate to firmware M0.
+**Still open in Phase 0:** the bulk acquisition pass (roadmap D3) including the figure digitisation of the Knowles raster tables (06 #38); hardware-fact closure and the rail map (D4); and the D6 freeze of the validation plan, which is the gate to firmware M0. **Closed 2026-08-21:** all six named ADRs (0001–0006) are now accepted.
 
 ## Section 7: Limitations and future work
 

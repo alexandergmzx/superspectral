@@ -115,7 +115,14 @@ believed: 86 confirmed, 50 partial, 19 refuted outright.**
 
 Five of the six blockers are fixed. The sixth is yours and is below.
 
-## The one thing to read first
+## The one thing to read first — **resolved 2026-08-21, by the operator**
+
+> Restated as *"≥ 30 Hz for the presets whose hop supports it — 50 Hz for
+> `live_singing` and `diction_consonants`"* ([proposal §1](../proposal/01-super-spectral-proposal.md),
+> real-time bound). ADR 0006 accepted the same session; the old IDF 5.5.5 tree removed.
+> Session record below is left as written — it is what the handback said at the time.
+
+## The one thing to read first — as handed back
 
 > **The research question refutes three of its own presets, and D2 is about to
 > freeze it.**

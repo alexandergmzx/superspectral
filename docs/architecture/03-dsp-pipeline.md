@@ -53,7 +53,7 @@ The split is not stylistic: esp-dsp cannot build on the ESP-IDF `linux` target (
 
 ## 3. Conventions: what is fixed
 
-> **ADR 0006 is written** ([`0006-fft-normalisation-and-window-conventions.md`](../adr/0006-fft-normalisation-and-window-conventions.md), `proposed` 2026-08-21). Everything this section used to list as "still owed" now has an answer; the table below is unchanged because ADR 0006 ratified it verbatim rather than restating it.
+> **ADR 0006 is accepted** ([`0006-fft-normalisation-and-window-conventions.md`](../adr/0006-fft-normalisation-and-window-conventions.md), written `proposed` 2026-08-21, accepted the same day after an independent audit corrected four of its claims). Everything this section used to list as "still owed" now has an answer; the table below is unchanged because ADR 0006 ratified it verbatim rather than restating it.
 
 Fixed today, because an accepted ADR or a committed header says so:
 

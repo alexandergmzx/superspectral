@@ -43,7 +43,7 @@ The speech-training-aid branch of the same lineage — **Öster (2006)**, [05 #7
 
 ## B. Latency — what "real-time" has to mean on a wrist
 
-Grounds the §4 rows *acoustic-to-photon ≤ 80 ms mean / ≤ 120 ms p99*, *analysis-to-GPIO*, and *sustained refresh ≥ 30 Hz (50 Hz `live_singing`)*, and the §7 statement of what the user can perceive.
+Grounds the §4 rows *acoustic-to-photon ≤ 80 ms mean / ≤ 120 ms p99*, *analysis-to-GPIO*, and *sustained refresh* — per-preset since 2026-08-21, 50 Hz `live_singing`/`diction_consonants`, 25 Hz the other three — and the §7 statement of what the user can perceive.
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|
