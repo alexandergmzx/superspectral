@@ -31,7 +31,7 @@
    dBFS frame            index                colour                 panel
    ── ADR 0006 ──┼────────── ADR 0011 ──────────────┼── ST7789V3 ──────────
                  │                                  │
-    -80..0 dB ──►│ u8 idx 0..255 ──► LUT[idx] ──────►│ COLMOD 3Ah=05h (565)
+  -90/-100..0 dB►│ u8 idx 0..255 ──► LUT[idx] ──────►│ COLMOD 3Ah=05h (565)
    (prov.)       │       │            256 entries    │ RAMCTRL B0h EPF[1:0]
                  │       │            75 distinct    │   = 5→6 bit fill
                  │       └─► PSRAM history ring      │
@@ -65,7 +65,7 @@
   - (+) The default is CVD-safe and luminance-monotone *by construction*, and both properties are asserted in CI rather than assumed.
   - (+) Quantisation is a measured quantity with a regenerating command behind it: worst edge ΔE 5.82 against the naive conversion's 8.76, and 3.92 stated for the 18-bit path we did not take.
   - (+) Storing indices rather than colours halves the history footprint and makes D1 reversible after the fact, including over already-recorded history.
-  - (−) **Only 75 of 256 entries are distinct colours.** On an 80 dB display range that is 0.31 dB per index *(prov., the range is ADR 0006's)*, so the widest flat run shows a ≈ 3.1 dB span as one colour. Dithering hides the edge; it does not restore the resolution.
+  - (−) **Only 75 of 256 entries are distinct colours.** Across the 90–100 dB range every shipped preset asks for (`db_floor_dbfs` −90 or −100 under a 0 dBFS ceiling, [preset schema §7](../../protocols/specs/preset-schema.md)) that is **0.35–0.39 dB per index**, so the widest flat run of 10 indices shows a **3.5–3.9 dB** span as one colour. Dithering hides the edge; it does not restore the resolution.
   - (−) A two-hue map has less hue variety for texture reading than viridis or magma, and [05 #81](../bibliography/05-papers.md) is explicit that the best map depends on the task. If D1 goes to cividis, that cost is accepted deliberately.
   - (−) Dithering, if D2 turns it on, adds a multiply and two table reads per pixel in the hot render loop, must track the ST7789 scroll address to avoid crawling, and makes photographed screenshots grainy — including the ones used as evidence.
   - (−) The colour tables' licence is unresolved (decision 8); until it is, the generated header is a build artefact, not a committed one.

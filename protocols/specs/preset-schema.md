@@ -13,7 +13,7 @@ LittleFS `presets` partition — 1 MB at 0x821000, subtype 0x83 (ADR 0014)
 │
 ├── presets/
 │   ├── live_singing.json           ─┐
-│   ├── vowel_formant_study.json     │  the six shipped presets, 1.5–1.7 KB each
+│   ├── vowel_formant_study.json     │  the six shipped presets, 1.48–1.62 kB each
 │   ├── sustained_pitch_lab.json     │  stored byte-for-byte as committed under
 │   ├── diction_consonants.json      │  protocols/presets/ (canonical form, §3)
 │   ├── room_noise_floor.json        │

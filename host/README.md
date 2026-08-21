@@ -1,3 +1,6 @@
+<!-- SPDX-FileCopyrightText: 2026 Alexander Gomez -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Host — Linux companion (GPL-3.0-or-later)
 
 The **offline path** of the companion architecture ([ADR 0002](../docs/adr/0002-companion-architecture.md), accepted): everything the founding research document assigned to the Python backend — Praat-grade formants, pitch golden files, LTAS/SPR over whole takes, H1–H2, DTW alignment against a Demucs-separated reference stem — runs here, on recorded takes, never in real time.
@@ -11,7 +14,7 @@ Rules that keep the boundary clean — they are the reason the boundary is a *di
 - Nothing outside `host/` imports anything inside `host/`; nothing inside `host/` imports anything outside `host/`. The two halves exchange **files** only: takes and preset JSON written by the watch ([`../protocols/specs/`](../protocols/specs/)), golden vectors and reports written by the host.
 - Firmware never links, vendors or generates code from `host/`. The firmware's only relationship with Praat is a tolerance table against files the host produced.
 - This is the **sole exception** to the "every Python file lives under `python-scripts/`" rule ([`CLAUDE.md`](../CLAUDE.md#where-python-lives)). Apache-2.0 Python (signal generators, comparators, `doc_ocr`) stays under [`../python-scripts/`](../python-scripts/); anything that needs a GPL import comes here. Do not move Apache-2.0 tooling here for convenience — that would relicense it.
-- Every file here carries `SPDX-License-Identifier: GPL-3.0-or-later`.
+- Every file here carries `SPDX-License-Identifier: GPL-3.0-or-later` — in an HTML comment for the Markdown, on line 2 for everything else. The one exception is `LICENSE`, which *is* the licence text.
 
 | Subdirectory | Contents |
 |--------------|----------|
