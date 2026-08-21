@@ -1,0 +1,61 @@
+{
+  "analysis": {
+    "averaging": "linear",
+    "averaging_frames": 25,
+    "db_reference": "dbfs_sine",
+    "dc_blocker_hz": 20,
+    "decimations": 0,
+    "fft_size": 8192,
+    "hold": "min",
+    "interval_ms": 40,
+    "resolution": {
+      "bin_width_hz": 3.90625,
+      "enbw_hz": 5.859375,
+      "hop_samples": 1280,
+      "window_duration_ms": 256.0
+    },
+    "sample_rate_hz": 32000,
+    "smoothing": 0.0,
+    "spectrum_type": "psd",
+    "weighting": "A",
+    "window": {
+      "coefficients": [
+        0.5,
+        0.5
+      ],
+      "coherent_gain": 0.5,
+      "coherent_gain_db": -6.0206,
+      "enbw_bins": 1.5,
+      "form": "periodic",
+      "name": "hann"
+    }
+  },
+  "description": "Linear (Welch-style) averaging with min-hold and A-weighting: what the room and the instrument contribute before anyone sings.",
+  "display": {
+    "db_ceiling_dbfs": 0,
+    "db_floor_dbfs": -100,
+    "freq_max_hz": 12800,
+    "freq_min_hz": 20,
+    "freq_scale": "log",
+    "overlays": [
+      "leq"
+    ],
+    "refresh_hz_target": 25
+  },
+  "guidance": "Silence in the room, watch still, no hand movement across the port. The reading is relative dBFS, not dB SPL: no calibrator is in the chain.",
+  "id": "room_noise_floor",
+  "mic_eq": {
+    "mode": "none"
+  },
+  "name": "Room noise floor",
+  "provisional": [
+    "/analysis/dc_blocker_hz",
+    "/display/db_floor_dbfs",
+    "/display/freq_max_hz"
+  ],
+  "schema_version": "1.0.0",
+  "targets": [
+    "watch",
+    "host"
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "analysis": {
+    "averaging": "none",
+    "db_reference": "dbfs_sine",
+    "dc_blocker_hz": 20,
+    "decimations": 0,
+    "fft_size": 8192,
+    "hold": "none",
+    "interval_ms": 40,
+    "resolution": {
+      "bin_width_hz": 3.90625,
+      "enbw_hz": 5.859375,
+      "hop_samples": 1280,
+      "window_duration_ms": 256.0
+    },
+    "sample_rate_hz": 32000,
+    "smoothing": 0.0,
+    "spectrum_type": "power_spectrum",
+    "weighting": "Z",
+    "window": {
+      "coefficients": [
+        0.5,
+        0.5
+      ],
+      "coherent_gain": 0.5,
+      "coherent_gain_db": -6.0206,
+      "enbw_bins": 1.5,
+      "form": "periodic",
+      "name": "hann"
+    }
+  },
+  "description": "Long window on a linear axis for reading formant structure off sustained vowels; no smoothing, so the harmonic comb stays visible under the envelope.",
+  "display": {
+    "db_ceiling_dbfs": 0,
+    "db_floor_dbfs": -100,
+    "freq_max_hz": 5000,
+    "freq_min_hz": 0,
+    "freq_scale": "linear",
+    "overlays": [
+      "f1f2",
+      "spectrum_envelope",
+      "peak_markers"
+    ],
+    "refresh_hz_target": 25
+  },
+  "guidance": "Sustained vowel, steady loudness, mouth-to-mic distance held constant for the whole series. Formant estimates degrade at high f0 - expect it and report it.",
+  "id": "vowel_formant_study",
+  "mic_eq": {
+    "mode": "none"
+  },
+  "name": "Vowel / formant study",
+  "provisional": [
+    "/analysis/dc_blocker_hz",
+    "/display/db_floor_dbfs"
+  ],
+  "schema_version": "1.0.0",
+  "targets": [
+    "watch",
+    "host"
+  ]
+}

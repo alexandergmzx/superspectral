@@ -1,0 +1,671 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Super Spectral preset",
+  "description": "One analysis preset, loaded by the watch from the LittleFS `presets` partition and by the host from `protocols/presets/`. Normative prose: protocols/specs/preset-schema.md (ADR 0010). Rules that arithmetic cannot express in JSON Schema (V1-V10) live in that document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "targets",
+    "analysis",
+    "mic_eq",
+    "display"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "Major version of this schema the file conforms to. A loader accepts major 1 and rejects anything else; it never coerces.",
+      "type": "string",
+      "pattern": "^1\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "id": {
+      "description": "Stable identifier. MUST equal the file's basename without the .json suffix (rule V1). Referenced from TAKE_HEADER together with the sha256 of this file.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{2,31}$"
+    },
+    "name": {
+      "description": "Short label for the preset picker.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 400
+    },
+    "targets": {
+      "description": "Which half of the companion architecture may run this preset (ADR 0002). A host-only preset is never offered by the watch UI and never selected by a take.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "watch",
+          "host"
+        ]
+      }
+    },
+    "analysis": {
+      "$ref": "#/$defs/analysis"
+    },
+    "mic_eq": {
+      "$ref": "#/$defs/mic_eq"
+    },
+    "display": {
+      "$ref": "#/$defs/display"
+    },
+    "host": {
+      "$ref": "#/$defs/host"
+    },
+    "guidance": {
+      "description": "Environment rules of thumb for this preset (distance, expected floor, clipping headroom), shown once when the preset is selected.",
+      "type": "string",
+      "maxLength": 600
+    },
+    "provisional": {
+      "description": "JSON Pointers to fields whose values are provisional - the repository's `(prov.)` marker, machine-readable. Every pointer MUST resolve (rule V10).",
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^(/[A-Za-z0-9_]+)+$"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "V2 - a watch preset stays inside the internal-SRAM envelope and the display ceiling.",
+      "if": {
+        "required": [
+          "targets"
+        ],
+        "properties": {
+          "targets": {
+            "contains": {
+              "const": "watch"
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "analysis": {
+            "properties": {
+              "fft_size": {
+                "enum": [
+                  512,
+                  1024,
+                  2048,
+                  4096,
+                  8192
+                ]
+              }
+            }
+          },
+          "display": {
+            "required": [
+              "refresh_hz_target"
+            ],
+            "properties": {
+              "overlays": {
+                "items": {
+                  "not": {
+                    "enum": [
+                      "stem_f0",
+                      "dtw_path"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "V3 - the host block belongs to a preset that runs on the host.",
+      "if": {
+        "required": [
+          "host"
+        ]
+      },
+      "then": {
+        "properties": {
+          "targets": {
+            "contains": {
+              "const": "host"
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "V4 - a logarithmic frequency axis cannot start at zero.",
+      "if": {
+        "properties": {
+          "display": {
+            "required": [
+              "freq_scale"
+            ],
+            "properties": {
+              "freq_scale": {
+                "const": "log"
+              }
+            }
+          }
+        },
+        "required": [
+          "display"
+        ]
+      },
+      "then": {
+        "properties": {
+          "display": {
+            "properties": {
+              "freq_min_hz": {
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "V5 - `smoothing` is the exponential-averaging coefficient and is meaningless without it.",
+      "if": {
+        "required": [
+          "analysis"
+        ],
+        "properties": {
+          "analysis": {
+            "required": [
+              "averaging"
+            ],
+            "properties": {
+              "averaging": {
+                "const": "exponential"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "analysis": {
+            "properties": {
+              "smoothing": {
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "analysis": {
+            "properties": {
+              "smoothing": {
+                "const": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "$comment": "V6 - linear (Welch) averaging needs a frame count; nothing else may carry one.",
+      "if": {
+        "required": [
+          "analysis"
+        ],
+        "properties": {
+          "analysis": {
+            "required": [
+              "averaging"
+            ],
+            "properties": {
+              "averaging": {
+                "const": "linear"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "analysis": {
+            "required": [
+              "averaging_frames"
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "analysis": {
+            "not": {
+              "required": [
+                "averaging_frames"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_rate_hz",
+        "fft_size",
+        "window",
+        "resolution",
+        "interval_ms",
+        "decimations",
+        "spectrum_type",
+        "db_reference",
+        "averaging",
+        "smoothing",
+        "hold",
+        "weighting",
+        "dc_blocker_hz"
+      ],
+      "properties": {
+        "sample_rate_hz": {
+          "description": "Nominal PCM rate. 48000 is RESERVED and rejected by the watch loader until experiment 0001 clause 4 passes (ADR 0003 decision 5); a host-only preset may use it today.",
+          "enum": [
+            16000,
+            32000,
+            48000
+          ]
+        },
+        "fft_size": {
+          "description": "Real transform length N. 16384 is host-only: 224 KB of internal SRAM is the watch's hard ceiling.",
+          "enum": [
+            512,
+            1024,
+            2048,
+            4096,
+            8192,
+            16384
+          ]
+        },
+        "window": {
+          "$ref": "#/$defs/window"
+        },
+        "resolution": {
+          "$ref": "#/$defs/resolution"
+        },
+        "interval_ms": {
+          "description": "Analysis hop in milliseconds. `interval_ms * sample_rate_hz` MUST be an integer multiple of 1000 so the hop is a whole number of samples (rule V7).",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "decimations": {
+          "description": "Spectroid-style decimation cascade depth; stage k analyses at sample_rate_hz / 2^k. 0 disables the cascade.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "spectrum_type": {
+          "description": "What the dB axis shows. `psd` divides by the ENBW and is the correct choice for noise; `power_spectrum` is the correct choice for tones. ADR 0006 fixes the scaling constants; the preset only names which of the two it displays.",
+          "enum": [
+            "power_spectrum",
+            "psd"
+          ]
+        },
+        "db_reference": {
+          "description": "dBFS referenced to a full-scale SINE, not a full-scale square (the 3.01 dB trap in docs/validation/golden-files.md).",
+          "const": "dbfs_sine"
+        },
+        "averaging": {
+          "enum": [
+            "none",
+            "exponential",
+            "linear"
+          ]
+        },
+        "averaging_frames": {
+          "description": "Number of frames in a linear (Welch) average.",
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 1000
+        },
+        "smoothing": {
+          "description": "Exponential-averaging coefficient. Upper bound 0.95 follows Spectroid's documented range.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.95
+        },
+        "hold": {
+          "enum": [
+            "none",
+            "peak",
+            "min"
+          ]
+        },
+        "weighting": {
+          "description": "Frequency weighting applied to level readouts only, never to the displayed spectrum. Relative dBFS in every case - no calibrator is in the chain.",
+          "enum": [
+            "Z",
+            "A",
+            "C"
+          ]
+        },
+        "dc_blocker_hz": {
+          "description": "Corner of the software DC blocker in the capture path (ADR 0003 decision 6; the S3 has no hardware PDM high-pass). Recorded in TAKE_HEADER so the host applies the same filter.",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "window": {
+      "description": "The analysis window itself. Coefficients are the cosine-sum a_k of the named family; the watch generates the PERIODIC form (esp-dsp's dsps_wind_* are symmetric - ADR 0018).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "form",
+        "coefficients",
+        "coherent_gain",
+        "coherent_gain_db",
+        "enbw_bins"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "hann",
+            "blackman",
+            "blackman_harris",
+            "blackman_nuttall",
+            "nuttall",
+            "flat_top"
+          ]
+        },
+        "form": {
+          "const": "periodic"
+        },
+        "coefficients": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 5,
+          "items": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "coherent_gain": {
+          "description": "a0. Divide a tone's magnitude by this. MUST equal coefficients[0] (rule V8).",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1
+        },
+        "coherent_gain_db": {
+          "type": "number",
+          "minimum": -20,
+          "maximum": 0
+        },
+        "enbw_bins": {
+          "description": "Normalised equivalent noise bandwidth in bins (Heinzel 2002 NENBW). MUST equal (a0^2 + sum_{k>=1} a_k^2 / 2) / a0^2 (rule V8).",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 8
+        }
+      }
+    },
+    "resolution": {
+      "description": "What the (window, fft_size, sample_rate_hz) triple buys. Every field is derived and re-checked on load (rule V9) - it is stored so a take manifest is self-describing without the window table.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bin_width_hz",
+        "window_duration_ms",
+        "enbw_hz",
+        "hop_samples"
+      ],
+      "properties": {
+        "bin_width_hz": {
+          "description": "sample_rate_hz / fft_size.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "window_duration_ms": {
+          "description": "1000 * fft_size / sample_rate_hz.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "enbw_hz": {
+          "description": "enbw_bins * bin_width_hz - the analysis bandwidth of this preset. This field is the reason the schema exists: 'wideband' and 'narrowband' are undefined without it.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "hop_samples": {
+          "description": "interval_ms * sample_rate_hz / 1000, an integer.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "mic_eq": {
+      "description": "The microphone-correction slot (ADR 0003 decision 7 - the only permitted non-linear-free conditioning is linear, minimum-phase and declared). `none` until experiment 0001 produces a fitted curve.",
+      "type": "object",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "none"
+            }
+          }
+        },
+        {
+          "$comment": "Reference to an EQ filed at eq/<eq_id>.json on the same partition.",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "eq_id",
+            "sha256"
+          ],
+          "properties": {
+            "mode": {
+              "const": "ref"
+            },
+            "eq_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{2,47}$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        {
+          "$comment": "Coefficients carried in the preset itself. design_sample_rate_hz MUST equal analysis.sample_rate_hz (rule V6b).",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "eq_id",
+            "design_sample_rate_hz",
+            "biquads"
+          ],
+          "properties": {
+            "mode": {
+              "const": "inline"
+            },
+            "eq_id": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{2,47}$"
+            },
+            "design_sample_rate_hz": {
+              "enum": [
+                16000,
+                32000,
+                48000
+              ]
+            },
+            "scope": {
+              "description": "Whether this curve is a per-part-number constant or a per-unit calibration. A per-unit EQ makes band readouts non-reproducible on a second watch without a calibration step.",
+              "enum": [
+                "part_number",
+                "unit"
+              ]
+            },
+            "biquads": {
+              "description": "Cascaded transposed-direct-form-II sections, RBJ sign convention, a0 == 1 (the esp-dsp dsps_biquad_f32 coefficient order).",
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 8,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "b0",
+                  "b1",
+                  "b2",
+                  "a1",
+                  "a2"
+                ],
+                "properties": {
+                  "b0": {
+                    "type": "number"
+                  },
+                  "b1": {
+                    "type": "number"
+                  },
+                  "b2": {
+                    "type": "number"
+                  },
+                  "a1": {
+                    "type": "number"
+                  },
+                  "a2": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "display": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "freq_scale",
+        "freq_min_hz",
+        "freq_max_hz",
+        "db_floor_dbfs",
+        "db_ceiling_dbfs",
+        "overlays"
+      ],
+      "properties": {
+        "freq_scale": {
+          "enum": [
+            "log",
+            "linear"
+          ]
+        },
+        "freq_min_hz": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 24000
+        },
+        "freq_max_hz": {
+          "description": "MUST be > freq_min_hz and <= sample_rate_hz / 2 (rule V9).",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 24000
+        },
+        "db_floor_dbfs": {
+          "type": "number",
+          "minimum": -160,
+          "maximum": -10
+        },
+        "db_ceiling_dbfs": {
+          "type": "number",
+          "minimum": -20,
+          "maximum": 0
+        },
+        "refresh_hz_target": {
+          "description": "Frames pushed to the panel per second. 50 is the measured ceiling of the hardware-scrolled analyzer canvas. 1000 / interval_ms MUST be an integer multiple of this (rule V7).",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "colormap_id": {
+          "description": "Deliberately an open string, not an enum: ADR 0011 fixes the map and the RGB565 LUT. Absent means 'the firmware default'.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,31}$"
+        },
+        "overlays": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 8,
+          "items": {
+            "enum": [
+              "f0",
+              "peak_markers",
+              "f1f2",
+              "spectrum_envelope",
+              "vibrato_rate",
+              "ring_band",
+              "twang_band",
+              "fhe",
+              "spr",
+              "ltas",
+              "leq",
+              "clipping",
+              "stem_f0",
+              "dtw_path"
+            ]
+          }
+        }
+      }
+    },
+    "host": {
+      "description": "Offline-only parameters. Meaningless on the watch and rejected there.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference",
+        "separation",
+        "align"
+      ],
+      "properties": {
+        "reference": {
+          "enum": [
+            "none",
+            "stem",
+            "take"
+          ]
+        },
+        "separation": {
+          "enum": [
+            "none",
+            "demucs_htdemucs",
+            "demucs_htdemucs_ft"
+          ]
+        },
+        "align": {
+          "enum": [
+            "none",
+            "dtw_chroma",
+            "dtw_mfcc"
+          ]
+        }
+      }
+    }
+  }
+}

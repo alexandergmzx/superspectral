@@ -1,0 +1,64 @@
+{
+  "analysis": {
+    "averaging": "exponential",
+    "db_reference": "dbfs_sine",
+    "dc_blocker_hz": 20,
+    "decimations": 0,
+    "fft_size": 4096,
+    "hold": "none",
+    "interval_ms": 20,
+    "resolution": {
+      "bin_width_hz": 7.8125,
+      "enbw_hz": 15.659007,
+      "hop_samples": 640,
+      "window_duration_ms": 128.0
+    },
+    "sample_rate_hz": 32000,
+    "smoothing": 0.25,
+    "spectrum_type": "power_spectrum",
+    "weighting": "Z",
+    "window": {
+      "coefficients": [
+        0.35875,
+        0.48829,
+        0.14128,
+        0.01168
+      ],
+      "coherent_gain": 0.35875,
+      "coherent_gain_db": -8.904162,
+      "enbw_bins": 2.004353,
+      "form": "periodic",
+      "name": "blackman_harris"
+    }
+  },
+  "description": "Waterfall-first preset for singing at full tempo: the shortest window that still resolves adjacent harmonics at a soprano f0, at the display's 50 Hz ceiling.",
+  "display": {
+    "db_ceiling_dbfs": 0,
+    "db_floor_dbfs": -90,
+    "freq_max_hz": 8000,
+    "freq_min_hz": 60,
+    "freq_scale": "log",
+    "overlays": [
+      "f0",
+      "peak_markers",
+      "ring_band",
+      "clipping"
+    ],
+    "refresh_hz_target": 50
+  },
+  "guidance": "Wrist at the validation matrix distance (15-45 cm from the mouth), arm angle recorded. Clipping is flagged, never tamed: back off if the flag latches.",
+  "id": "live_singing",
+  "mic_eq": {
+    "mode": "none"
+  },
+  "name": "Live singing",
+  "provisional": [
+    "/analysis/dc_blocker_hz",
+    "/display/db_floor_dbfs"
+  ],
+  "schema_version": "1.0.0",
+  "targets": [
+    "watch",
+    "host"
+  ]
+}

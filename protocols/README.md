@@ -4,8 +4,9 @@ Definitions of every byte that crosses the boundary between the two halves of Su
 
 | Subdirectory | Contents |
 |--------------|----------|
-| [specs/](specs/) | Human-readable format specifications: the take/record format, the preset JSON schema, the take-transfer procedure |
-| `schemas/` *(planned)* | Machine-readable artifacts: `preset.schema.json` (JSON Schema draft 2020-12), `take_record.h` reference header, test vectors |
+| [specs/](specs/) | Human-readable format specifications plus the machine-readable preset schema: [`preset-schema.md`](specs/preset-schema.md) + [`presets.schema.json`](specs/presets.schema.json) (JSON Schema draft 2020-12), and — planned — the take/record format and the take-transfer procedure |
+| [presets/](presets/) | The six preset instances, one JSON file per preset, in the canonical form the LittleFS `presets` partition stores byte-for-byte ([ADR 0010](../docs/adr/0010-preset-schema.md)) |
+| `schemas/` *(planned)* | Remaining machine-readable artifacts: `take_record.h` reference header, take test vectors |
 
 The C header the firmware compiles against lives in `firmware/twatch-s3/components/spectral_core/include/spectral_core/` (planned `take_record.h`) so `spectral_core` stays host-buildable; the host reads the same layout through a Python reader under [`../host/`](../host/). This directory holds **specifications and schemas**, not source — the header is generated from or checked against the spec, never the other way around.
 

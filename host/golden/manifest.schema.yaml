@@ -1,0 +1,726 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Golden-file manifest schema — JSON Schema draft 2020-12, written in YAML.
+#
+# WHAT THIS IS
+#   The machine-checkable form of the rule stated in ADR 0009 and specified in
+#   ../../docs/validation/golden-files.md: *a golden file is its manifest*. A
+#   `.npy` of f0 values is worthless without the provenance that says which
+#   parselmouth, which BUNDLED Praat, which pitch method, which floor/ceiling
+#   and which input bytes produced it. This schema is what `verify.py` loads
+#   before it trusts a single number.
+#
+# WHY IT LIVES HERE, UNDER THE GPL BOUNDARY
+#   ADR 0004 makes `host/` GPL-3.0-or-later as a *directory*, with no per-file
+#   exceptions, so that the boundary is one `grep`. This file therefore carries
+#   the directory's SPDX tag like every other text file under `host/`. It is
+#   *consumed as data* by the Apache-2.0 test harness in ../../host-tests/ —
+#   reading a file is not linking, which is the whole reason the contract
+#   between the two halves is a file format and not an API (ADR 0002).
+#
+# WHERE THE LIMITS ARE *NOT*
+#   No tolerance appears in this schema. Tolerances live in exactly one place,
+#   ../../docs/validation/golden-files.md, on the Apache side; the manifest only
+#   *points* at that table (`tolerances.source`) and records which revision of
+#   it a vector set was accepted against (`tolerances.revision`). A generator
+#   that could define its own acceptance limit would be marking its own homework.
+#
+# LICENCE NOTE ON THE DATA ITSELF
+#   The SPDX tag above is directory hygiene, not a claim that a float array of
+#   measurements computed from our own input WAVs is a derivative work of Praat.
+#   See ADR 0009 §Decision item 3.
+#
+# HOW TO USE IT
+#   python3 -c "import yaml; yaml.safe_load(open('manifest.schema.yaml'))"
+#   python3 -c "import json,yaml,jsonschema; \
+#       jsonschema.Draft202012Validator(yaml.safe_load(open('manifest.schema.yaml'))) \
+#       .validate(yaml.safe_load(open('manifest.yaml')))"
+#
+# WHAT THIS SCHEMA CANNOT EXPRESS (enforced by `verify.py`, not by JSON Schema)
+#   1. `analyses.pitch.pitch_floor` < `analyses.pitch.pitch_ceiling`.
+#   2. Every `outputs[].input` value appears as some `inputs[].path`.
+#   3. Every `outputs[].analysis` value names a key present in `analyses`.
+#   4. Every recorded sha256 matches the bytes actually on disk.
+#   5. `generator.parselmouth` / `generator.praat_bundled` match the *installed*
+#      environment at verification time (drift here means regenerate, not patch).
+#   A manifest that passes this schema and fails any of 1–5 is not a golden set.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "urn:super-spectral:schema:golden-manifest:1"
+title: Super Spectral golden-file manifest
+description: >-
+  One manifest per golden set (`tier0-synthetic`, `vocadito-subset`, …). Describes
+  the exact environment, the exact settings and the exact bytes behind every
+  reference vector the watch's DSP is regressed against. Structure follows the
+  specification in docs/validation/golden-files.md; a set whose manifest is
+  missing any required field is rejected by the harness, never silently defaulted.
+
+type: object
+additionalProperties: false
+required:
+  - schema
+  - set
+  - generated
+  - generator
+  - inputs
+  - analyses
+  - outputs
+  - tolerances
+  - regeneration
+
+properties:
+
+  schema:
+    description: >-
+      Manifest schema version. Bumped only by an ADR amendment; a reader that
+      does not recognise the value must refuse the manifest rather than guess.
+    const: 1
+
+  set:
+    description: >-
+      Name of the golden set. One manifest per set, and the name is also the
+      output directory (`outputs/<set>/`). Changing a pin (parselmouth, bundled
+      Praat, method, floor/ceiling) produces a NEW set with a new name — golden
+      sets are never edited in place (ADR 0009 §Decision item 4).
+    type: string
+    pattern: "^[a-z0-9][a-z0-9-]*$"
+
+  generated:
+    description: UTC date the generator wrote this manifest (YYYY-MM-DD).
+    $ref: "#/$defs/date"
+
+  generator:
+    description: >-
+      The environment that produced the vectors. This block is the reason the
+      manifest exists: "parselmouth is numerically identical to Praat" holds only
+      within one bundled Praat version, and Praat changed its default pitch
+      method from raw to filtered autocorrelation in 2023.
+    type: object
+    additionalProperties: false
+    required:
+      - script
+      - sha256
+      - commit
+      - python
+      - numpy
+      - scipy
+      - parselmouth
+      - praat_bundled
+      - praat_reference
+      - platform
+      - blas
+    properties:
+      script:
+        description: Repository-relative path of the generator (e.g. `host/golden/generate.py`).
+        type: string
+        minLength: 1
+      sha256:
+        description: >-
+          sha256 of the generator script's bytes, so that a change to the
+          generator is visible in the manifest diff even when the outputs happen
+          not to move.
+        $ref: "#/$defs/sha256"
+      commit:
+        description: Full 40-hex repository commit the generator ran from.
+        $ref: "#/$defs/git_sha"
+      python:
+        description: "`python3 --version` of the interpreter that ran the generator, e.g. `3.12.3`."
+        $ref: "#/$defs/version"
+      numpy:
+        description: "`numpy.__version__`. Fixes array dtype/reduction behaviour and the .npy format."
+        $ref: "#/$defs/version"
+      scipy:
+        description: >-
+          `scipy.__version__`. Load-bearing for the `spectrum` analysis block:
+          `scipy.signal.get_window` is periodic (`fftbins=True`) while
+          `scipy.signal.windows.<name>` defaults to symmetric.
+        $ref: "#/$defs/version"
+      parselmouth:
+        description: "`parselmouth.__version__` — the installed praat-parselmouth PyPI version."
+        $ref: "#/$defs/version"
+      praat_bundled:
+        description: >-
+          `parselmouth.PRAAT_VERSION` — the Praat version parselmouth EMBEDS.
+          Never assumed equal to the current praat.org release. This, not
+          `praat_reference`, is the version the numbers came from.
+        $ref: "#/$defs/version"
+      praat_reference:
+        description: >-
+          The praat.org Praat release the side-by-side comparison of roadmap
+          threshold T7 was run against (praat.org is at 7.0.01 as of 2026-08).
+          May be `null` ONLY while T7 is open; a set carrying `null` here may not
+          back a "vs Praat" claim outside the project.
+        type:
+          - string
+          - "null"
+      platform:
+        description: "Host platform string (`uname -srm` or `platform.platform()`)."
+        type: string
+        minLength: 1
+      blas:
+        description: >-
+          NumPy's BLAS/LAPACK vendor and version (`numpy.show_config()`). Recorded
+          because reduction order — and therefore the last bits — differs between
+          vendors; the tolerance table absorbs it, but only if it is visible.
+        type: string
+        minLength: 1
+
+  inputs:
+    description: >-
+      Every input WAV, identified by the sha256 of its bytes AS USED (computed
+      after any resampling). Inputs are not stored in this directory: Tier-0
+      signals are regenerated by their Apache-2.0 generators under
+      python-scripts/, corpus excerpts are fetched through datasets/ manifests.
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [path, sha256, sample_rate, bit_depth, channels, source]
+      properties:
+        path:
+          description: Repository-relative path of the WAV as consumed by the generator.
+          type: string
+          minLength: 1
+        sha256:
+          description: sha256 of the file's bytes after any preprocessing recorded below.
+          $ref: "#/$defs/sha256"
+        sample_rate:
+          description: >-
+            Sample rate in Hz of the file as used. Recorded per input because
+            published accuracy figures are rate-specific (CREPE's are at 16 kHz)
+            and a silent resample is the classic false accuracy gap.
+          type: integer
+          minimum: 1
+        bit_depth:
+          description: Bits per sample of the stored WAV.
+          type: integer
+          enum: [16, 24, 32]
+        channels:
+          description: Channel count. The watch path is mono; a stereo input must say how it was mixed in `preprocessing`.
+          type: integer
+          minimum: 1
+        duration_s:
+          description: Duration in seconds. Optional, informational.
+          type: number
+          exclusiveMinimum: 0
+        source:
+          description: Provenance of the input — where it came from and under what terms.
+          type: object
+          additionalProperties: false
+          required: [kind, name]
+          properties:
+            kind:
+              description: >-
+                `tier0-synthetic` = generated in-repo, exact by construction;
+                `corpus` = an external dataset excerpt; `recorded` = captured by
+                this project.
+              type: string
+              enum: ["tier0-synthetic", "corpus", "recorded"]
+            name:
+              description: Generator name (Tier 0) or corpus name, matching datasets/corpora/manifest.yaml.
+              type: string
+              minLength: 1
+            parameters:
+              description: >-
+                Free-form map of the generator's parameters (frequency, level,
+                window, seed). Required in practice for `tier0-synthetic` if the
+                signal is to be reproducible; free-form because generators differ.
+              type: object
+            licence:
+              description: SPDX identifier or licence name for a `corpus` input; omitted for Tier 0.
+              type: string
+        preprocessing:
+          description: >-
+            What was done to the file before the sha256 above was taken. Absent
+            means "the bytes are as published/generated".
+          type: object
+          additionalProperties: false
+          properties:
+            resample_to_hz:
+              type: integer
+              minimum: 1
+            resampler:
+              description: Resampler and quality setting (e.g. `soxr VHQ`).
+              type: string
+            resampler_version:
+              $ref: "#/$defs/version"
+            level_normalisation:
+              description: e.g. `ITU-T P.56 active speech level, -26 dBov` or `none`.
+              type: string
+            channel_mixdown:
+              description: How multi-channel material was reduced to mono.
+              type: string
+
+  analyses:
+    description: >-
+      One block per analysis kind this set contains. `pitch`, `formant`,
+      `spectrogram` and `ltas` are Praat's, run through parselmouth; `spectrum`
+      is the NumPy/SciPy reference behind the window-coefficient and
+      magnitude-spectrum rows of the tolerance table. Every field of a block that
+      is present is required — Praat's defaults differ between the raw and
+      filtered pitch methods, so "left at the default" is not a record of anything.
+    type: object
+    additionalProperties: false
+    minProperties: 1
+    properties:
+
+      pitch:
+        description: Parameters of Praat's pitch analysis.
+        type: object
+        additionalProperties: false
+        required:
+          - method
+          - time_step
+          - pitch_floor
+          - pitch_ceiling
+          - silence_threshold
+          - voicing_threshold
+          - octave_cost
+          - octave_jump_cost
+          - voiced_unvoiced_cost
+          - max_candidates
+          - very_accurate
+        properties:
+          method:
+            description: >-
+              `raw` = `To Pitch (raw ac)` (the classic autocorrelation of
+              Boersma 1993); `filtered` = `To Pitch (filtered ac)` (Praat's
+              default since 2023); `cc` = cross-correlation, only where a set
+              explicitly needs it. There is no default: state it.
+            type: string
+            enum: ["raw", "filtered", "cc"]
+          time_step:
+            description: >-
+              Analysis step in seconds. `0` means Praat's automatic step; explicit
+              is preferred so the hop relates to the watch's frame rate. Frames
+              are compared by TIME, never by index — Praat centres its grid
+              (`t1 = (duration - (nFrames-1)*dt)/2`) and the device frames from
+              sample 0.
+            type: number
+            minimum: 0
+          pitch_floor:
+            description: Praat pitch floor in Hz. Changing it is a new golden set, not an edit.
+            type: number
+            exclusiveMinimum: 0
+          pitch_ceiling:
+            description: Praat pitch ceiling in Hz. Must exceed `pitch_floor` (checked by verify.py).
+            type: number
+            exclusiveMinimum: 0
+          silence_threshold:
+            type: number
+            minimum: 0
+          voicing_threshold:
+            type: number
+            minimum: 0
+          octave_cost:
+            type: number
+            minimum: 0
+          octave_jump_cost:
+            type: number
+            minimum: 0
+          voiced_unvoiced_cost:
+            type: number
+            minimum: 0
+          max_candidates:
+            description: Praat's maximum number of pitch candidates per frame.
+            type: integer
+            minimum: 2
+          very_accurate:
+            description: Praat's "very accurate" flag (longer window, slower).
+            type: boolean
+
+      formant:
+        description: Parameters of Praat's formant analysis. Burg order = 2*max_formants + 2.
+        type: object
+        additionalProperties: false
+        required: [method, time_step, max_formants, ceiling_hz, window_length, preemphasis_from_hz]
+        properties:
+          method:
+            type: string
+            enum: ["burg"]
+          time_step:
+            type: number
+            minimum: 0
+          max_formants:
+            description: Praat's "maximum number of formants" (often 5).
+            type: number
+            exclusiveMinimum: 0
+          ceiling_hz:
+            description: >-
+              Praat's formant ceiling in Hz. The single most outcome-changing
+              formant setting; a comparison against a device estimate is
+              meaningless unless the device used the same LPC order and ceiling.
+            type: number
+            exclusiveMinimum: 0
+          window_length:
+            description: Analysis window length in seconds.
+            type: number
+            exclusiveMinimum: 0
+          preemphasis_from_hz:
+            type: number
+            minimum: 0
+
+      spectrogram:
+        description: Parameters of Praat's `To Spectrogram`.
+        type: object
+        additionalProperties: false
+        required: [window_shape, window_length, time_step, frequency_step, max_frequency]
+        properties:
+          window_shape:
+            description: >-
+              Praat's window-shape enumeration. For `gaussian`, Praat's effective
+              bandwidth is 1.2982804 / window_length — a Praat-specific relation
+              that does NOT match the esp-dsp window set, which is why spectrogram
+              vectors are compared as levels and not as coefficients.
+            type: string
+            enum: ["square", "hamming", "bartlett", "welch", "hanning", "gaussian"]
+          window_length:
+            description: Window length in seconds (0.005 ≈ 260 Hz wideband; 0.030 ≈ 43 Hz narrowband).
+            type: number
+            exclusiveMinimum: 0
+          time_step:
+            type: number
+            exclusiveMinimum: 0
+          frequency_step:
+            type: number
+            exclusiveMinimum: 0
+          max_frequency:
+            type: number
+            exclusiveMinimum: 0
+
+      ltas:
+        description: Parameters of Praat's `To Ltas`.
+        type: object
+        additionalProperties: false
+        required: [bandwidth_hz]
+        properties:
+          bandwidth_hz:
+            type: number
+            exclusiveMinimum: 0
+
+      spectrum:
+        description: >-
+          The NumPy/SciPy reference for the window-coefficient and per-bin
+          magnitude rows of the tolerance table. Every field here is one of the
+          documented silent-mismatch traps: periodic vs symmetric windows, FFT
+          normalisation, the dBFS reference, int16 scaling and accumulation width.
+          Pinning them is what makes a dB difference a finding instead of a fudge
+          factor.
+        type: object
+        additionalProperties: false
+        required:
+          - window
+          - window_length_samples
+          - fftbins
+          - fft_size
+          - normalization
+          - scaling
+          - dbfs_reference
+          - int16_scale
+          - dtype
+        properties:
+          window:
+            description: >-
+              Window name as passed to `scipy.signal.get_window`. Must be one the
+              watch also has (esp-dsp `dsps_wind_*`); Blackman-Harris coefficient
+              sets differ between sources, so the SciPy set is the reference.
+            type: string
+            minLength: 1
+          window_length_samples:
+            type: integer
+            minimum: 2
+          fftbins:
+            description: >-
+              `True` = periodic (`get_window(..., fftbins=True)`), `False` =
+              symmetric (`windows.<name>(N, sym=True)`). The two differ by one
+              sample of phase and by a fraction of a dB per bin, worst at small N.
+              There is no defensible default; state it.
+            type: boolean
+          fft_size:
+            description: FFT length in samples (zero-padded if larger than the window).
+            type: integer
+            minimum: 2
+          normalization:
+            description: >-
+              The scale factor applied to the DFT output before magnitudes are
+              taken. Must match the single convention fixed by ADR 0006 for both
+              halves of the project.
+            type: string
+            enum: ["none", "1/N", "1/sqrt(N)", "coherent_gain", "S1", "S2"]
+          scaling:
+            description: >-
+              What the stored array represents (Heinzel 2002 vocabulary): a power
+              spectrum, a power spectral density, a linear spectrum or a linear
+              spectral density. A sine reads correctly under one and the noise
+              floor under another; both are only right when this is stated.
+            type: string
+            enum: ["power_spectrum", "power_spectral_density", "linear_spectrum", "linear_spectral_density"]
+          dbfs_reference:
+            description: >-
+              `sine` = a full-scale SINE is 0 dBFS (the project's convention);
+              `square` = a full-scale square is 0 dBFS, which puts a full-scale
+              sine at -3.01 dBFS. The classic constant 3 dB offset lives here.
+            type: string
+            enum: ["sine", "square"]
+          int16_scale:
+            description: >-
+              Divisor used to convert int16 PCM to float. 32768 is the project's
+              convention (and Praat's); 32767 differs by 0.00026 dB, invisible
+              until a clipping test at exactly full scale disagrees on the flag.
+            type: integer
+            enum: [32768, 32767]
+          dtype:
+            description: >-
+              Accumulation width used to compute the reference. The host is
+              float64 and the watch is float32; that asymmetry is deliberate and
+              is what the tolerance table exists to bound.
+            type: string
+            enum: ["float32", "float64"]
+
+  outputs:
+    description: >-
+      Every array the generator wrote, identified by sha256. `units` and `columns`
+      are required because an array of numbers with no unit is the single most
+      common way a golden file lies (Hz vs cents, dB vs linear).
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [path, sha256, analysis, input, dtype, shape, units, columns]
+      properties:
+        path:
+          description: Repository-relative path of the written array (e.g. `host/golden/outputs/tier0-synthetic/pitch_sine_440.npy`).
+          type: string
+          minLength: 1
+        sha256:
+          $ref: "#/$defs/sha256"
+        analysis:
+          description: Which `analyses` block produced this array.
+          type: string
+          enum: ["pitch", "formant", "spectrogram", "ltas", "spectrum"]
+        input:
+          description: The `inputs[].path` this array was computed from.
+          type: string
+          minLength: 1
+        dtype:
+          description: NumPy dtype of the stored array.
+          type: string
+          enum: ["float32", "float64", "int16", "int32"]
+        shape:
+          description: Shape of the stored array, most significant axis first.
+          type: array
+          minItems: 1
+          items:
+            type: integer
+            minimum: 0
+        units:
+          description: >-
+            Physical unit per column, in order, as a single human-readable string
+            (e.g. `s, Hz` or `Hz, dB re full-scale sine`).
+          type: string
+          minLength: 1
+        columns:
+          description: Name of each column, in order (e.g. `[time, f0]`).
+          type: array
+          minItems: 1
+          items:
+            type: string
+            minLength: 1
+        unvoiced_sentinel:
+          description: >-
+            Value used to mark an unvoiced frame in a pitch track (Praat/parselmouth
+            write 0). Required in practice for `analysis: pitch`; omitted elsewhere.
+            Never inferred — a 0 that is silently treated as a frequency destroys
+            a cents comparison.
+          type: number
+
+  tolerances:
+    description: >-
+      A POINTER to the acceptance limits, never the limits themselves. The
+      tolerance table is Apache-licensed, lives on the validation side and is the
+      only place a limit is defined (ADR 0009 §Decision item 2).
+    type: object
+    additionalProperties: false
+    required: [source, revision]
+    properties:
+      source:
+        description: Repository-relative path of the tolerance table.
+        type: string
+        const: "docs/validation/golden-files.md"
+      revision:
+        description: >-
+          The commit sha of the tolerance table this vector set was accepted
+          against. Recorded so that a widened tolerance and a regenerated vector
+          set can never be confused with each other in review.
+        $ref: "#/$defs/git_sha"
+
+  regeneration:
+    description: >-
+      Regeneration is a deliberate, reviewed act with a recorded reason — never a
+      silent refresh. This block is written on EVERY generation, including the
+      first (`reason: initial generation`, previous fields `null`).
+    type: object
+    additionalProperties: false
+    required: [date, reason, approved_by, previous_manifest_sha256, previous_set]
+    properties:
+      date:
+        $ref: "#/$defs/date"
+      reason:
+        description: >-
+          Why the vectors were regenerated, in prose a reviewer can disagree with.
+          "Tests were failing" is not a reason; "parselmouth 0.x.y bundles Praat
+          a.b.c, whose filtered-autocorrelation default changes the f0 track" is.
+        type: string
+        minLength: 1
+      approved_by:
+        description: The human who reviewed the manifest diff and accepted the new set.
+        type: string
+        minLength: 1
+      previous_manifest_sha256:
+        description: sha256 of the manifest this set replaces; `null` for the first generation.
+        oneOf:
+          - $ref: "#/$defs/sha256"
+          - type: "null"
+      previous_set:
+        description: >-
+          Name of the set this one supersedes; `null` for the first generation.
+          A pin change makes a NEW set — the old one stays on disk until its last
+          consumer is retired, so a regression can be bisected against it.
+        oneOf:
+          - type: string
+            pattern: "^[a-z0-9][a-z0-9-]*$"
+          - type: "null"
+
+  notes:
+    description: Free-form notes for the reviewer. Never load-bearing.
+    type: string
+
+$defs:
+
+  sha256:
+    description: Lowercase hex sha256 digest, 64 characters.
+    type: string
+    pattern: "^[0-9a-f]{64}$"
+
+  git_sha:
+    description: Full 40-character lowercase hex git object name. Short shas are not accepted.
+    type: string
+    pattern: "^[0-9a-f]{40}$"
+
+  date:
+    description: >-
+      Calendar date, YYYY-MM-DD, UTC, written as a QUOTED string. Unquoted, a
+      YAML loader resolves it to a native date object and the manifest stops
+      being valid JSON — the generator therefore emits `"2026-08-21"`, and
+      verify.py rejects a bare date rather than coercing it.
+    type: string
+    pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+
+  version:
+    description: >-
+      A version string exactly as the tool reports it. Deliberately not
+      regex-constrained: `7.0.01`, `3.12.3` and a git-describe string are all
+      legitimate here, and a pattern that rejected one of them would tempt a
+      generator into rewriting the value it was supposed to record.
+    type: string
+    minLength: 1
+
+# ---------------------------------------------------------------------------
+# WORKED EXAMPLE — a complete, valid `manifest.yaml` for the `tier0-synthetic`
+# set. Angle-bracket placeholders (`<...>`) mark values that are MEASURED at
+# generation time, following the convention of docs/validation/golden-files.md:
+# a real manifest never contains one. The Praat settings shown are the
+# provisional ones from that file; `praat_reference: null` is shown because
+# roadmap threshold T7 (bundled Praat vs praat.org 7.0.01) is still open.
+#
+#   # SPDX-FileCopyrightText: 2026 Alexander Gomez
+#   # SPDX-License-Identifier: GPL-3.0-or-later
+#   schema: 1
+#   set: tier0-synthetic
+#   generated: "2026-08-21"
+#
+#   generator:
+#     script: host/golden/generate.py
+#     sha256: <64 hex of generate.py>
+#     commit: <40 hex repo commit>
+#     python: "3.12.3"
+#     numpy: <numpy.__version__>
+#     scipy: <scipy.__version__>
+#     parselmouth: <parselmouth.__version__>
+#     praat_bundled: <parselmouth.PRAAT_VERSION>
+#     praat_reference: null          # T7 open; no external "vs Praat" claim yet
+#     platform: <uname -srm>
+#     blas: <numpy.show_config() vendor + version>
+#
+#   inputs:
+#     - path: datasets/tier0/sine_440_0dBFS_48k.wav
+#       sha256: <64 hex>
+#       sample_rate: 48000
+#       bit_depth: 16
+#       channels: 1
+#       duration_s: 3.0
+#       source:
+#         kind: tier0-synthetic
+#         name: sine
+#         parameters: {frequency_hz: 440.0, level_dbfs: 0.0, phase_rad: 0.0}
+#
+#   analyses:
+#     pitch:
+#       method: filtered           # Praat's default since 2023; state it, never inherit it
+#       time_step: 0.01            # s
+#       pitch_floor: 65            # Hz (C2)   (prov.)
+#       pitch_ceiling: 1100        # Hz (>C6)  (prov.)
+#       silence_threshold: 0.03
+#       voicing_threshold: 0.45
+#       octave_cost: 0.01
+#       octave_jump_cost: 0.35
+#       voiced_unvoiced_cost: 0.14
+#       max_candidates: 15
+#       very_accurate: false
+#     spectrum:
+#       window: hann
+#       window_length_samples: 4096
+#       fftbins: true              # periodic, per scipy.signal.get_window
+#       fft_size: 4096
+#       normalization: "S1"        # per ADR 0006
+#       scaling: power_spectrum
+#       dbfs_reference: sine       # a full-scale sine is 0 dBFS
+#       int16_scale: 32768
+#       dtype: float64
+#
+#   outputs:
+#     - path: host/golden/outputs/tier0-synthetic/pitch_sine_440.npy
+#       sha256: <64 hex>
+#       analysis: pitch
+#       input: datasets/tier0/sine_440_0dBFS_48k.wav
+#       dtype: float64
+#       shape: [298, 2]
+#       units: "s, Hz"
+#       columns: [time, f0]
+#       unvoiced_sentinel: 0
+#     - path: host/golden/outputs/tier0-synthetic/spectrum_sine_440.npy
+#       sha256: <64 hex>
+#       analysis: spectrum
+#       input: datasets/tier0/sine_440_0dBFS_48k.wav
+#       dtype: float64
+#       shape: [2049, 2]
+#       units: "Hz, dB re full-scale sine"
+#       columns: [frequency, level]
+#
+#   tolerances:
+#     source: docs/validation/golden-files.md
+#     revision: <40 hex commit of the tolerance table>
+#
+#   regeneration:
+#     date: "2026-08-21"
+#     reason: initial generation
+#     approved_by: Alexander Gomez
+#     previous_manifest_sha256: null
+#     previous_set: null
+#
+#   notes: >-
+#     Shapes depend on the Praat frame grid; compare by time, never by index.
+# ---------------------------------------------------------------------------
