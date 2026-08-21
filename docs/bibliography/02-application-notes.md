@@ -145,6 +145,8 @@ Grounds [`hardware/acoustic-port/`](../../hardware/acoustic-port/README.md) (ran
 
 [11](11-esp-idf-platform-and-toolchain.md)'s `A`-numbers were assigned while this file was authored in parallel; this table is their home. When the indexes freeze (roadmap D3) 11's rows are re-addressed to `02 #n`; until then both forms are valid citations.
 
+**Coverage.** The table maps `A1`–`A39`, the rows that have a home here. `A40`–`A45` are native to 11 — the ESP-IDF *Get Started* / `idf_tools.py` / `idf.py` / serial-connection / Dev-Containers / v6.1-migration pages — and are toolchain documentation rather than application notes, so they get no `02 #n` address and are cited as `11 #A40`… (checked 2026-08-21: 11's highest row is A45).
+
 | 11 local | 02 # | 11 local | 02 # | 11 local | 02 # |
 |---|---|---|---|---|---|
 | A1 | #20, #21 | A14 | #10 | A27 | #42 |

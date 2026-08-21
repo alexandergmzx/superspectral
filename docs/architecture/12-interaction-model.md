@@ -88,7 +88,7 @@ Requirements that follow, and their sources:
 
 - **The glance zone never re-flows between presets.** A readout that moves is a readout that must be searched for, and searching is not a glance ([09 R3](../bibliography/09-visual-feedback-for-singing.md)).
 - **Sizing targets arm's length**, i.e. the 5th–95th-percentile wrist-to-mouth reach of a raised arm, taken from an anthropometric distribution ([03 #21](../bibliography/03-standards.md): ISO 7250-1 landmarks, ANSUR II / DINED tables) — not from the 15/30/45 cm placeholders that [proposal §4.4](../proposal/01-super-spectral-proposal.md) itself flags as a known defect.
-- **No state is colour-only**: `REC`, `ARMED` and the clip warning each carry a shape and a word as well as a colour ([03 #23](../bibliography/03-standards.md) / [09 S3](../bibliography/09-visual-feedback-for-singing.md)). The same argument produces the CVD-safe spectrogram map in [ADR 0011](../adr/README.md).
+- **No state is colour-only**: `REC`, `ARMED` and the clip warning each carry a shape and a word as well as a colour ([03 #23](../bibliography/03-standards.md) / [09 S3](../bibliography/09-visual-feedback-for-singing.md)). The same argument produces the CVD-safe spectrogram map in [ADR 0011](../adr/0011-spectrogram-colormap.md).
 - **Touch targets** for the setup screens follow the small-screen minima ([09 R3](../bibliography/09-visual-feedback-for-singing.md), [09 R4](../bibliography/09-visual-feedback-for-singing.md)); they are irrelevant above the line in §3 because nothing is touched there.
 - **Daylight legibility is currently an aspiration, not a requirement with a number.** The panel's luminance has never been measured, and the ≈ 450 cd/m² figure that circulates — in the completeness critique as a small-screen sunlight rule of thumb, in [09 §C](../bibliography/09-visual-feedback-for-singing.md) as this panel's brightness — is **unsourced in both places**. It stays `(prov.)`; the fix is an outdoor illuminance condition in the O3 sessions, which today's factorial does not contain.
 
@@ -133,7 +133,7 @@ A real-time visual voice display **is** assistive technology: the speech-trainin
 | Rule | Consequence in the model | Source |
 |---|---|---|
 | No cue is audio-only | every confirmation is haptic **and** visual; the speaker is not in the interaction path at all | [05 #75](../bibliography/05-papers.md) |
-| No state is colour-only | `REC` / `ARMED` / clip carry a shape and a word; the spectrogram map is CVD-safe ([ADR 0011](../adr/README.md)) | [03 #23](../bibliography/03-standards.md), [03 #24](../bibliography/03-standards.md) |
+| No state is colour-only | `REC` / `ARMED` / clip carry a shape and a word; the spectrogram map is CVD-safe ([ADR 0011](../adr/0011-spectrogram-colormap.md)) | [03 #23](../bibliography/03-standards.md), [03 #24](../bibliography/03-standards.md) |
 | Every hands-free gesture has a touch equivalent | reachable between phrases, so limited shoulder range, a prosthesis or a seated arm position never locks a function away | [03 #22](../bibliography/03-standards.md) |
 | Voice is never the *only* way to start a take | decision D3 may add voice onset; it may not make it mandatory | [05 #75](../bibliography/05-papers.md) |
 

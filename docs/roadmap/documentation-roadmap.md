@@ -12,7 +12,7 @@ The roadmap answers one question for every artefact in this repo: **in what orde
 
 | Step | swarm commit | What happened | What it proves for Super Spectral |
 |---|---|---|---|
-| 0 | `241c090` | `LICENSE` + a two-line README, nothing else | Licence is decided before any content exists (here: Apache-2.0 root, GPL-3.0-or-later `host/` — [ADR 0004](../adr/README.md)) |
+| 0 | `241c090` | `LICENSE` + a two-line README, nothing else | Licence is decided before any content exists (here: Apache-2.0 root, GPL-3.0-or-later `host/` — [ADR 0004](../adr/0004-split-licensing.md)) |
 | 1 | `514846d` | The **whole skeleton in one commit**: `CLAUDE.md` before any code, a README in every directory, `.gitkeep` for planned dirs, proposal filed, CI with markdownlint | "Constitution first" — D0 |
 | 2 | `67fc75b` | `docs/bibliography/` the **same day, before implementation**, framed as "the acquisition list" | The bibliography is a procurement instrument, not a reading list — D1 |
 | 3 | `6a58924` | Index (`bibliography/`) split from library (`docs/{datasheets,…}`), vendor dirs pre-carved, R100 renames | Index mirrors library; `📥 Filed locally` couples them — D3 |
@@ -84,7 +84,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   1. Heinzel, Rüdiger & Schilling 2002 — PS/PSD/NENBW normalization; prevents a silently wrong dBFS axis (grounds [ADR 0006](../adr/README.md)).
   2. Smith, *Spectral Audio Signal Processing* — real-FFT packing, quadratic peak interpolation, COLA (grounds ADR 0006 and the peak-frequency metric).
   3. Harris 1978 (+ Nuttall 1981 coefficients) — the six windows esp-dsp ships, coherent gain, ENBW, scalloping loss.
-  4. Boersma 1993 — the algorithm behind the Praat golden files (grounds [ADR 0009](../adr/README.md)).
+  4. Boersma 1993 — the algorithm behind the Praat golden files (grounds [ADR 0009](../adr/0009-golden-file-strategy.md)).
   5. McLeod & Wyvill 2005 — MPM; the pitch estimator that fits a 20 ms budget.
   6. Omori et al. 1996 — the *peak-to-peak* definition of SPR (grounds [ADR 0008](../adr/README.md)).
   7. Müller et al. 2022 — FHE; the open replacement for per-voice-type fixed bands.
@@ -144,7 +144,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   6. Flash the vendor factory `.bin` once (LilyGoLib `factory.twatchs3.sx1262.*.bin`, a read-only artefact) to prove display/touch/PMU are alive; then restore.
   7. Observe the USB PID before/after the first native-IDF flash (`303a:821b` → `303a:1001`) and confirm the symlink follows.
   8. **Week-1 safety tests**, before any feature code: [experiment 0002](../validation/experiments/0002-rollback-and-boot-guard-race.md) — OTA rollback to `ota_0` without human intervention, and `idf.py flash` winning the boot-guard race 10/10.
-  9. Unblock the paper-first decisions: `VDD_SPI_FORCE` → [ADR 0016](../adr/README.md) (GPIO45 backlight); schematic + S3 datasheet pin table → which rail powers the SPM1423 (GPIO47, VDD_SPI domain on R8V) and the MAX98357A (GPIO48) → [ADR 0003](../adr/README.md) / [ADR 0015](../adr/README.md).
+  9. Unblock the paper-first decisions: `VDD_SPI_FORCE` → [ADR 0016](../adr/0016-backlight-gpio45-vdd-spi-strap.md) (GPIO45 backlight); schematic + S3 datasheet pin table → which rail powers the SPM1423 (GPIO47, VDD_SPI domain on R8V) and the MAX98357A (GPIO48) → [ADR 0003](../adr/0003-microphone-path.md) / [ADR 0015](../adr/0015-anti-brick-policy.md).
   10. Golden recovery image resident in `ota_0` from this point on; all development builds flash to `ota_1` only.
 - **Definition of done**
   - [x] `docs/hw/efuse-baseline.json` and `docs/hw/vendor-partition-table.md` committed; factory backup sha256 recorded (in `docs/hw/README.md` ledger and `vendor-partition-table.md`; `backup-policy.md` points there). *(2026-08-20)*
@@ -181,7 +181,7 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
 
 - **Owner:** Claude (reading, notes); Alexander (decisions).
 - **Inputs:** D3 clones and filed datasheets; E2 eFuse and rail facts.
-- **Outputs:** `_notes.md` per studied project; the first project-ADR ([ADR 0018](../adr/README.md): xiao-edge-audio / LilyGoLib register sequences / SensorLib takeaways); `architecture/06-power-budget.md` rail map filled (DC1 = SoC, ALDO2 = backlight, ALDO3 = display+touch, ALDO4 = LoRa, BLDO2 = haptic, VBACKUP = RTC, **mic and amp rails from the schematic**); `hardware/bom/bill-of-materials.csv` complete; hardware questions closed on paper: R8 vs R8V, mic/amp rails, ST7789 revision, 470 vs 400 mAh, FT6336U vs FT5336, DIO3/TCXO, `ULC0511C`, speaker transducer (request filed with LilyGO).
+- **Outputs:** `_notes.md` per studied project; the first project-ADR ([ADR 0018](../adr/0018-first-reference-project-study.md): xiao-edge-audio / LilyGoLib register sequences / SensorLib takeaways); `architecture/06-power-budget.md` rail map filled (DC1 = SoC, ALDO2 = backlight, ALDO3 = display+touch, ALDO4 = LoRa, BLDO2 = haptic, VBACKUP = RTC, **mic and amp rails from the schematic**); `hardware/bom/bill-of-materials.csv` complete; hardware questions closed on paper: R8 vs R8V, mic/amp rails, ST7789 revision, 470 vs 400 mAh, FT6336U vs FT5336, DIO3/TCXO, `ULC0511C`, speaker transducer (request filed with LilyGO).
 - **Definition of done**
   - [ ] `architecture/06-power-budget.md` rail map has no `TBD` rail for any powered part on the BOM.
   - [ ] BOM complete with min/max cost and a TOTAL row carrying any deviation justification.

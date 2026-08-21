@@ -10,7 +10,7 @@
 
 This is a **thematic list** (see the numbering note in [08](08-voice-metrology-on-the-wrist.md): `05 #n` rows are cross-references to the by-type index and carry no acquisition link here; local `S`/`R`/`P`/`D` rows are new and get their home address when the parallel indexes freeze). Cite as `09 R1`. Every document has exactly one row; where a second section also rests on it, that section says so in prose under its table rather than repeating the row.
 
-**Downstream of this list:** §1 and §5 get rewritten with inline citations; [ADR 0011](../adr/README.md) (colormap/RGB565 LUT), [ADR 0012](../adr/README.md) (hands-free interaction) and the §4 latency rows cite sections B–D; the six presets are compared against the WinSingad/Sing&See display set in the §5 novelty statement.
+**Downstream of this list:** §1 and §5 get rewritten with inline citations; [ADR 0011](../adr/0011-spectrogram-colormap.md) (colormap/RGB565 LUT), [ADR 0012](../adr/0012-hands-free-interaction.md) (hands-free interaction) and the §4 latency rows cite sections B–D; the six presets are compared against the WinSingad/Sing&See display set in the §5 novelty statement.
 
 ## Priority key (same scale as the rest of the bibliography)
 
@@ -55,7 +55,7 @@ Grounds the §4 rows *acoustic-to-photon ≤ 80 ms mean / ≤ 120 ms p99*, *anal
 
 ## C. Legibility — colormaps, RGB565 and daylight
 
-Grounds [ADR 0011](../adr/README.md) (cividis/batlow-class, pre-quantised 256-entry RGB565 LUT with ordered dithering, or ST7789 18-bit mode at SPI-bandwidth cost) and the `display_backend` component.
+Grounds [ADR 0011](../adr/0011-spectrogram-colormap.md) (cividis/batlow-class, pre-quantised 256-entry RGB565 LUT with ordered dithering, or ST7789 18-bit mode at SPI-bandwidth cost) and the `display_backend` component.
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|
@@ -67,12 +67,12 @@ Grounds [ADR 0011](../adr/README.md) (cividis/batlow-class, pre-quantised 256-en
 | [05 #81](05-papers.md) | **Liu & Heer (2018)** — empirical assessment of quantitative colormaps, CHI 2018 | ★★ | The task-dependent caveat (peak reading vs texture judgement): ADR 0011 must name the task each preset optimises for, and the O3 sessions include a peak-reading task. |
 | [05 #82](05-papers.md) | **Ware (1988)** — color sequences for univariate maps, IEEE CG&A 8(5) | ★ | The founding theory of sequential colour maps — background for ADR 0011's luminance-monotonic requirement. |
 | D1 | **Sitronix ST7789V3 datasheet — `COLMOD (3Ah)` and `RAMCTRL` sections** — home: [01](01-datasheets.md) | ★★★ | 16-bit (RGB565) vs 18-bit (RGB666) pixel formats and the SPI-bandwidth cost of the latter; the vertical-scroll registers (`VSCRDEF`/`VSCSAD`) that ADR 0007 depends on. The datasheet decides whether dithering or 18-bit mode is the cheaper fix. |
-| P2 | **Scientific Colour Maps** tables + matplotlib `cividis` — home: [06](06-reference-projects.md) #37 | ★★ | The source tables the LUT generator (a script under `python-scripts/`) reads — grounds [ADR 0011](../adr/README.md) (the pre-quantised RGB565 LUT is derived from these tables, not hand-tuned) and [ADR 0004](../adr/README.md) (MIT / BSD-style upstream, so the generated LUT compiled into Apache-2.0 firmware is licence-clean; record the upstream version in the LUT header). |
+| P2 | **Scientific Colour Maps** tables + matplotlib `cividis` — home: [06](06-reference-projects.md) #37 | ★★ | The source tables the LUT generator (a script under `python-scripts/`) reads — grounds [ADR 0011](../adr/0011-spectrogram-colormap.md) (the pre-quantised RGB565 LUT is derived from these tables, not hand-tuned) and [ADR 0004](../adr/0004-split-licensing.md) (MIT / BSD-style upstream, so the generated LUT compiled into Apache-2.0 firmware is licence-clean; record the upstream version in the LUT header). |
 | — | **Sunlight legibility at the panel's ≈ 450 cd/m²** — no source yet | ★ | Vendor brightness figures are claims; the O3 sessions should include one outdoor condition. Route to §7. |
 
 ## D. Glanceable, hands-free interaction
 
-Grounds [ADR 0012](../adr/README.md) (wrist-raise arm via BMA423, haptic confirm via DRV2605L, auto-arm on voice onset) and the `ui` component.
+Grounds [ADR 0012](../adr/0012-hands-free-interaction.md) (wrist-raise arm via BMA423, haptic confirm via DRV2605L, auto-arm on voice onset) and the `ui` component.
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|

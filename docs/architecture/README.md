@@ -1,6 +1,6 @@
 # Architecture
 
-Design notes for the Super Spectral companion architecture: one wrist-worn device (LilyGO T-Watch S3, ESP32-S3-R8) that captures, analyzes and displays in real time, and a Linux host that does the offline science on recorded takes. The split is fixed by proposal §3 and will be recorded as [ADR 0002](../adr/README.md); the toolchain and environment by [ADR 0001](../adr/0001-toolchain-esp-idf-v6-pinned-environment.md).
+Design notes for the Super Spectral companion architecture: one wrist-worn device (LilyGO T-Watch S3, ESP32-S3-R8) that captures, analyzes and displays in real time, and a Linux host that does the offline science on recorded takes. The split is fixed by proposal §3 and will be recorded as [ADR 0002](../adr/0002-companion-architecture.md); the toolchain and environment by [ADR 0001](../adr/0001-toolchain-esp-idf-v6-pinned-environment.md).
 
 ```
   acoustic path                              digital-injection path (tests)

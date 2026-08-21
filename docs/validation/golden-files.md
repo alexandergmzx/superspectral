@@ -1,6 +1,6 @@
 # Golden files — Praat/parselmouth reference vectors for the on-device DSP
 
-**Status:** specification, provisional until [ADR 0009](../adr/README.md) is accepted. **Owner:** the generator lives in [`../../host/golden/`](../../host/golden/README.md) (GPL-3.0-or-later side of the licence boundary, because it imports parselmouth); the generated vectors and this manifest are **data**, consumed by the Apache-2.0 host tests in [`../../host-tests/`](../../host-tests/README.md) and by the QEMU/target backend-agreement test. No code crosses the boundary; only files do.
+**Status:** specification, provisional until [ADR 0009](../adr/0009-golden-file-strategy.md) is accepted. **Owner:** the generator lives in [`../../host/golden/`](../../host/golden/README.md) (GPL-3.0-or-later side of the licence boundary, because it imports parselmouth); the generated vectors and this manifest are **data**, consumed by the Apache-2.0 host tests in [`../../host-tests/`](../../host-tests/README.md) and by the QEMU/target backend-agreement test. No code crosses the boundary; only files do.
 
 ## Why a manifest, not a file
 

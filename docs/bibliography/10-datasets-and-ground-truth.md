@@ -10,7 +10,7 @@
 
 This is a **thematic list** and the **home index for datasets**: datasets are numbered `1…n` here (there is no by-type dataset file; the library location is the repo-root [`datasets/`](../../datasets/README.md)). Papers are cross-referenced as `05 #n`; generator tools as `P`, signal standards as `S` (home: [03](03-standards.md)). Cite as `10 #5` or `10 P1`. Entry numbers are append-only.
 
-**Downstream of this list:** §4 of the [proposal](../proposal/01-super-spectral-proposal.md) (corpus manifests, two-path rule, the optional third path), [`golden-files.md`](../validation/golden-files.md) and [ADR 0009](../adr/README.md) (golden-file strategy), [ADR 0005](../adr/README.md) (pathology corpora as acoustic material only), the `mirdata` manifests under [`datasets/`](../../datasets/README.md), and the three-ledger rule of ADR 0004 (corpus licences · software licences · golden-file provenance — never conflated).
+**Downstream of this list:** §4 of the [proposal](../proposal/01-super-spectral-proposal.md) (corpus manifests, two-path rule, the optional third path), [`golden-files.md`](../validation/golden-files.md) and [ADR 0009](../adr/0009-golden-file-strategy.md) (golden-file strategy), [ADR 0005](../adr/0005-no-clinical-claim.md) (pathology corpora as acoustic material only), the `mirdata` manifests under [`datasets/`](../../datasets/README.md), and the three-ledger rule of ADR 0004 (corpus licences · software licences · golden-file provenance — never conflated).
 
 ## Priority key (same scale as the rest of the bibliography)
 

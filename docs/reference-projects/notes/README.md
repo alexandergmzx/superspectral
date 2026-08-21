@@ -1,6 +1,6 @@
 # Reference-project study notes
 
-Durable per-project notes from the D4 study loop ([roadmap](../../roadmap/documentation-roadmap.md) §D4): what each catalogued project ([bibliography 06](../../bibliography/06-reference-projects.md)) does, the exact calls and values it uses, what transfers to a Super Spectral component, and what must not be copied. The shallow clones themselves stay gitignored under [`../clones/`](../README.md); these notes are tracked so the findings survive a refreshed clone. Each note records the commit SHA studied and confirms the licence from the project's own `LICENSE` file; the study conclusions are then lifted into a project-study ADR ([ADR 0018](../../adr/README.md) for the first three).
+Durable per-project notes from the D4 study loop ([roadmap](../../roadmap/documentation-roadmap.md) §D4): what each catalogued project ([bibliography 06](../../bibliography/06-reference-projects.md)) does, the exact calls and values it uses, what transfers to a Super Spectral component, and what must not be copied. The shallow clones themselves stay gitignored under [`../clones/`](../README.md); these notes are tracked so the findings survive a refreshed clone. Each note records the commit SHA studied and confirms the licence from the project's own `LICENSE` file; the study conclusions are then lifted into a project-study ADR ([ADR 0018](../../adr/0018-first-reference-project-study.md) for the first three).
 
 | Note | Project | Licence | Studied commit | Feeds |
 |---|---|---|---|---|
