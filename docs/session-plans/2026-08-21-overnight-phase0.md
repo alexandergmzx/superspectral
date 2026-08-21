@@ -14,12 +14,23 @@
 | Unit | State | Notes |
 |---|---|---|
 | U0 session setup | **DONE** 02:20 | `06a4f74` — branch + this plan. **Correction:** workflow `w9e08cb66` did not survive the interrupt at 01:41:33 — three of its four study agents died mid-tool-call and the ADR phase never began. It was resumed as `wipguewn1` (the finished study replayed from cache). Absorbed: `22e425a` four D4 study notes (1,180 lines; the AXP2101 register table is the `twatch_bsp` driver specification) and `8015184` seven ADRs. The index now holds 12 records, backlog down to 0006–0012. Corrected one factual error in ADR 0004 while reviewing (it claimed the D3 history rewrite was cheap "because there is no remote yet"). |
-| U3 D5 engineering ADRs (0009, 0010, 0011, 0012) | IN PROGRESS 02:24 | started only after the D4/D5 workflow released `docs/adr/README.md`; 0011 and 0012 are drafted **proposed** because they are judgement calls |
+| U3 D5 engineering ADRs (0009, 0010, 0011, 0012) | **DONE** 02:47 | `163592a`, `+1` — schema negative-tested (6/6 invalid presets rejected), every preset's ENBW/coherent gain recomputed from its own coefficients to 6e-8, colormap self-test runs. 0011/0012 **proposed**. |
 | U4 D6 validation freeze (paper side) | **DONE** 01:58 | `d5f15e0` — GUM uncertainty budget (3 models; the sample-rate term is row 1 and the reference-mic term is what blocks an accuracy claim) + `datasets/corpora/manifest.yaml` pre-registering 6 corpora with quarantine consequences. Experiment 0001 was already at full recipe quality, so it needed no work. |
 | U5 D3 acquisition follow-ups | **DONE** 02:05 | `fc41e7d` — both quarantines resolved (mir_eval was the wrong paper, now correct and committed; XL2 re-fetched whole). YIN + Sundberg 1994: 5xx twice each, paths closed. Added `python-scripts/check_links.py` as the commit gate. |
 | U6 bibliography live-verification | **DONE** 02:21 | `3677960` — 430 URLs, 24 min of the 90-min box. 16 dead links replaced; **one cited DOI does not exist** (05 #23) and one author list is wrong (05 #44), both flagged without touching the numbers. Knowles and Bosch have delisted parts we depend on. |
 | U7 D2 proposal prose (DRAFT) | **DONE** 02:21 | `44cb4e8` — §1–§7 filled, 199→370 lines, 12 synthesis claims corrected against measured facts, 150 citations verified, RQ byte-identical in all three places (independently checked). Also fixed `architecture/README.md`, which said FFT scratch goes to PSRAM. |
 | U8 handback | pending | mandatory, starts 07:00 at the latest |
+
+**Queue extended 02:50.** All eight approved units closed four hours inside the
+budget, so the following stretch units were added under the same rules. They are
+additions, not substitutions: nothing in the approved queue was skipped to reach
+them, and each is documentation of a decision already taken or a verification of
+work already committed — no new science, no new scope.
+
+| Unit | State | Notes |
+|---|---|---|
+| U9 architecture documents (01 overview, 02 audio capture, 03 DSP pipeline, 06 power budget) | pending | the planned-documents list in `architecture/README.md`; pure synthesis of accepted ADRs and measured facts |
+| U10 self-review sweep | pending | re-read every file committed tonight against its sources; report defects rather than trusting the writers |
 
 **Out of scope by the operator's decision (01:55):** U1 (promote the gate's bring-up
 into `twatch_bsp`) and U2 (`spectral_core` v0 + host golden tests). No firmware
