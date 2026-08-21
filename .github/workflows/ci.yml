@@ -100,6 +100,15 @@ jobs:
           python -m pip install --quiet "pytest>=8"
           cd python-scripts/doc_ocr
           python -m pytest -q
+      # The presets are a protocol, not configuration: the watch rejects a file
+      # that fails any rule in protocols/specs/preset-schema.md section 6, so a
+      # rule that quietly stops being true here would ship a preset the device
+      # refuses to load. Runs the schema (draft 2020-12) and rules V0-V10 over
+      # every shipped preset, plus a negative-case suite that must be rejected.
+      - name: preset schema + loader rules V0-V10
+        run: |
+          python -m pip install --quiet "jsonschema>=4.10"
+          python python-scripts/check_presets.py --verbose
 
   firmware:
     name: firmware build (${{ matrix.config }})

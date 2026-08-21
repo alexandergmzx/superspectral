@@ -166,7 +166,20 @@ repos:
           print(*msgs,sep=chr(10)); sys.exit(bool(msgs))"
         files: '^firmware/twatch-s3/partitions\.csv$'
 
-      # 5. Needs an activated ESP-IDF shell: the lock must match the manifest.
+      # 5. The shipped presets are a protocol: the watch validates and rejects, it
+      #    never coerces. This runs the schema plus loader rules V0-V10 (canonical
+      #    form, id/filename, watch limits, window-coefficient and resolution
+      #    recomputation to 1e-6, provisional pointers) over every preset, and a
+      #    negative-case suite that must stay rejected. jsonschema is optional --
+      #    without it the rules still run and the schema pass is skipped loudly.
+      - id: presets-rules
+        name: presets satisfy the schema and loader rules V0-V10
+        language: system
+        entry: python3 python-scripts/check_presets.py
+        files: '^(protocols/presets/.*\.json|protocols/specs/presets\.schema\.json|python-scripts/check_presets\.py)$'
+        pass_filenames: false
+
+      # 6. Needs an activated ESP-IDF shell: the lock must match the manifest.
       - id: lockfile-matches-manifest
         name: dependencies.lock is up to date (manual stage; needs idf.py)
         language: system
@@ -176,7 +189,7 @@ repos:
         pass_filenames: false
         stages: [manual]
 
-      # 6. Needs an activated ESP-IDF shell: the authoritative partition-table check.
+      # 7. Needs an activated ESP-IDF shell: the authoritative partition-table check.
       - id: gen-esp32part
         name: gen_esp32part.py accepts partitions.csv for a 16MB flash (manual stage)
         language: system
