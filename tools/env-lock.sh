@@ -32,6 +32,7 @@ USAGE
 }
 
 # Rows compared by --check (regex over the rendered table's first column).
+# shellcheck disable=SC2016  # single quotes are deliberate: this is an ERE, not a template.
 INVARIANT_ROWS='^\| (ESP-IDF tag|ESP-IDF commit SHA|ESP-IDF submodules out of sync|esptool|esp-coredump|idf-component-manager|esp-idf-kconfig|esp-idf-size|CI container \(digest-pinned\)|`dependencies\.lock` sha256) \|'
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -50,11 +51,20 @@ done
 BEGIN='<!-- env-lock:begin -->'
 END='<!-- env-lock:end -->'
 [ -f "$OUT" ] || { echo "error: $OUT does not exist" >&2; exit 2; }
+# shellcheck disable=SC2015  # A && B || C is intended here and is correct: C runs iff either
+# grep fails, which is exactly the condition. There is no "A true, B false" case to mishandle.
 grep -qF "$BEGIN" "$OUT" && grep -qF "$END" "$OUT" || {
   echo "error: $OUT lacks the $BEGIN / $END markers" >&2; exit 2; }
 
 # --- helpers -----------------------------------------------------------------
 have() { command -v "$1" >/dev/null 2>&1; }
+dirnames() { # dirnames <glob...> -> space-separated basenames, or empty if the glob did not match.
+  # A glob loop rather than `ls | xargs basename`: ls output is not safely parseable for names
+  # with spaces or newlines (SC2011), and an unmatched glob must yield nothing, not itself.
+  local out="" d
+  for d in "$@"; do [ -d "$d" ] || continue; out="$out$(basename "$d") "; done
+  printf '%s' "$out"
+}
 ver() { # ver <cmd> <args...> -> first line of output or "not found"
   local c="$1"; shift
   # (awk, not head: head closes the pipe early and SIGPIPEs the producer under pipefail)
@@ -98,7 +108,7 @@ GIT="$(ver git --version)"
 DIRENV="$(ver direnv version)"
 OPENOCD="$(ver openocd --version)"
 XTENSA_GCC="$(ver xtensa-esp32s3-elf-gcc --version)"
-CLANGD="$(ls -d "$IDF_TOOLS_PATH"/tools/esp-clang/*/ 2>/dev/null | xargs -n1 basename 2>/dev/null | tr '\n' ' ' || true)"
+CLANGD="$(dirnames "$IDF_TOOLS_PATH"/tools/esp-clang/*/)"
 ESPTOOL="$(pyver esptool)"
 ESPCOREDUMP="$(pyver esp-coredump)"
 CM="$(pyver idf-component-manager)"
@@ -107,7 +117,7 @@ IDFSIZE="$(pyver esp-idf-size)"
 PYTEST_EMBEDDED="$(pyver pytest-embedded)"
 IDF_BUILD_APPS="$(pyver idf-build-apps)"
 SBOM="$(pyver esp-idf-sbom)"
-QEMU_INSTALLED="$(ls -d "$IDF_TOOLS_PATH"/tools/qemu-xtensa/*/ 2>/dev/null | xargs -n1 basename 2>/dev/null | tr '\n' ' ' || true)"
+QEMU_INSTALLED="$(dirnames "$IDF_TOOLS_PATH"/tools/qemu-xtensa/*/)"
 CONTAINER="$(grep -rhoE 'espressif/idf:v[0-9.]+@sha256:[0-9a-f]{64}' "$REPO_ROOT/.github/workflows" 2>/dev/null | sort -u | awk 'NR==1' || true)"
 LOCK="$REPO_ROOT/firmware/twatch-s3/dependencies.lock"
 LOCK_SHA="$( [ -f "$LOCK" ] && sha256sum "$LOCK" | cut -c1-64 || echo 'dependencies.lock not yet generated (phase E1)')"

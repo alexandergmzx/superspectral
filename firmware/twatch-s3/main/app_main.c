@@ -11,8 +11,8 @@
 #include "sdkconfig.h"
 
 #include "esp_log.h"
-#include "esp_system.h"
 #include "esp_ota_ops.h"
+#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -43,7 +43,9 @@ void app_main(void)
     const esp_partition_t *running = esp_ota_get_running_partition();
     esp_ota_img_states_t ota_state = ESP_OTA_IMG_UNDEFINED;
     (void) esp_ota_get_state_partition(running, &ota_state);
-    ESP_LOGI(TAG, "running from %s @0x%lx, ota state %d (0 NEW, 1 PENDING_VERIFY, 2 VALID, 3 INVALID, 4 ABORTED)",
+    ESP_LOGI(TAG,
+             "running from %s @0x%lx, ota state %d (0 NEW, 1 PENDING_VERIFY, 2 VALID, 3 INVALID, 4 "
+             "ABORTED)",
              running->label, (unsigned long) running->address, (int) ota_state);
 
 #if CONFIG_SPECTRAL_TEST_CRASH_AFTER_GUARD

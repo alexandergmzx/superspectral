@@ -58,7 +58,7 @@ repos:
       - id: check-deprecated-kconfig-options
 
   - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.11.0                          # VERIFY before first use
+    rev: v0.11.0                          # verified 2026-08-21: first `pre-commit run -a`, 5 findings, all addressed
     hooks:
       - id: shellcheck
         args: ["-x", "-e", "SC1091"]
@@ -68,7 +68,7 @@ repos:
   # SPDX / REUSE compliance. Runs at the manual stage until a REUSE.toml exists that
   # covers the Markdown library (reuse lint otherwise fails on every un-annotated .md).
   - repo: https://github.com/fsfe/reuse-tool
-    rev: v5.0.2                           # VERIFY before first use
+    rev: v5.0.2                           # verified 2026-08-21: runs; still manual-stage until a REUSE.toml covers the .md library
     hooks:
       - id: reuse
         stages: [manual]
