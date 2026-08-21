@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+# Reference-library extractor (docs/ PDF -> markdown sidecars). Lives under
+# python-scripts/ per repo rule.
+#
+# NOTE: there are no Python runtime dependencies on purpose. The tool shells out
+# to system binaries that are already installed:
+#
+#   poppler-utils  (pdftotext, pdfinfo)   -- text extraction, page counts
+#   mupdf-tools    (mutool)               -- bookmark outlines
+#   ocrmypdf + tesseract                  -- fallback for scanned PDFs only
+#
+# So `python3 -m doc_ocr` runs from python-scripts/ with no install step, and CI's
+# `python -m compileall python-scripts` keeps passing. Install is only needed for
+# the test extra:  pip install -e '.[test]'
+
+[project]
+name = "doc-ocr"
+version = "0.1.0"
+description = "Generate reviewable markdown sidecars for the docs/ reference library"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["doc_ocr"]
