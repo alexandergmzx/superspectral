@@ -77,7 +77,11 @@ typedef enum {
  * sqrt(ENBW)). Mixing them is the classic "my floor is 2 dB off" bug.
  *
  * dB reference: 0 dBFS = a full-scale SINE (amplitude 1.0 -> RMS^2 = 0.5),
- * i.e. dBFS = 10*log10(PS / 0.5). A full-scale square reads +3.01 dBFS.
+ * i.e. dBFS = 10*log10(PS / 0.5). Mind the square: PS is PER BIN, so a
+ * full-scale square's FUNDAMENTAL bin reads +2.10 dBFS (20*log10(4/pi));
+ * +3.01 dBFS is its TOTAL power over all harmonics. Both are asserted in
+ * host-tests -- a test written from the broadband figure against a per-bin
+ * PS fails by 0.92 dB (ADR 0006 D3).
  * The PDM path delivers int16; the backend scales by 1/32768 before the
  * window so "FS" is the 16-bit code range, not the mic's acoustic overload.
  * Absolute dB SPL is a separate, optional calibration offset (validation
