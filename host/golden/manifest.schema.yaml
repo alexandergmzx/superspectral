@@ -148,7 +148,7 @@ properties:
       praat_reference:
         description: >-
           The praat.org Praat release the side-by-side comparison of roadmap
-          threshold T7 was run against (praat.org is at 7.0.01 as of 2026-08).
+          threshold T7 was run against (praat.org is at 7.0.01, read 2026-08-21).
           May be `null` ONLY while T7 is open; a set carrying `null` here may not
           back a "vs Praat" claim outside the project.
         type:
@@ -287,8 +287,21 @@ properties:
             description: >-
               `raw` = `To Pitch (raw ac)` (the classic autocorrelation of
               Boersma 1993); `filtered` = `To Pitch (filtered ac)` (Praat's
-              default since 2023); `cc` = cross-correlation, only where a set
-              explicitly needs it. There is no default: state it.
+              default since 6.4, 2023-11-15); `cc` = cross-correlation, only
+              where a set explicitly needs it. There is no default: state it.
+
+              `filtered` is admitted by this enum but is NOT REACHABLE from any
+              released praat-parselmouth: 0.4.0 through 0.4.7 all bundle Praat
+              6.1.38 (2021-01-02), which raises `PraatError: Command "To Pitch
+              (filtered autocorrelation)" not available for given objects.`
+              (measured 2026-08-21). `verify.py` invariant 6 therefore rejects
+              `filtered` unless `generator.praat_bundled >= 6.4.0`. Two further
+              things a `filtered` set will need, so they are written down now:
+              the filtered method takes a pitch TOP plus an `attenuation at top`
+              rather than the `pitch_ceiling` below, so admitting it is a schema
+              MINOR BUMP, not just an enum value; and its defaults differ in
+              every threshold (silence 0.09, voicing 0.50, octave cost 0.055,
+              floor 50 / top 800).
             type: string
             enum: ["raw", "filtered", "cc"]
           time_step:
@@ -682,15 +695,18 @@ $defs:
 #       #  very accurate off, time step 0.0 = auto)
 #       #   https://www.fon.hum.uva.nl/praat/manual/pitch_analysis_by_filtered_autocorrelation.html
 #       #   https://www.fon.hum.uva.nl/praat/manual/pitch_analysis_by_raw_autocorrelation.html
-#       # Below: the filtered method with its own thresholds, and only the two
-#       # fields we deliberately widen for singing marked (prov.).
-#       method: filtered           # Praat's default method since 2023; state it, never inherit it
+#       # Below: `raw`, because that is the only method the pinned generator can
+#       # run -- praat-parselmouth 0.4.7 bundles Praat 6.1.38, which predates the
+#       # filtered method by two years (measured 2026-08-21; see the `method`
+#       # description above and ADR 0009's amendment). Only the two fields we
+#       # deliberately widen for singing are marked (prov.).
+#       method: raw                # the only method Praat 6.1.38 registers; state it, never inherit it
 #       time_step: 0.01            # s -- pinned, not Praat's auto 0.0
-#       pitch_floor: 65            # Hz (C2); filtered default is 50   (prov.)
-#       pitch_ceiling: 1100        # Hz (>C6); filtered default top is 800   (prov.)
-#       silence_threshold: 0.09    # filtered default
-#       voicing_threshold: 0.50    # filtered default
-#       octave_cost: 0.055         # filtered default (per octave)
+#       pitch_floor: 65            # Hz (C2); raw default is 75    (prov.)
+#       pitch_ceiling: 1100        # Hz (>C6); raw default is 600   (prov.)
+#       silence_threshold: 0.03    # raw default
+#       voicing_threshold: 0.45    # raw default
+#       octave_cost: 0.01          # raw default (per octave)
 #       octave_jump_cost: 0.35
 #       voiced_unvoiced_cost: 0.14
 #       max_candidates: 15

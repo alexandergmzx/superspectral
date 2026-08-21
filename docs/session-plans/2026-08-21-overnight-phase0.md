@@ -177,12 +177,16 @@ headers and one `sdkconfig` comment, and all three builds were run to prove it.
 
 Three things could not be done here and are yours:
 
-1. **parselmouth is not installed** (it is GPL and lives in `host/`'s own
-   environment), so the Praat pitch defaults now recorded in ADR 0009 come from
-   the Praat manual, not from `parselmouth.PRAAT_VERSION`. That is roadmap
-   threshold **T7**.
-2. **`pre-commit` is not installed** on this machine. The hooks were run by
-   hand; two of them had never been run at all, and both failed (see below).
+1. ~~**parselmouth is not installed**~~ — **closed 2026-08-21, and it should not have
+   been listed here.** `uv` and `pipx` were already on the machine; installing into
+   `host/.venv` was one command inside the licence boundary. Doing it showed the
+   handback's own premise was wrong: parselmouth 0.4.7 bundles **Praat 6.1.38**, which
+   has no filtered autocorrelation at all, so U10's "correction" of the golden example
+   to `method: filtered` (commit `e31df9a`) moved it *away* from what any generator can
+   produce. Reversed; ADR 0009 amended; T7 split into T7a (closed) and T7b (open, needs
+   an out-of-process praat.org binary).
+2. ~~**`pre-commit` is not installed**~~ — **closed 2026-08-21** (`pipx install pre-commit`,
+   4.6.2). `pre-commit install`, which writes `.git/hooks`, is still the operator's call.
 3. **The watch was not touched**, per the unattended rule. It is still running
    the E1 gate firmware in `ota_0`.
 
