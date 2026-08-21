@@ -20,7 +20,8 @@ dependencies:
   # the planned hop after v6.1.1/v6.1.2 via docs/devenv/upgrade-procedure.md).
   idf: ">=6.0,<6.2"
 
-  # DSP kernels: radix-2/4 complex FFT, fft4real, six windows (Hann, Blackman,
+  # DSP kernels: radix-2/4 complex FFT (no real-FFT entry point -- the real path
+  # is composed by hand), six symmetric windows (Hann, Blackman,
   # Blackman-Harris, Blackman-Nuttall, Nuttall, flat-top), FIR/IIR, dot
   # products - Xtensa LX7 + S3 PIE paths. Apache-2.0. 1.8.2 = 2026-05-11.
   # Consumed ONLY by components/spectral_fft_backend (ADR 0006 keeps

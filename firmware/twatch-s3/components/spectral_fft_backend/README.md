@@ -1,6 +1,6 @@
 # spectral_fft_backend — esp-dsp binding
 
-**Decision.** `spectral_core` never sees esp-dsp; this component implements the `spectral_rfft_fn` contract from [`spectral_core/spectral.h`](../spectral_core/include/spectral_core/spectral.h) on top of `espressif/esp-dsp ~1.8.2` (`dsps_fft2r_fc32` / `dsps_fft4r_fc32` and the `fft4real` path). **Trade-off:** a second FFT implementation to keep in agreement (`fft_ref.c` on the host), but that agreement *is* the test that catches esp-dsp misuse — wrong `dsps_fft2r_init_fc32` table size, a forgotten bit-reverse, a missing `/N` — and it is the only place the S3 SIMD (`_aes3`) path gets numeric coverage (QEMU, ADR 0009).
+**Decision.** `spectral_core` never sees esp-dsp; this component implements the `spectral_rfft_fn` contract from [`spectral_core/spectral.h`](../spectral_core/include/spectral_core/spectral.h) on top of `espressif/esp-dsp ~1.8.2` (`dsps_fft2r_fc32` / `dsps_fft4r_fc32`, hand-composed with `dsps_bit_rev*` and `dsps_cplx2real_fc32` — **there is no `fft4real` API**, `examples/fft4real/` is a directory, and `dsps_cplx2real_fc32` needs `dsps_fft4r_init_fc32` even on the radix-2 path ([esp-dsp notes §2.1](../../../../docs/reference-projects/notes/esp-dsp_notes.md))). **Trade-off:** a second FFT implementation to keep in agreement (`fft_ref.c` on the host), but that agreement *is* the test that catches esp-dsp misuse — wrong `dsps_fft2r_init_fc32` table size, a forgotten bit-reverse, a missing `/N` — and it is the only place the S3 SIMD (`_aes3`) path gets numeric coverage (QEMU, ADR 0009).
 
 ## Contract
 

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
 ## E1 gate — exact versions from ADR 0001 (no tilde: the gate tests THESE bytes)
 dependencies:
   idf: ">=6.0.0,<6.1.0"

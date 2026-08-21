@@ -95,7 +95,10 @@ repos:
       # 2. GPIO19/GPIO20 are the USB-Serial-JTAG D-/D+ pins — the ONLY recovery path on a
       #    sealed board with zero exposed GPIO. A literal 19/20 near any GPIO API or pin
       #    macro is a commit failure. Comment lines (`/*`, ` *`, `//`) are skipped so the
-      #    rule may be *explained* in code; twatch_pins.h is excluded because it is the file
+      #    rule may be *explained* in code. String literals are blanked before matching for
+      #    the same reason: `_Static_assert(PIN_LCD_BL != 20, "GPIO19/20 are USB-Serial-JTAG")`
+      #    is the rule being ENFORCED, and the hook must read code, not message text.
+      #    twatch_pins.h is excluded because it is the file
       #    that IMPLEMENTS the rule (TWATCH_ASSERT_NOT_USJ + the two reserved USB defines)
       #    and is policed by hook 2b instead. Complements the _Static_asserts (ADR 0015).
       - id: no-usb-pins
@@ -103,7 +106,8 @@ repos:
         language: system
         entry: >-
           bash -c 'rc=0; for f in "$@"; do
-          hits=$(grep -nE "GPIO_NUM_(19|20)\b|\bGPIO(19|20)\b|\b(gpio_config|gpio_reset_pin|gpio_set_direction|gpio_set_level|gpio_set_pull_mode|gpio_iomux_out|gpio_iomux_in|esp_rom_gpio_pad_select_gpio)\b[^;]*[^0-9.x](19|20)\b|^\s*#\s*define\s+\w*(PIN|GPIO|IO)\w*\s+\(?(19|20)\b" "$f"
+          hits=$(sed "s/\"[^\"]*\"/\"\"/g" "$f"
+          | grep -nE "GPIO_NUM_(19|20)\b|\bGPIO(19|20)\b|\b(gpio_config|gpio_reset_pin|gpio_set_direction|gpio_set_level|gpio_set_pull_mode|gpio_iomux_out|gpio_iomux_in|esp_rom_gpio_pad_select_gpio)\b[^;]*[^0-9.x](19|20)\b|^\s*#\s*define\s+\w*(PIN|GPIO|IO)\w*\s+\(?(19|20)\b" -
           | grep -vE "^[0-9]+:\s*(/\*|\*|//)");
           if [ -n "$hits" ]; then printf "%s\n" "$hits" | sed "s|^|$f:|"; rc=1; fi; done;
           [ $rc -eq 0 ] || echo "GPIO19/20 (USB-Serial-JTAG) referenced above — forbidden (ADR 0015)"; exit $rc' --

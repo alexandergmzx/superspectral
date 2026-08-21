@@ -96,7 +96,8 @@ typedef enum {
  *             (no 1/N, no 1/sqrt(N)); spectral_core applies S1/S2 scaling.
  *   n       : power of two, 256 <= n <= 8192
  * Returns 0 on success. Implementations: fft_ref.c (host, radix-2, float),
- * spectral_fft_backend (esp-dsp dsps_fft2r_fc32 / fft4real). The two must
+ * spectral_fft_backend (esp-dsp dsps_fft2r_fc32 + bit_rev + cplx2real; there
+ * is no fft4real API -- see the backend README). The two must
  * agree to the tolerance in docs/validation/golden-files.md, compared in dB. */
 typedef int (*spectral_rfft_fn)(void *user, const float *in, float *out, size_t n);
 
