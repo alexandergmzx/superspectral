@@ -55,13 +55,70 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
   ledger.
 - Hardware BOM with bench instruments and tolerances; acoustic-port notes.
 
+*Session of 2026-08-21 (branch `overnight-2026-08-21`, plan in
+[`docs/session-plans/2026-08-21-overnight-phase0.md`](docs/session-plans/2026-08-21-overnight-phase0.md)):*
+
+- **ADRs 0002, 0003, 0004, 0005, 0009, 0010, 0013, 0018, 0019 accepted**, and
+  0011 (spectrogram colormap) and 0012 (hands-free interaction) written as
+  `proposed` — both are perception/UX judgements and are the author's to take.
+  The backlog is now 0006, 0007, 0008 only.
+- **Preset protocol** (ADR 0010): `protocols/specs/preset-schema.md`,
+  `protocols/specs/presets.schema.json` (draft 2020-12) and the six shipped
+  presets under `protocols/presets/`, each carrying its window coefficients and
+  the ENBW derived from them.
+- **Golden-file contract** (ADR 0009): `host/golden/manifest.schema.yaml` —
+  every version, setting and hash that a Praat reference output depends on.
+- **Reference-project study** (ADR 0018): `docs/reference-projects/notes/` for
+  xiao-edge-audio, LilyGoLib/XPowersLib, esp-dsp and SensorLib, read at pinned
+  revisions, each with a corrections table against what the project believed.
+- **Architecture documents** 01 overview, 02 audio-capture path, 03 DSP
+  pipeline, 06 power budget, 12 interaction model.
+- **Validation, paper side**: `docs/validation/uncertainty-budget.md` (JCGM 100
+  shape, three models) and `datasets/corpora/manifest.yaml` pre-registering
+  seven corpora with licences, intended validation rows and quarantine
+  consequences.
+- **Tooling**: `python-scripts/check_links.py` (relative links and `#anchors`,
+  reported as `path:line`), `python-scripts/check_presets.py` (schema + loader
+  rules V0–V10 + a 41-case negative suite) and
+  `python-scripts/gen_colormap_lut.py`.
+- Pre-commit hook `presets-rules`; a CI step running the preset checker.
+
 ### Changed
 
-- Nothing yet.
+- ADR 0004's `host/` boundary is now literally one `grep`: every file under
+  `host/` except `LICENSE` carries the GPL-3.0-or-later header, and no file
+  outside it does.
+- `check_links.py` reports `path:line`, validates `#anchors` against heading
+  slugs, and scans `.yaml`/`.yml`/`.json` as well as `.md`.
+- The `no-usb-pins` pre-commit hook blanks string literals before matching, so
+  the `_Static_assert` that enforces the rule no longer trips it.
 
 ### Deprecated / Removed / Fixed / Security
 
-- Nothing yet.
+- **The 1.8 V flash claim is retired.** The schematic names a W25Q128JW; the
+  shipped die on this unit reads JEDEC `ef 4018`, a 3.3 V JV-class part, and
+  `VDD_SPI_FORCE = 1`. GPIO45 is free for backlight PWM (ADR 0016). Corrected
+  in fourteen places, including `twatch_pins.h`, the BOM and the hardware
+  README.
+- **FFT memory figures corrected.** Real-8192 costs ≈ 104 KB of internal SRAM
+  with our own `cplx2real` and ≈ 160 KB on esp-dsp's tables — not the 112 KB
+  that was in circulation, because `dsps_cplx2real_fc32` pulls in
+  `dsps_fft4r_init_fc32`'s `16·N_c` twiddle table even on the radix-2 path.
+- **`fft4real` does not exist** in esp-dsp 1.8.2; it is an example directory.
+  Corrected in the bibliography, the component README, `spectral.h` and
+  `idf_component.yml`.
+- **SensorLib 0.4.1 is not an AXP2101 fallback**: `src/pmic/xpowers/` is on
+  GitHub master and absent from the registry tarball we pin.
+- `sdkconfig.defaults.esp32s3` no longer says FFT scratch goes to PSRAM.
+- The `sc16` rejection had its bit-loss inverted (it is ≈ 60 dB at real-2048
+  and ≈ 72 dB at real-8192) and rested on the microphone's broadband SNR rather
+  than the 90–100 dB per-bin range the presets ask for.
+- The golden-file worked example pinned raw-autocorrelation thresholds under
+  `method: filtered`; both Praat default sets are now recorded with their
+  source URLs and read date.
+- `live_singing`'s `enbw_hz` was truncated rather than rounded.
+- SPDX headers added to `firmware/idf-gate/{CMakeLists.txt,
+  main/CMakeLists.txt, main/idf_component.yml}`.
 
-<!-- Link targets are filled in at the first tagged release; there is no remote yet. -->
+<!-- Link targets are filled in at the first tagged release. -->
 [Unreleased]: ./
