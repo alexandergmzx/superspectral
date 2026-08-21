@@ -19,7 +19,7 @@ The roadmap answers one question for every artefact in this repo: **in what orde
 | 4 | `d9feec5`… | First ADRs numbered **0008** because 0001–0006 were pre-registered in `docs/adr/README.md` "Backlog" | ADR numbers are allocated when a decision is *identified* — D5, and the routing table below |
 | 5 | `30922df` `89bdf42` `8bd305a` | Proposal → Markdown; inline citations; per-entry **Acquisition links** | Bidirectional traceability: "Why" cell ↔ § / ADR — D2 |
 | 6 | `30bfc59` `3958a07` | **One bulk acquisition pass** (75 PDFs) + `acquisition-status.md` gap ledger + `📥` stamps; ebooks + `reference-projects/` | Acquire in one pass, ledger the gaps — D3 |
-| 7 | ADR 0015 | `docs/OCR/` + `python-scripts/doc_ocr/` once the library passed ~80 PDFs | Extraction layer after the library is large — D3 (tooling already copied in D0) |
+| 7 | **swarm** ADR 0015 (not this repo's 0015, which is the anti-brick policy) | `docs/OCR/` + `python-scripts/doc_ocr/` once the library passed ~80 PDFs | Extraction layer after the library is large — D3 (tooling already copied in D0) |
 | 8 | `docs/validation/README.md`, `docs/architecture/README.md` | Metrics anchored to standards in the bibliography; tenets + planned-docs manifest | "Validation is part of the design" — D6 |
 
 Two things swarm specified and never did are done here deliberately: the **reference-project study loop** (0 project-ADRs, 0 `_notes.md` in swarm → D4 here) and the **per-experiment validation report** beyond a single worked example (→ `validation/experiments/`).

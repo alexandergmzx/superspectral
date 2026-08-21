@@ -8,14 +8,14 @@ Format (per file `NNNN-title.md`):
 # NNNN — <Decision title>
 
 - **Status:** proposed | accepted | superseded by NNNN
-- **Date:** YYYY-MM-DD
+- **Date:** YYYY-MM-DD    <- the date the DECISION was taken, not the date the file was written
 - **Context:** what problem are we solving?
 - **Decision:** what did we choose?
 - **Alternatives:** what else did we consider, and why not?
 - **Consequences:** trade-offs we accept (positive and negative).
 ```
 
-House conventions (carried over from `swarm`): the title is a **claim**, not a topic; consequences are bulleted `(+)` / `(−)` with negatives listed honestly and usually outnumbering positives; each rejected alternative gets an italic name, a verdict, and — where it could be revisited — the trigger that would reopen it; a `Reference basis:` bullet names the bibliography entries (`NN #k`) the decision leans on; a decision that adds a measurable requirement appends a `### <Subsystem> metrics (per ADR NNNN)` block to [`../validation/README.md`](../validation/README.md) and says `Flagged as a validation item.`; amendments are preferred over supersession. Numbers are allocated when a decision is *identified* (the backlog below), not when it is written, so the first ADR written need not be 0001. **Update this index in the same commit as the ADR.**
+House conventions (carried over from `swarm`): **`Date:` is the date the decision was taken.** A record is often written later — 0001 and 0004 were both decided on 2026-08-20 and written on the 21st — and when the two differ, the `Status:` line says so. That is why `Date:` is not a proxy for "when this file appeared": `git log --follow` answers that, and only one of the two facts is worth a reader's attention. The title is a **claim**, not a topic; consequences are bulleted `(+)` / `(−)` with negatives listed honestly and usually outnumbering positives; each rejected alternative gets an italic name, a verdict, and — where it could be revisited — the trigger that would reopen it; a `Reference basis:` bullet names the bibliography entries (`NN #k`) the decision leans on; a decision that adds a measurable requirement appends a `### <Subsystem> metrics (per ADR NNNN)` block to [`../validation/README.md`](../validation/README.md) and says `Flagged as a validation item.`; amendments are preferred over supersession. Numbers are allocated when a decision is *identified* (the backlog below), not when it is written, so the first ADR written need not be 0001. **Update this index in the same commit as the ADR.**
 
 ## Records
 
