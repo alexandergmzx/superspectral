@@ -44,7 +44,8 @@ Priority key: ★★★ must-have/blocking · ★★ strongly recommended · ★
 
 ## Acquisition links
 
-> **📥 Filed locally:** nothing yet (roadmap D3). Only **author- or publisher-sanctioned free copies** may be placed under [`../books/`](../books/README.md): the Arm sample chapter (#4) qualifies; Smith's *SASP* (#1) is free as an HTML site, not a PDF — archive the chapters you cite with their URLs in `_notes.md` rather than scraping the site. Everything else stays physical or behind institutional access and is tracked in this index only. When a free copy lands, add `📥 Filed locally: <relative path>` to its entry and update [`acquisition-status.md`](acquisition-status.md).
+> **📥 Filed locally (D3 pass, 2026-08-20):** #4 Arm Education Media free sample chapter (Ünsalan, Yücel & Gürhan 2018; 42 pp) → [`../books/unsalan2018_dsp-using-arm-cortex-m_sample-chapter.pdf`](../books/unsalan2018_dsp-using-arm-cortex-m_sample-chapter.pdf) — publisher-sanctioned free download, but its redistribution terms are unstated, so it is filed locally (not committed — redistribution unknown; see [OCR manifest](../OCR/manifest.tsv)).
+> Only **author- or publisher-sanctioned free copies** may be placed under [`../books/`](../books/README.md): the Arm sample chapter (#4) qualifies; Smith's *SASP* (#1) is free as an HTML site, not a PDF — archive the chapters you cite with their URLs in `_notes.md` rather than scraping the site. Everything else stays physical or behind institutional access and is tracked in this index only.
 
 | # | Access | Link |
 |---|--------|------|

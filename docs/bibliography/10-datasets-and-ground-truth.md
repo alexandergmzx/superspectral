@@ -152,7 +152,7 @@ When a dataset is downloaded, add `📥 Downloaded: datasets/<name>/ (manifest s
 
 ## Acquisition links
 
-> **📥 Downloaded:** nothing yet (roadmap D3 / validation phase). Paper links are in [05 — Acquisition links](05-papers.md#acquisition-links).
+> **📥 Downloaded:** no corpus yet (validation phase; corpora go to the gitignored `datasets/corpora/` by manifest). **Papers filed** (D3 pass, 2026-08-20): #6 SingStyle111 (Dai et al., ISMIR 2023) → [`../papers/by-topic/mir-evaluation-datasets/dai2023_singstyle111.pdf`](../papers/by-topic/mir-evaluation-datasets/dai2023_singstyle111.pdf); the VocalSet, vocadito, mirdata and Tony papers are stamped in [05 — Acquisition links](05-papers.md#acquisition-links) (#57, #58, #54, #61).
 > **Registration or request:** #10 (TU Graz form), #13 (Academia Sinica), #16 (NUS), #27 (ACE registration). **NC:** #11, #14, #22, #23. **Unstated:** #12.
 
 Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `free, reg.` · `paid` · `REPO`, plus `request` (corpus released on request; also used in [01](01-datasheets.md)) and `n/a` (generated in-repo). Licence qualifiers (NC, unstated, verify terms) are **not** access states — they live in the Link cell and in the licence ledger (section G).

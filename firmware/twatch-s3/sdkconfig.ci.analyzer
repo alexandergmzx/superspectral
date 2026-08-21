@@ -4,11 +4,20 @@
 # CI overlay: GCC static analyzer (-fanalyzer). Applied AFTER
 # sdkconfig.defaults(.esp32s3):
 #   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.analyzer" build
-# Blocking in CI, but confined to this one configuration: -fanalyzer is slow
-# and noisy on third-party code. Suppress confirmed false positives inline
-# with ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-...") from
-# esp_compiler.h. clang-check (IDF_TOOLCHAIN=clang) stays advisory and is
-# not a Kconfig overlay.
+# ADVISORY in CI (continue-on-error), confined to this one configuration.
+# Why not blocking: -fanalyzer runs over every component, and on v6.0.2 it
+# reports a false positive inside ESP-IDF's own lwIP
+# (components/lwip/lwip/src/core/tcp_out.c: "dereference of NULL 'useg'",
+# -Wanalyzer-null-dereference), which warnings-as-errors turns fatal (first CI
+# run, 2026-08-21). We cannot annotate IDF sources, so this overlay disables
+# the default -Werror promotion and the job reports instead of gating. It
+# becomes blocking again once ADR 0017 trims lwIP/esp_wifi out of the
+# component set (then only our code is analysed). Confirmed false positives
+# in OUR code are still suppressed inline with
+# ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-...") from esp_compiler.h.
+# clang-check (IDF_TOOLCHAIN=clang) stays advisory and is not a Kconfig overlay.
 
 # `depends on IDF_TOOLCHAIN_GCC` (the default toolchain).
 CONFIG_COMPILER_STATIC_ANALYZER=y
+# Analyzer findings stay warnings (see above); our own -Werror per component still applies.
+CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS=y

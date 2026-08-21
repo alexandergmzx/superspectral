@@ -159,7 +159,7 @@ When a file lands, add the `📥 Filed locally: <relative path>` blockquote to t
 
 ## Acquisition links
 
-> **📥 Filed locally:** nothing yet (roadmap D3). Paper links live in [05 — Acquisition links](05-papers.md#acquisition-links) under the numbers cross-referenced above; the table below covers only the local S/D/A/R entries.
+> **📥 Filed locally (D3 pass, 2026-08-20)** — by home file: D1 Knowles SPM1423HM4H-B Rev A + Rev D, D3 B&K 4231 BP1311, D4 UMIK-1 product brief → [01 — Acquisition links](01-datasheets.md#acquisition-links) (#9, #30, #31); A1 Knowles selection guide R5, A4 GORE portfolio + GAW334 → [02](02-application-notes.md#acquisition-links) (#60, #65); S3's free half, ANSI S1.11-2004 → [03](03-standards.md#acquisition-links) (#1); Bland & Altman 1986 and Pörschmann & Arend 2020 → [05](05-papers.md#acquisition-links) (#86, #67). Paper links live in [05 — Acquisition links](05-papers.md#acquisition-links) under the numbers cross-referenced above; the table below covers only the local S/D/A/R entries.
 > **Paid standards:** S2–S5, S10 (IEC/ISO/ANSI stores; none strictly required for a *relative* measurement tool — roadmap open question on the standards budget). **Free:** S6–S9 (ITU, BIPM), ANSI S1.11-2004 (law.resource.org), ANSUR II / DINED.
 
 Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` · `mirror` · `free, reg.` · `REPO` · `PORTAL`, plus `request` (vendor/author request; also used in [01](01-datasheets.md)). Several tokens joined by ` / ` mean several routes; qualifiers live in the Link cell.

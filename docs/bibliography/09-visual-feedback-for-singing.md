@@ -129,7 +129,7 @@ When a file lands, add `📥 Filed locally: <relative path>` to the entry in its
 
 ## Acquisition links
 
-> **📥 Filed locally:** nothing yet (roadmap D3). Paper links are in [05 — Acquisition links](05-papers.md#acquisition-links); the table below covers the local S/R/P/D entries only.
+> **📥 Filed locally (D3 pass, 2026-08-20)** — by home file: D1 ST7789V3 preliminary V0.0 → [01](01-datasheets.md#acquisition-links) (#13); Howard et al. 2004, Wilson et al. 2007, McPherson et al. 2016, Liu & Heer 2018 → [05](05-papers.md#acquisition-links) (#68, #71, #84, #81). No R/S snapshots were taken. Paper links are in [05 — Acquisition links](05-papers.md#acquisition-links); the table below covers the local S/R/P/D entries only.
 > **Browser-only:** R1–R4 and S3 are living web pages (print-to-PDF with the capture date in the filename).
 
 Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` · `mirror` · `free, reg.` · `REPO` · `PORTAL`; qualifiers live in the Link cell.

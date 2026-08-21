@@ -186,7 +186,8 @@ When a file lands, add a `📥 Filed locally: <relative path>` blockquote to its
 
 ## Acquisition links
 
-> **📥 Filed locally:** nothing yet — roadmap D3 performs the bulk acquisition. The ESP-IDF programme docs are taken as dated PDF snapshots of the **v6.0.2** rendering, not of `stable`/`latest`.
+> **📥 Filed locally (D3 pass, 2026-08-20):** only the by-type datasheets this file leans on — ESP32-S3 datasheet v2.2, TRM v1.8, hardware design guidelines (2026-08-07 build) and both T-Watch S3 schematics → [01 — Acquisition links](01-datasheets.md#acquisition-links) (#1, #2, #4, #6, #7). No ESP-IDF programme-doc snapshot was taken yet; when they are, they are dated PDF snapshots of the **v6.0.2** rendering, not of `stable`/`latest`.
+> **Not filed by design:** P-rows (repositories) stay URL-only. The schematics ([01 #6/#7](01-datasheets.md)) come from MIT-licensed LilyGO repositories and are committed (decision taken at filing time, D3).
 > **Not filed by design:** P-rows (repositories) stay URL-only; schematics ([01 #6/#7](01-datasheets.md)) are linked, never committed.
 
 Keyed to the entry labels above. Every `docs.espressif.com` URL below is `free (GET)` and printable; GitHub and registry pages are `REPO`/`free`. Where the table above shows an `…/en/stable/…` form in the research, substitute `…/en/v6.0.2/…` at snapshot time so the capture matches the pin.
