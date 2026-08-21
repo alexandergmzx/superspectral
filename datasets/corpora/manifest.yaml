@@ -1,0 +1,338 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Corpus manifest — the contract described in ../README.md.
+#
+# STATUS 2026-08-21: PRE-REGISTRATION, not an inventory. Nothing here is
+# downloaded yet. Every `files:` block is empty and every `sha256` absent by
+# design: those arrive with the fetch (roadmap D6/Phase 2) and are what makes a
+# run reproducible. Fields marked `verify:` are claims read from a catalogue
+# page, not from the downloaded record, and must be confirmed at fetch time.
+#
+# Rules this file obeys (../README.md, docs/validation/README.md):
+#   * Audio is gitignored; this manifest is tracked. The pair is the dataset.
+#   * Licence is recorded with the URL where the terms were read AND the date.
+#   * NC / request-only / unstated corpora are QUARANTINED from headline
+#     metrics: usable on the bench, never in a number that leaves the project.
+#   * `use:` names the validation row and the measurement path, so an unused
+#     corpus is visible as unused.
+#   * Preprocessing is recorded so the injection path is reproducible; level
+#     normalisation is ITU-T P.56 active speech level, never peak.
+
+version: 0
+generated: 2026-08-21
+generator: hand-written (pre-registration); refreshed by python-scripts/ fetch tooling in D6
+policy:
+  audio_tracked: false
+  checksums: sha256 per file, written at fetch time
+  loader: mirdata where a loader exists (validates checksums against the canonical release)
+  quarantine_rule: >-
+    A corpus whose licence is NC, request-only or unstated may support bench work and
+    exploratory analysis; it may not contribute to a headline metric or to any figure
+    that leaves the project. The `restrictions.consequence` field states this per corpus.
+  clinical_claim_rule: >-
+    Every entry carries `clinical_claim: "no"` — quoted, because a bare `no` is a boolean under YAML 1.1 and the string `"no"` under YAML 1.2, and the loader must not be the thing that decides. It is not a licence field: it records that
+    the corpus's audio may be used as acoustic material while its labels are never used
+    as targets, and that no sensitivity, specificity, ROC or AUC against those labels is
+    computed or published (ADR 0005 rule 4). The field is `no` for every corpus in this
+    file and there is no value it may take other than `no`.
+
+datasets:
+
+  - name: vocadito
+    tier: 1
+    version: "1.0 (Zenodo record 5578807)"
+    source:
+      zenodo: https://zenodo.org/records/5578807
+      doi: 10.5281/zenodo.5578807   # verify: record-level DOI at fetch time
+      paper: bibliography 05 #58 (Bittner et al. 2021, ISMIR LBD)
+      mirdata_loader: vocadito
+    licence:
+      spdx: CC-BY-4.0
+      read_at: https://zenodo.org/records/5578807
+      read_on: 2026-08-20
+    ground_truth:
+      - frame-level f0 (CSV)
+      - note annotations, two versions
+      - lyrics
+    content: 40 solo monophonic singing excerpts, 7 languages, mixed recording devices incl. phones
+    files: []          # filled at fetch: path, sha256, sample_rate, channels, bit_depth, duration
+    preprocessing:
+      resample_to_hz: 32000        # the watch's default rate (ADR 0003); 48000 variant if T3 passes
+      resampler: soxr VHQ via python-scripts (recorded with its version)
+      level_normalisation: ITU-T P.56 active speech level, target recorded per run
+      channels: mono (already mono; assert at fetch)
+    use:
+      - row: "RPA @ 50 / 25 / 10 cents; median |Δcents| vs Praat"
+        path: injection
+      - row: "RPA, acoustic path (subset, replayed through the monitor)"
+        path: acoustic
+    use_note: >-
+      The phone-recorded subset is the closest existing analogue to a wrist MEMS
+      capture, which is why this is the primary f0 corpus rather than a studio one.
+      The corpus's own inter-annotator agreement is the floor on any cents claim.
+    clinical_claim: "no"   # quoted: bare no is a YAML 1.1 boolean. ADR 0005 rule 4: audio may be used, labels are never targets
+    restrictions:
+      flags: []
+      consequence: none — usable in headline metrics
+
+  - name: dagstuhl-choirset
+    tier: 1
+    version: "1.2.3 (Zenodo record 4608395)"   # verify at fetch
+    source:
+      zenodo: https://zenodo.org/records/4608395
+      doi: 10.5281/zenodo.4608395   # verify
+      paper: bibliography 05 #60 (Rosenzweig et al. 2020, TISMIR)
+      mirdata_loader: dagstuhl_choirset
+    licence:
+      spdx: CC-BY-4.0
+      read_at: https://zenodo.org/records/4608395
+      read_on: 2026-08-20
+    ground_truth:
+      - F0 per close-up microphone
+      - larynx contact-microphone channel (the EGG-like reference)
+      - beat annotations, aligned score
+    content: amateur choir, 55 min 30 s, full choir and quartet takes, multi-channel
+    files: []
+    preprocessing:
+      resample_to_hz: 32000
+      level_normalisation: ITU-T P.56
+      channels: >-
+        Select the close-up microphone channel for f0 reference and the contact-mic
+        channel for the physiological cross-check; record which channel id was used.
+    use:
+      - row: "acoustic-path f0 reference; RCA − RPA octave-error gap"
+        path: acoustic
+      - row: "voicing measures VR / VFA"
+        path: injection
+    use_note: >-
+      The contact-microphone channel is the closest thing to electroglottograph
+      ground truth available without buying an EGG, which is why this corpus
+      carries the acoustic-path reference rows.
+    clinical_claim: "no"   # quoted: bare no is a YAML 1.1 boolean. ADR 0005 rule 4: audio may be used, labels are never targets
+    restrictions:
+      flags: []
+      consequence: none — usable in headline metrics
+
+  - name: vocalset
+    tier: 1
+    version: "1.2 (Zenodo record 1193957)"   # verify
+    source:
+      zenodo: https://zenodo.org/records/1193957
+      doi: 10.5281/zenodo.1193957   # verify
+      paper: bibliography 05 #57 (Wilkins et al. 2018, ISMIR)
+      companion: annotated-vocalset (Zenodo 7061507) — supplies labels the base release lacks
+    licence:
+      spdx: CC-BY-4.0
+      read_at: https://zenodo.org/records/1193957
+      read_on: 2026-08-20
+    ground_truth:
+      - technique labels (17 techniques), vowel, singer id
+      - "no f0 ground truth in the base release — see annotated-vocalset"
+    content: 10.1 h, 20 professional singers, 17 vocal techniques, five vowels
+    files: []
+    preprocessing:
+      resample_to_hz: 32000
+      level_normalisation: ITU-T P.56
+    use:
+      - row: "ring/twang readouts (FHE, SPR) across techniques — ADR 0008"
+        path: injection
+      - row: "timbre stability of the band-energy metric under technique change"
+        path: injection
+    open_questions:
+      - >-
+        The gender split is reported inconsistently (paper vs Zenodo record: 11 M / 9 F
+        vs 11 F / 9 M). Settle from the record's own metadata BEFORE any table quotes it.
+    clinical_claim: "no"   # quoted: bare no is a YAML 1.1 boolean. ADR 0005 rule 4: audio may be used, labels are never targets
+    restrictions:
+      flags: []
+      consequence: none — usable in headline metrics
+
+  - name: pvqd
+    tier: 3
+    version: "v4 (Mendeley Data)"
+    source:
+      url: https://data.mendeley.com/datasets/9dz247gnyb/4
+      doi: 10.17632/9dz247gnyb.4   # verify
+    licence:
+      spdx: CC-BY-4.0
+      read_at: https://data.mendeley.com/datasets/9dz247gnyb/4
+      read_on: 2026-08-20
+    ground_truth:
+      - expert perceptual ratings (CAPE-V scales)
+    content: 296 WAV files, CAPE-V sustained vowels and sentences
+    files: []
+    preprocessing:
+      resample_to_hz: 32000
+      level_normalisation: ITU-T P.56
+    use:
+      - row: "validity check — do CPP / H1–H2 / spectral-tilt readouts ORDER voices as listeners do"
+        path: injection
+    use_note: >-
+      Used as acoustic material and as a rank-order sanity check of the host-side
+      measures. NOT a diagnostic use: ADR 0005 (no clinical claim) governs, and no
+      output of this project is framed as a voice-quality assessment of a person.
+    clinical_claim: "no"   # quoted: bare no is a YAML 1.1 boolean. ADR 0005 rule 4: audio may be used, labels are never targets
+    restrictions:
+      flags: [pathological-voice-material]
+      consequence: >-
+        Ethics/labelling: results referencing this corpus say "ordering agreement with
+        published perceptual ratings", never "detects" or "assesses" a voice disorder.
+
+  # Named in ADR 0005 as one of the two Tier-3 corpora the validation plan feeds.
+  # LICENCE FOUND 2026-08-21, and it lifts the quarantine this entry was created
+  # with. The live site has no terms page at all -- "Terms & Conditions" is a
+  # footer HEADING over /imprint (a TMG Impressum) and a privacy link, and
+  # /terms, /nutzungsbedingungen and the legacy /help_en.php4 are all 404. The
+  # licence lives on the Zenodo deposit of the whole database instead: CC BY 4.0.
+  # Keys introduced on this date and not present in the other entries:
+  # `doi`, `index_csv`, `bulk_download`, `native_format`, `site_terms_note`,
+  # `licence.attribution`.
+  - name: saarbruecken-voice-database
+    tier: 3
+    version: >-
+      Zenodo record 16874898. The record's `metadata.version` is null -- it has no
+      version string; `publication_date` is 2008. Cite the record DOI, not a version.
+    source:
+      url: https://stimmdb.coli.uni-saarland.de/
+      doi: 10.5281/zenodo.16874898
+      terms_page: https://zenodo.org/records/16874898   # the licence is here, not on the site
+      index_csv: https://stimmdb.coli.uni-saarland.de/data/voice_data.csv
+      institution: >-
+        Created at the former Institut fuer Phonetik, Universitaet des Saarlandes;
+        hosted and managed since 2025 by Universitaetsklinikum Essen.
+      paper: >-
+        Barry, W. J. & Puetzer, M. (2007). Saarbruecken Voice Database. Institut fuer
+        Phonetik, Universitaet des Saarlandes. Note the Zenodo deposit lists the
+        creators in the other order (Puetzer, Barry) -- see licence.attribution.
+      bulk_download: >-
+        73 files on the Zenodo record: data.zip 17,881,176,281 B
+        (md5 8314013ccf4830ca732486206fbed9e6), healthy.zip 6,020,018,616 B
+        (md5 67789ec89a161ce26d562719bc8d1aaa), and 71 per-pathology zips.
+        17.9 GB for the whole set -- far over the 1 GB session rule, so a fetch is
+        planned and subset-first, never casual.
+      native_format: >-
+        .nsp (Kay CSL) plus a separate EGG file per case; the Zenodo description
+        links a converter to .wav. Confirm the conversion path at fetch.
+      mirdata_loader: null      # no loader
+    licence:
+      spdx: CC-BY-4.0
+      attribution: >-
+        Puetzer, Manfred; Barry, William J. -- Saarbruecken Voice Database, Zenodo,
+        doi:10.5281/zenodo.16874898, CC BY 4.0. (Creator order as the licensor
+        registered it; the canonical bibliographic citation is Barry & Puetzer 2007.)
+      statement_found: >-
+        Zenodo record rights id `cc-by-4.0`. The site separately says "Free and
+        Open-Source" and "Free to use for reproducible voice science", which is not
+        a licence; the Zenodo record is the one that grants rights.
+      read_at: https://zenodo.org/api/records/16874898
+      read_on: 2026-08-21
+      site_terms_note: >-
+        No terms page exists on the live site (verified 2026-08-21): the "Terms &
+        Conditions" footer heading covers /imprint and uk-essen.de/datenschutz only,
+        and /terms, /terms-and-conditions, /nutzungsbedingungen and /help_en.php4
+        all return 404. Do not cite the site for licence terms.
+    ground_truth:
+      - clinician-assigned pathology labels (never used as targets -- see clinical_claim)
+      - simultaneous electroglottographic (EGG) signal, so a reference f0 is derivable
+    content: >-
+      German speakers, healthy and pathological. Sustained [i:] [a:] [u:] at normal,
+      high and low pitch and with rising/falling pitch, plus the sentence "Guten
+      Morgen, wie geht es Ihnen?", with a simultaneous EGG channel.
+      Counts computed from the site's own index CSV on 2026-08-21 (not from the
+      landing page, which states none of them): 2 225 recording sessions from
+      1 853 distinct speakers; 869 sessions typed `n` and 1 356 typed `p`; 854
+      speakers have at least one normal session, 1 020 at least one pathological,
+      21 have both; 1 163 sessions from female and 1 062 from male speakers;
+      1 038 distinct free-text diagnoses; recording dates 1997-11-20 to 2004-06-16.
+      Pathology labels: 71 distinct labels, appearing in 186 distinct combinations
+      (the `Pathologien` column is comma-separated and multi-label -- counting the
+      raw strings gives 186, not 71).
+      NOTE the widely quoted "1 356 patients" is 1 356 *pathological sessions*, and
+      "687 healthy" matches nothing in the current index.
+      Sample rate 50 kHz / 16-bit with a separate EGG file per case is stated in the
+      SVD literature, NOT on the site or the Zenodo record -- confirm at fetch.
+    files: []
+    preprocessing:
+      resample_to_hz: 32000
+      resampler: soxr VHQ via python-scripts (recorded with its version)
+      level_normalisation: ITU-T P.56 active speech level, target recorded per run
+      channels: mono; the EGG channel is kept separate and never mixed into the audio
+    use:
+      - row: "EGG-derived reference f0 vs the watch's f0 on sustained vowels"
+        path: injection
+    use_note: >-
+      The EGG channel is the reason to want this corpus: it gives a reference f0 that
+      does not come from another pitch tracker. The pathology labels are acoustic
+      metadata here and nothing else (ADR 0005 rule 4).
+    clinical_claim: "no"   # quoted: bare no is a YAML 1.1 boolean. ADR 0005 rule 4: audio may be used, labels are never targets
+    restrictions:
+      flags: [pathological-voice-material, headline-use-pending-q41]
+      consequence: >-
+        The LICENCE quarantine is lifted (2026-08-21): CC BY 4.0 permits use and
+        redistribution with attribution, so `unstated-terms` and `no-bulk-export`
+        no longer apply and the policy.quarantine_rule above does not bite.
+        Two constraints remain and neither is a licence question. (1) ADR 0005 is
+        unchanged: audio is acoustic material, labels are never targets, no
+        classifier, no per-voice statement, no sensitivity/specificity/ROC/AUC.
+        (2) Whether a clinician-labelled pathology corpus contributes to a HEADLINE
+        metric at all is roadmap Q41 -- an ethics call for the owner, not a lookup.
+        Until Q41 is answered, treat as bench-and-exploratory.
+
+  - name: mdb-stem-synth
+    tier: 2
+    version: "Zenodo record 1481172"   # verify record id
+    source:
+      zenodo: https://zenodo.org/records/1481172
+      paper: bibliography 05 #59 (Salamon et al. 2017, ISMIR)
+      mirdata_loader: medleydb_pitch  # verify: the stem-synth set may need its own loader
+    licence:
+      spdx: CC-BY-NC-4.0
+      read_at: https://zenodo.org/records/1481172
+      read_on: 2026-08-20
+    ground_truth:
+      - resynthesis-derived f0 ("perfect" by construction, with documented artefacts)
+    content: 230 stems, 15.56 h
+    files: []
+    preprocessing:
+      resample_to_hz: 16000   # CREPE's operating rate, for the published-ceiling comparison
+      level_normalisation: ITU-T P.56
+    use:
+      - row: "RPA @ 10 cents vs the published CREPE ceiling — context only"
+        path: injection
+    clinical_claim: "no"   # quoted: bare no is a YAML 1.1 boolean. ADR 0005 rule 4: audio may be used, labels are never targets
+    restrictions:
+      flags: [NC]
+      consequence: >-
+        QUARANTINED from headline metrics. It may support one context sentence
+        ("the published ceiling on this set is X") and must not appear in a
+        headline table. Its resynthesis artefacts are documented in the paper and
+        must be cited whenever its numbers are.
+
+  - name: demand
+    tier: 2
+    version: "Zenodo record 1227121"
+    source:
+      zenodo: https://zenodo.org/records/1227121
+      paper: https://hal.science/hal-00796707
+    licence:
+      spdx: CC-BY-SA-3.0   # verify on the record; SA reaches derived RECORDINGS, not firmware
+      read_at: https://zenodo.org/records/1227121
+      read_on: 2026-08-20
+    ground_truth: []
+    content: 18 acoustic environments × 16 channels, 5 min each
+    files: []
+    preprocessing:
+      resample_to_hz: 32000
+      mixing: >-
+        Mixed with corpus material at controlled SNR for the background-noise factor;
+        the SNR ladder and the RNG seed are recorded per run.
+    use:
+      - row: "background-noise factor of the validation matrix (rehearsal-room-like scenes)"
+        path: injection
+    clinical_claim: "no"   # quoted: bare no is a YAML 1.1 boolean. ADR 0005 rule 4: audio may be used, labels are never targets
+    restrictions:
+      flags: [share-alike]
+      consequence: >-
+        Any derived RECORDING that is distributed inherits CC-BY-SA-3.0. Analysis
+        numbers and firmware do not. Do not publish mixed audio without the notice.
