@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# CI overlay: GCC static analyzer (-fanalyzer). Applied AFTER
+# sdkconfig.defaults(.esp32s3):
+#   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.analyzer" build
+# Blocking in CI, but confined to this one configuration: -fanalyzer is slow
+# and noisy on third-party code. Suppress confirmed false positives inline
+# with ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-...") from
+# esp_compiler.h. clang-check (IDF_TOOLCHAIN=clang) stays advisory and is
+# not a Kconfig overlay.
+
+# `depends on IDF_TOOLCHAIN_GCC` (the default toolchain).
+CONFIG_COMPILER_STATIC_ANALYZER=y

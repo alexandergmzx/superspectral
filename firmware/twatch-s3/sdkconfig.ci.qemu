@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# CI overlay: QEMU (espressif/qemu, esp32s3). Applied AFTER sdkconfig.defaults
+# and sdkconfig.defaults.esp32s3:
+#   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.qemu" build
+#   idf.py qemu monitor
+# idf-build-apps picks it up via config_rules "sdkconfig.ci.*=".
+#
+# QEMU emulates the dual-core CPU, 8 MB octal PSRAM + PSRAM MMU, GDMA, flash
+# + MMU, eFuse, UART and an RGB framebuffer. It emulates NO USB, I2C, I2S,
+# GP-SPI or GPIO matrix - so the console must move to UART and every board
+# driver must be behind the audio_source / display_backend seams.
+
+# USB-Serial-JTAG does not exist in QEMU: primary console to UART0. This is a
+# later assignment within the same Kconfig choice, so it overrides the
+# ESP_CONSOLE_USB_SERIAL_JTAG=y in sdkconfig.defaults.
+CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+# No secondary console either (the default secondary would be the absent USJ).
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
+# Flash image size must equal the emulated flash: 16 MB is inherited from
+# sdkconfig.defaults.esp32s3 (CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y).
+
+# Seam selectors (CONFIG_SPECTRAL_AUDIO_SOURCE_SYNTHETIC,
+# CONFIG_SPECTRAL_DISPLAY_BACKEND_QEMU_RGB, CONFIG_SPECTRAL_TARGET_QEMU) are
+# added here when those Kconfig symbols exist in components/audio_source and
+# components/display_backend - not before, to keep kconfgen warning-free.

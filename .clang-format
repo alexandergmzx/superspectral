@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# clang-format style for Super Spectral C sources. Pinned to clang-format MAJOR 20
+# (pre-commit mirrors-clang-format v20.1.8 == the esp-clang 20.1.1 toolchain shipped
+# with ESP-IDF v6.0.x, verified 2026-08-20). A major bump reformats the whole tree:
+# do it as a standalone commit recorded in .git-blame-ignore-revs (pitfall B20).
+# ESP-IDF itself ships no .clang-format (it uses astyle_py), so this is a free choice.
+# No `Language:` key on purpose: clang-format 20 treats C and C++ as distinct
+# languages, and a language-less section applies to both (.c/.h and any .cpp test).
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+PointerAlignment: Right
+ReferenceAlignment: Right
+BreakBeforeBraces: Linux
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AlignConsecutiveMacros: AcrossEmptyLinesAndComments
+AlignTrailingComments: true
+AlignEscapedNewlines: Left
+BinPackArguments: true
+BinPackParameters: true
+SpaceBeforeParens: ControlStatements
+SpaceAfterCStyleCast: true
+IndentCaseLabels: false
+IndentPPDirectives: None
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+# Include order: sdkconfig.h first (CONFIG_* macros must be visible to every header
+# below it -- ESP-IDF convention, see app_main.c), then libc, then other <system>,
+# then IDF/FreeRTOS, then this project's spectral_* headers, then everything else.
+# With IncludeBlocks: Regroup a shared priority would let SortIncludes move
+# "sdkconfig.h" below "freertos/FreeRTOS.h" (s < f is false), hence its own group.
+# Priority -1, not 0: clang-format reserves category 0 for a source file's own
+# main header (foo.c -> "foo.h"), and sdkconfig.h must precede even that.
+IncludeCategories:
+  - Regex: '^"sdkconfig\.h"'
+    Priority: -1
+  - Regex: '^<(assert|ctype|errno|float|inttypes|limits|math|stdalign|stdarg|stdbool|stddef|stdint|stdio|stdlib|string|time)\.h>'
+    Priority: 1
+  - Regex: '^<'
+    Priority: 2
+  - Regex: '^"(freertos|esp_|driver|soc|hal)'
+    Priority: 3
+  - Regex: '^"spectral_'
+    Priority: 4
+  - Regex: '.*'
+    Priority: 5
+InsertNewlineAtEOF: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+---

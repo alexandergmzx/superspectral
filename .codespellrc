@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+[codespell]
+# Generated trees, binaries, clones and the research scratchpad are not prose we own.
+skip = ./build,./build_*,./managed_components,./.git,./.direnv,./scratch,./docs/reference-projects/clones,*.bin,*.map,*.svg,*.f32,*.wav,*.pdf,*.ocr.md,*.lock,*.ipynb
+# ba = Bland–Altman · nd = "n.d." · te = Ternström/Titze citations · hel = Hz-label abbreviation
+# fo = f0-adjacent token · ser = serial abbreviation in esptool output · ocr = tool name
+ignore-words-list = ba,nd,te,hel,ser,ocr,ans,fo,crate,thirdparty
+quiet-level = 3

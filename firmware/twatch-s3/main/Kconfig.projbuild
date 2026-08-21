@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Super Spectral"
+
+    config SPECTRAL_BOOT_GUARD_MS
+        int "Boot guard delay before any init (ms)"
+        default 3000
+        range 1000 10000
+        help
+            Unconditional delay executed as the FIRST statement of app_main(),
+            before any peripheral, PMU, display or sleep code runs (ADR 0015,
+            anti-brick policy).
+
+            The T-Watch S3 exposes no GPIO and its BOOT button is on the
+            internal PCB; the only re-flash path is esptool driving the
+            reset-to-download sequence over the on-chip USB-Serial-JTAG
+            controller, which re-enumerates in roughly one second after each
+            reset. A firmware that crashes, deep-sleeps or reconfigures
+            GPIO19/20 faster than that can never be caught by `idf.py flash`.
+            Three seconds beats the enumeration window with margin, so the
+            host always wins the race - even in a crash loop.
+
+            Lower bound 1000 ms is the enumeration time itself; do not set
+            this below the default even for release builds. Raising it costs
+            nothing but boot time.
+
+    config SPECTRAL_DEV_SLEEP_ARMED
+        bool "Allow sleep entry during development"
+        default n
+        help
+            Every sleep entry (light or deep) is additionally gated by
+            "awake >= N s AND no USB host attached" at runtime (ADR 0015).
+            During development this compile-time switch keeps sleep code
+            unreachable entirely: an early esp_deep_sleep_start() makes the
+            USB-Serial-JTAG device disappear from the host even with the
+            cable attached, and light sleep gates the USB PHY clock.
+
+            Leave n until the rollback path and the boot-guard race have been
+            tested on hardware (docs/validation/experiments, recipe 0002).
+            Release builds are expected to flip this per ADR, never ad hoc.
+
+endmenu

@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# LilyGO T-Watch S3: ESP32-S3-R8 chip-down, 16 MB Winbond W25Q128JW (1.8 V)
+# QUAD flash, 8 MB OCTAL in-package PSRAM - an "F4R8" combination
+# (Flash Quad + RAM Octal). Hardware facts: docs/hw/twatch-s3-pins.md.
+#
+# Auto-loaded because sdkconfig.defaults exists and IDF_TARGET == esp32s3
+# (tools/cmake/kconfig.cmake appends "<defaults>.<idf_target>" when present).
+# Must NOT appear in SDKCONFIG_DEFAULTS. Symbols verified in v6.0.1 Kconfig.
+
+# ---- Flash: quad, 80 MHz, 16 MB ---------------------------------------------
+# ESPTOOLPY_FLASH_MODE_AUTO_DETECT defaults to y and, by its own help text,
+# costs ~900 B of internal RAM. We KNOW the part is quad: off.
+CONFIG_ESPTOOLPY_OCT_FLASH=n
+CONFIG_ESPTOOLPY_FLASH_MODE_AUTO_DETECT=n
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR=y
+CONFIG_ESPTOOLPY_FLASHFREQ_80M=y
+# Espressif's Kconfig default is 2MB. A 16 MB partitions.csv flashed under a
+# 2 MB image header still fails - BOTH knobs are needed (ADR 0014).
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+# NOTE: the build log will print flash mode "dio" even with QIO=y: esptool
+# writes the bootloader in dio and the bootloader upgrades itself to quad.
+# Do not "fix" it.
+
+# ---- VDD_SPI: 1.8 V flash, keep the DEFAULT 1.9 V boost ---------------------
+# W25Q128JW operates 1.7-1.95 V; 1.9 V is the programming-current headroom
+# against "flash writes corrupt under load". BOOTLOADER_VDDSDIO_BOOST_1_8V
+# `depends on !ESPTOOLPY_FLASHFREQ_80M`, so the wrong choice is unreachable
+# at 80 MHz anyway. Whether VDD_SPI is eFuse-forced (VDD_SPI_FORCE) or set by
+# the GPIO45 strap is unknown until the E2 eFuse read - see ADR 0016 and the
+# GPIO45/backlight rule in docs/hw/twatch-s3-pins.md.
+CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V=y
+
+# ---- PSRAM: 8 MB octal @ 80 MHz ---------------------------------------------
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_TYPE_AUTO=y
+# MUST be explicit: esp_psram/esp32s3/Kconfig.spiram has
+# `default SPIRAM_SPEED_40M` - leaving it silently halves PSRAM bandwidth.
+CONFIG_SPIRAM_SPEED_80M=y
+CONFIG_SPIRAM_USE_MALLOC=y
+# Fail LOUDLY in the bootloader (readable over USJ) instead of silently
+# running on 512 KB and OOM-ing in LVGL an hour later (ADR 0015).
+CONFIG_SPIRAM_IGNORE_NOTFOUND=n
+# Small driver allocations stay internal; guarantee a DMA-capable pool for
+# I2S DMA, LVGL partial buffers and the SPI bounce buffer. FFT scratch,
+# spectrogram history and fonts go to PSRAM explicitly via MALLOC_CAP_SPIRAM.
+CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=16384
+CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL=65536
+# Start with code/rodata in flash; the FFT working set fits in cache. Revisit
+# (measure both ways) only if audio dropouts correlate with flash writes.
+CONFIG_SPIRAM_FETCH_INSTRUCTIONS=n
+CONFIG_SPIRAM_RODATA=n
+CONFIG_SPIRAM_XIP_FROM_PSRAM=n
+# EXPLICITLY NOT SET: CONFIG_IDF_EXPERIMENTAL_FEATURES, any *_120M option.
+# SPIRAM_SPEED_120M `depends on SPIRAM_MODE_QUAD || IDF_EXPERIMENTAL_FEATURES`
+# and its help text warns of crashes after a ~20 degC swing from power-on -
+# a wrist-worn device does that daily. The F4R8 table also forbids 120 MHz
+# flash with 80 MHz PSRAM outright.
+
+# ---- CPU / cache -------------------------------------------------------------
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_ESP32S3_INSTRUCTION_CACHE_32KB=y
+CONFIG_ESP32S3_INSTRUCTION_CACHE_8WAYS=y

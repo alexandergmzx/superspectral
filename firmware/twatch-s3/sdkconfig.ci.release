@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# CI overlay: release build. Applied AFTER sdkconfig.defaults(.esp32s3):
+#   idf.py -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.ci.release" build
+# This is the configuration whose .bin is built twice and sha256-diffed, sized
+# with `idf.py size --diff`, and SBOM-checked. It changes log verbosity only;
+# it never touches watchdogs, rollback, the boot guard or the console.
+
+# Quieter default log level (per-tag esp_log_level_set() still applies).
+CONFIG_LOG_DEFAULT_LEVEL_WARN=y
+# -O2 is already the project default; restated so the overlay is
+# self-describing when read alone.
+CONFIG_COMPILER_OPTIMIZATION_PERF=y

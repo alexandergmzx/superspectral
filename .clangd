@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# clangd configuration — the editor stays DOWNSTREAM of the shell build.
+# `idf.py build` / `idf.py reconfigure` emits firmware/twatch-s3/build/compile_commands.json
+# automatically; clangd consumes it. No Espressif VS Code extension (ADR 0001,
+# docs/devenv/setup.md §8). Point clangd.path at the esp-clang binary under
+# $IDF_TOOLS_PATH/tools/esp-clang/ and disable the MS C/C++ IntelliSense engine.
+#
+# `Remove: [-m*, -f*]` is essential: -mlongcalls, -fstrict-volatile-bitfields and
+# -fno-tree-switch-conversion are GCC/Xtensa-only flags that make clangd refuse
+# to index (Espressif's own recommendation; pitfall A20 in docs/devenv/pitfalls.md).
+CompileFlags:
+  CompilationDatabase: firmware/twatch-s3/build
+  Remove: [-m*, -f*]
+Diagnostics:
+  UnusedIncludes: None

@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Espressif's ESP-IDF .editorconfig, taken verbatim from the v6.0.x tree
+# (https://github.com/espressif/esp-idf/blob/master/.editorconfig, read 2026-08-20),
+# with one project addition at the end for Markdown/CSV/lock files.
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs
+# http://editorconfig.org
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[{*.md,*.rst}]
+trim_trailing_whitespace = false
+
+[{Makefile,*.mk,*.bat}]
+indent_style = tab
+indent_size = 2
+
+[*.pem]
+insert_final_newline = false
+
+[*.py]
+max_line_length = 119
+
+[{*.cmake,CMakeLists.txt}]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+[{*.sh,*.yml,*.yaml}]
+indent_size = 2
+
+[*.ini]
+indent_size = 2
+
+# --- Super Spectral additions -------------------------------------------------
+[*.c]
+max_line_length = 100
+
+[*.h]
+max_line_length = 100
+
+[{*.csv,dependencies.lock,*.json}]
+indent_size = 2

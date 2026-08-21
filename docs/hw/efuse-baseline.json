@@ -1,0 +1,8 @@
+{
+  "status": "not yet read",
+  "procedure": "docs/devenv/first-flash-checklist.md",
+  "command": "espefuse --chip esp32s3 --port /dev/ttyTWATCH summary --format json --file docs/hw/efuse-baseline.json",
+  "policy": "read-only; this project never burns eFuses",
+  "fields_that_gate_decisions": ["VDD_SPI_FORCE", "VDD_SPI_TIEH", "VDD_SPI_XPD", "DIS_USB_JTAG", "DIS_USB_SERIAL_JTAG", "FLASH_TYPE", "SPI_BOOT_CRYPT_CNT", "SECURE_BOOT_EN"],
+  "phase": "E2"
+}

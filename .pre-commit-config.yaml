@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Super Spectral pre-commit configuration.
+# Install:  pip install pre-commit && pre-commit install && pre-commit install -t commit-msg
+# Manual-stage hooks (need an activated ESP-IDF shell):  pre-commit run --hook-stage manual -a
+#
+# Every `rev:` below was current on 2026-08-20 unless marked VERIFY. Run
+# `pre-commit autoupdate` deliberately, never casually: a clang-format major bump
+# reformats the whole tree (pitfall B20, docs/devenv/pitfalls.md).
+default_stages: [pre-commit]
+minimum_pre_commit_version: "3.5.0"
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: &generated '(?x)^(.+\.(md|bin|map|csv|f32|wav)|.+/golden/.+|.+/ref_imgs/.+|docs/OCR/manifest\.tsv)$'
+      - id: end-of-file-fixer
+        exclude: *generated
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+        exclude: *generated
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]      # reference-library PDFs are added deliberately; bump per file if needed
+      - id: check-yaml
+        exclude: '^\.clangd$|^\.clang-format$'   # clangd/clang-format YAML is multi-document with a leading comment block
+      - id: check-json
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.3
+    hooks:
+      - id: codespell
+        args: ["--config=.codespellrc"]
+        exclude: '^docs/research/|^docs/OCR/manifest\.tsv$'
+
+  # PIN THE MAJOR: clang-format 20.1.8 == esp-clang 20.1.1 shipped with ESP-IDF v6.0.x.
+  # mirrors-clang-format's newest tag on 2026-08-20 was v22.1.8; a major bump reformats everything.
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v20.1.8
+    hooks:
+      - id: clang-format
+        types_or: [c, c++]
+        exclude: '(^|/)(managed_components|build|build_[^/]+)/'
+
+  # Kconfig linting — pinned to 3.x because ESP-IDF v6.0 constrains esp-idf-kconfig>=3.2.0,<4.0.0
+  # (https://dl.espressif.com/dl/esp-idf/espidf.constraints.v6.0.txt — cite the URL, never a host copy).
+  - repo: https://github.com/espressif/esp-idf-kconfig.git
+    rev: v3.12.0
+    hooks:
+      - id: check-kconfig-files
+      - id: check-deprecated-kconfig-options
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.11.0                          # VERIFY before first use
+    hooks:
+      - id: shellcheck
+        args: ["-x", "-e", "SC1091"]
+        files: '\.sh$|^\.envrc$'
+        types: [text]
+
+  # SPDX / REUSE compliance. Runs at the manual stage until a REUSE.toml exists that
+  # covers the Markdown library (reuse lint otherwise fails on every un-annotated .md).
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: v5.0.2                           # VERIFY before first use
+    hooks:
+      - id: reuse
+        stages: [manual]
+
+  - repo: https://github.com/espressif/conventional-precommit-linter
+    rev: v1.11.0
+    hooks:
+      - id: conventional-precommit-linter
+        stages: [commit-msg]
+        args: ["--subject-min-length=8", "--summary-uppercase"]
+
+  - repo: local
+    hooks:
+      # 1. Every code/config file carries an SPDX identifier (BRIEF rule 6; feeds esp-idf-sbom).
+      #    python-scripts/doc_ocr/ is NOT excluded: it originates from the author's swarm repo
+      #    (MIT, same author) and carries SPDX + `Origin:` header lines here -- see NOTICE.
+      - id: spdx-header
+        name: SPDX-License-Identifier present in code/config files
+        language: system
+        entry: >-
+          bash -c 'rc=0; for f in "$@"; do grep -q "SPDX-License-Identifier:" "$f"
+          || { echo "missing SPDX header in $f"; rc=1; }; done; exit $rc' --
+        files: '(\.(c|h|cpp|hpp|py|sh|cmake|ya?ml|toml)|CMakeLists\.txt|\.envrc|\.clangd|\.clang-format|\.editorconfig|\.codespellrc|Kconfig(\.projbuild)?|idf_component\.yml|sdkconfig\.[a-z0-9.]+|firmware/twatch-s3/partitions\.csv)$'
+        exclude: '(^|/)(managed_components|build|build_[^/]+|scratch|docs/reference-projects/clones)/|^docs/OCR/manifest\.tsv$|dependencies\.lock$'
+
+      # 2. GPIO19/GPIO20 are the USB-Serial-JTAG D-/D+ pins — the ONLY recovery path on a
+      #    sealed board with zero exposed GPIO. A literal 19/20 near any GPIO API or pin
+      #    macro is a commit failure. Comment lines (`/*`, ` *`, `//`) are skipped so the
+      #    rule may be *explained* in code; twatch_pins.h is excluded because it is the file
+      #    that IMPLEMENTS the rule (TWATCH_ASSERT_NOT_USJ + the two reserved USB defines)
+      #    and is policed by hook 2b instead. Complements the _Static_asserts (ADR 0015).
+      - id: no-usb-pins
+        name: GPIO19/20 are USB-Serial-JTAG — never referenced in firmware sources
+        language: system
+        entry: >-
+          bash -c 'rc=0; for f in "$@"; do
+          hits=$(grep -nE "GPIO_NUM_(19|20)\b|\bGPIO(19|20)\b|\b(gpio_config|gpio_reset_pin|gpio_set_direction|gpio_set_level|gpio_set_pull_mode|gpio_iomux_out|gpio_iomux_in|esp_rom_gpio_pad_select_gpio)\b[^;]*[^0-9.x](19|20)\b|^\s*#\s*define\s+\w*(PIN|GPIO|IO)\w*\s+\(?(19|20)\b" "$f"
+          | grep -vE "^[0-9]+:\s*(/\*|\*|//)");
+          if [ -n "$hits" ]; then printf "%s\n" "$hits" | sed "s|^|$f:|"; rc=1; fi; done;
+          [ $rc -eq 0 ] || echo "GPIO19/20 (USB-Serial-JTAG) referenced above — forbidden (ADR 0015)"; exit $rc' --
+        files: '^firmware/.*\.(c|h|cpp|hpp)$'
+        exclude: '(^|/)(managed_components|build|build_[^/]+)/|^firmware/twatch-s3/components/twatch_bsp/include/twatch_pins\.h$'
+
+      # 2b. In twatch_pins.h the ONLY macros allowed to equal 19 or 20 are the two reserved
+      #     USB names, and both must stay present so TWATCH_ASSERT_NOT_USJ keeps its meaning.
+      - id: pins-h-usb-reserved-only
+        name: twatch_pins.h assigns 19/20 only to TWATCH_PIN_USB_DN/DP
+        language: system
+        entry: >-
+          bash -c 'f=firmware/twatch-s3/components/twatch_bsp/include/twatch_pins.h; rc=0;
+          grep -qE "^\s*#\s*define\s+TWATCH_PIN_USB_DN\s+19\b" "$f" || { echo "$f: TWATCH_PIN_USB_DN 19 missing"; rc=1; };
+          grep -qE "^\s*#\s*define\s+TWATCH_PIN_USB_DP\s+20\b" "$f" || { echo "$f: TWATCH_PIN_USB_DP 20 missing"; rc=1; };
+          grep -q "TWATCH_ASSERT_NOT_USJ" "$f" || { echo "$f: TWATCH_ASSERT_NOT_USJ missing"; rc=1; };
+          if grep -nE "^\s*#\s*define\s+\w+\s+\(?(19|20)\b" "$f" | grep -vE "TWATCH_PIN_USB_D[NP]\b"; then
+          echo "$f: a pin macro other than TWATCH_PIN_USB_DN/DP equals 19/20 (ADR 0015)"; rc=1; fi; exit $rc'
+        files: '^firmware/twatch-s3/components/twatch_bsp/include/twatch_pins\.h$'
+        pass_filenames: false
+
+      # 3. sdkconfig.defaults must carry the anti-brick / no-radio / no-crypto invariants verbatim.
+      #    Symbols verified against the ESP-IDF v6.0.1 tree on 2026-08-20:
+      #    SECURE_BOOT, SECURE_FLASH_ENC_ENABLED (components/bootloader/Kconfig.projbuild),
+      #    ESP_WIFI_ENABLED (components/esp_wifi/Kconfig — promptless in v6.0.x, so the line is
+      #    declarative and may be written commented out, `# CONFIG_ESP_WIFI_ENABLED=n`; the effective
+      #    guard is that no component REQUIRES esp_wifi, pitfall H11),
+      #    BT_ENABLED (components/bt/Kconfig), ESP_CONSOLE_USB_SERIAL_JTAG (components/esp_stdio/Kconfig).
+      - id: sdkconfig-invariants
+        name: sdkconfig.defaults keeps SECURE_*=n, radio=n, console=USB-Serial-JTAG
+        language: system
+        entry: >-
+          bash -c 'f=firmware/twatch-s3/sdkconfig.defaults; rc=0;
+          for want in CONFIG_SECURE_BOOT=n CONFIG_SECURE_FLASH_ENC_ENABLED=n CONFIG_BT_ENABLED=n CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y;
+          do grep -qxF "$want" "$f" || { echo "$f lacks the line $want"; rc=1; }; done;
+          grep -qE "^(# *)?CONFIG_ESP_WIFI_ENABLED=n\b" "$f" || { echo "$f lacks CONFIG_ESP_WIFI_ENABLED=n (active or commented: the symbol is promptless in v6.0.x)"; rc=1; };
+          if grep -nE "^CONFIG_(SECURE_BOOT|SECURE_FLASH_ENC_ENABLED|ESP_WIFI_ENABLED|BT_ENABLED)=y" firmware/twatch-s3/sdkconfig.defaults* firmware/twatch-s3/sdkconfig.ci.* 2>/dev/null;
+          then echo "forbidden =y above"; rc=1; fi; exit $rc'
+        files: '^firmware/twatch-s3/sdkconfig\.'
+        pass_filenames: false
+
+      # 4. partitions.csv arithmetic: no overlaps, first entry at/after 0x9000 (table at 0x8000 +
+      #    one 4 KiB sector), app partitions 64 KiB-aligned, data 4 KiB-aligned, last partition ends
+      #    at exactly 0x1000000 (16 MiB), ota_0/ota_1 present, no factory partition (ADR 0014).
+      #    Alignment gaps (phy_init -> ota_0) are legal. Pure python, no IDF needed.
+      - id: partitions-arithmetic
+        name: partitions.csv is overlap-free, aligned and ends at exactly 16 MiB
+        language: python
+        entry: >-
+          python3 -c "import csv,sys;
+          R=[[c.strip() for c in r] for r in csv.reader(l for l in open(sys.argv[1]) if l.strip() and not l.lstrip().startswith('#'))];
+          T=[(r[0],r[1],int(r[3],0),int(r[4],0)) for r in R];
+          A=lambda t:0x10000 if t=='app' else 0x1000;
+          bad=[n for i,(n,t,o,s) in enumerate(T) if o<(0x9000 if i==0 else T[i-1][2]+T[i-1][3]) or o%A(t) or s%A(t)];
+          end=T[-1][2]+T[-1][3]; names=[n for n,*_ in T];
+          msgs=['overlap or misalignment at partition '+n for n in bad]
+          +(['table ends at %#x, expected 0x1000000'%end] if end!=0x1000000 else [])
+          +['missing partition '+x for x in ('nvs','otadata','ota_0','ota_1','coredump') if x not in names]
+          +(['factory partition present; ADR 0014 forbids it'] if 'factory' in names else []);
+          print(*msgs,sep=chr(10)); sys.exit(bool(msgs))"
+        files: '^firmware/twatch-s3/partitions\.csv$'
+
+      # 5. Needs an activated ESP-IDF shell: the lock must match the manifest.
+      - id: lockfile-matches-manifest
+        name: dependencies.lock is up to date (manual stage; needs idf.py)
+        language: system
+        entry: >-
+          bash -c 'cd firmware/twatch-s3 && idf.py reconfigure >/dev/null && git diff --exit-code -- dependencies.lock'
+        files: '(idf_component\.yml|dependencies\.lock)$'
+        pass_filenames: false
+        stages: [manual]
+
+      # 6. Needs an activated ESP-IDF shell: the authoritative partition-table check.
+      - id: gen-esp32part
+        name: gen_esp32part.py accepts partitions.csv for a 16MB flash (manual stage)
+        language: system
+        entry: >-
+          bash -c 'python3 "$IDF_PATH/components/partition_table/gen_esp32part.py" --flash-size 16MB -q firmware/twatch-s3/partitions.csv /dev/null'
+        files: '^firmware/twatch-s3/partitions\.csv$'
+        pass_filenames: false
+        stages: [manual]

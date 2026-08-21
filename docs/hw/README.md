@@ -1,0 +1,37 @@
+# Hardware facts — LilyGO T-Watch S3
+
+The hardware facts the firmware configuration depends on, kept **next to the evidence that produced them**. This directory holds derived tables and device-specific records; the vendor PDFs themselves live in the reference library ([`../datasheets/lilygo/t-watch-s3/`](../datasheets/lilygo/t-watch-s3/) once acquired in phase D3) and are indexed in [bibliography 01](../bibliography/01-datasheets.md). The rail-by-rail power budget is a planned architecture document (`docs/architecture/06-power-budget.md`); the BOM is [`../../hardware/bom/bill-of-materials.csv`](../../hardware/bom/bill-of-materials.csv).
+
+| File | Contents | Status |
+|---|---|---|
+| [twatch-s3-pins.md](twatch-s3-pins.md) | Pin map, AXP2101 rail map, I²S allocation, strapping-pin cautions (GPIO45/VDD_SPI, GPIO47/48 domain) — derived from the LilyGO schematic and the LilyGoLib MIT hardware document, **not** from arduino-esp32's LGPL `variants/` | (prov.) until D3 files the schematic and E2 reads the eFuses |
+| [efuse-baseline.json](efuse-baseline.json) | `espefuse summary --format json` of *this* unit | placeholder — written in E2 ([first-flash-checklist.md](../devenv/first-flash-checklist.md) step 3) |
+| [vendor-partition-table.md](vendor-partition-table.md) | The shipped partition table, decoded with `gen_esp32part.py` | placeholder — written in E2 (step 4) |
+
+## Factory baseline ledger (filled in E2)
+
+| Item | Value | Recorded |
+|---|---|---|
+| `esptool chip-id` (chip revision) | TBD | |
+| `esptool flash-id` (manufacturer / device ID / size) | TBD — must be 16 MB | |
+| `esptool read-mac` | TBD | |
+| `esptool get-security-info` | TBD | |
+| `lsusb -d 303a:` before any custom flash | TBD — expect `303a:821b` | |
+| Full-flash backup file name | `twatch-s3-factory-backup-<YYYYMMDD>.bin` (off-repo, two copies — [backup-policy.md](../devenv/backup-policy.md)) | |
+| Full-flash backup sha256 | TBD | |
+| Vendor `nvs` slice (offset, size, sha256) | TBD | |
+| Scratch-region restore test (offset, size, result) | TBD | |
+| Vendor factory image flashed (optional): file, sha256, source URL | TBD | |
+| `VDD_SPI_FORCE` / `VDD_SPI_TIEH` / `VDD_SPI_XPD` | TBD → ADR 0016 | |
+| `DIS_USB_JTAG` / `DIS_USB_SERIAL_JTAG` | TBD — must both be `False` | |
+| `SPI_BOOT_CRYPT_CNT` / `SECURE_BOOT_EN` | TBD — must be `0` / `False` | |
+
+## Rules
+
+- **eFuses are read-only for the life of the project.** This directory records them; nothing in this repository ever writes them.
+- Pin numbers in firmware come from `twatch_bsp/include/twatch_pins.h`, which is derived from [twatch-s3-pins.md](twatch-s3-pins.md) and carries a `_Static_assert` per pin against 19/20. When the schematic is filed and disagrees with this table, the schematic wins and both files change in the same commit.
+- The schematic PDF is **linked, not committed** (critic B11): deriving facts from it is fine, vendoring it into an Apache-2.0 repository is a separate question. Filed copies live in the gitignored-or-ledgered reference library per [`../datasheets/README.md`](../datasheets/README.md).
+
+## Open hardware questions routed here
+
+R8 vs R8V marking (VDD_SPI domain), which rail feeds the SPM1423 and the MAX98357A, ST7789 revision (`T_SCYCW` 66 ns vs 16 ns), FT6336U vs FT5336, 470 vs 400 mAh, `ULC0511C` identity, SX1262 DIO3/TCXO — tracked in the roadmap routing table ([`../roadmap/documentation-roadmap.md`](../roadmap/documentation-roadmap.md)) and closed on paper in phase D4 or on the bench in E2.

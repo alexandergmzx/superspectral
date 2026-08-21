@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Super Spectral - target-neutral Kconfig defaults (ESP-IDF v6.0.x, ADR 0001).
+# Board-specific flash/PSRAM/CPU settings live in sdkconfig.defaults.esp32s3,
+# which the build system auto-loads next to this file (do NOT list it in
+# SDKCONFIG_DEFAULTS). CI overlays: sdkconfig.ci.{qemu,release,analyzer}.
+#
+# Every symbol below was grepped against ~/.espressif/v6.0.1/esp-idf on
+# 2026-08-20 (symbol names, not line numbers - they rot across minors).
+# This file only seeds a NEW sdkconfig. After editing:
+#   rm -f sdkconfig && idf.py reconfigure     (or idf.py fullclean && idf.py build)
+# Regenerate a minimal file from a tuned sdkconfig with: idf.py save-defconfig
+
+# ---- Reproducibility (docs/devenv/env.lock.md; CI builds twice and diffs) ----
+# Selects COMPILER_HIDE_PATHS_MACROS; maps paths to /IDF, /IDF_PROJECT, ...;
+# drops timestamps from app + bootloader metadata. GDB then needs
+# build/gdbinit/prefix_map (idf.py gdb wires it automatically).
+CONFIG_APP_REPRODUCIBLE_BUILD=y
+
+# ---- Partition table (partitions.csv; offsets frozen by ADR 0014) -----------
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_OFFSET=0x8000
+
+# ---- Anti-brick (ADR 0015): the BOOT button is INSIDE the case --------------
+# Rollback: a build that never calls esp_ota_mark_app_valid_cancel_rollback()
+# is reverted by the bootloader on the next reset. The bootloader watchdog
+# covers the window before app_main.
+CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
+CONFIG_BOOTLOADER_WDT_ENABLE=y
+
+# ---- NEVER inherit these (asserted by pre-commit; eFuses are read-only) -----
+# Secure boot / flash encryption are one-way eFuse burns on a board whose only
+# recovery path is USB-Serial-JTAG. Both stay n for the life of the project.
+CONFIG_SECURE_BOOT=n
+CONFIG_SECURE_FLASH_ENC_ENABLED=n
+
+# ---- Console on native USB-Serial-JTAG (zero exposed GPIO, no UART) ---------
+# Must be the PRIMARY console. ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG is
+# output-only and `depends on !ESP_CONSOLE_USB_SERIAL_JTAG`.
+# USJ_NO_AUTO_LS_ON_CONNECTION stops automatic light sleep (esp_pm) from
+# killing the console while a host is attached.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_USJ_NO_AUTO_LS_ON_CONNECTION=y
+
+# ---- Post-mortem to the 60 KB coredump partition -----------------------------
+# In v6.0 the format/checksum choices are gone: ESP_COREDUMP_ENABLE `select`s
+# ESP_COREDUMP_DATA_FORMAT_ELF and ESP_COREDUMP_CHECKSUM_SHA256, and neither is
+# defined as a `config` anywhere in the v6.0.1 tree - so they are NOT set here
+# (an assignment to an undefined symbol only earns a kconfgen warning, but it
+# would be a lie in this file). Retrieval: docs/devenv/coredump-runbook.md.
+CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH=y
+
+# ---- Floating point / libc --------------------------------------------------
+# This product is numeric readouts (Hz, cents, dB): printf("%f") must work.
+# In v6.0 the default libc is PICOLIBC, not Newlib: components/esp_libc/Kconfig
+# `choice LIBC` defaults to LIBC_PICOLIBC and picks LIBC_NEWLIB only under
+# IDF_TOOLCHAIN_CLANG (migration guide release-6.x/6.0/system.rst, "Default
+# LibC changed from Newlib to PicolibC"). LIBC_NEWLIB_NANO_FORMAT `depends on
+# LIBC_NEWLIB`, so under the default GCC toolchain the line below is INERT -
+# kconfgen ignores it. It is kept (harmless) for the clang-toolchain case,
+# where Newlib is selected and the nano format would drop float formatting.
+# Picolibc's float printf is NOT gated by any Kconfig symbol in the v6.0.1
+# tree; the migration guide's own example prints "%.1000f". Confirm at the
+# E1 gate build with a printf("%f") smoke test over the USJ console
+# (firmware/twatch-s3/README.md, "What comes next", E1 row).
+# Note the v6.0 rename: CONFIG_NEWLIB_* -> CONFIG_LIBC_* (components/esp_libc).
+CONFIG_LIBC_NEWLIB_NANO_FORMAT=n
+
+# ---- Real-time behaviour ----------------------------------------------------
+CONFIG_FREERTOS_HZ=1000
+# -O2. NEVER add -ffast-math: it breaks golden-file agreement with the host.
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+CONFIG_COMPILER_WARN_WRITE_STRINGS=y
+# Deliberately NOT set: CONFIG_COMPILER_DISABLE_GCC*_WARNINGS,
+# CONFIG_COMPILER_DISABLE_DEFAULT_ERRORS (v6.0 default is warnings-as-errors;
+# keep it). Per-component -Werror -Wshadow -Wconversion -Wdouble-promotion
+# -Wformat=2 -Wundef -Wvla live in each components/*/CMakeLists.txt.
+
+# ---- Watchdogs: ON and PANICKING. Fix the design, never the timeout. --------
+# A reset is strictly better than a wedge: it gives the ROM bootloader another
+# USB enumeration window (ADR 0015). ESP_TASK_WDT_PANIC default is n (log only);
+# ESP_TASK_WDT_TIMEOUT_S default is 5.
+CONFIG_ESP_INT_WDT=y
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=10
+CONFIG_ESP_TASK_WDT_PANIC=y
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0=y
+CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1=y
+CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY=y
+
+# ---- Brownout: keep the LOWEST threshold on a 400-470 mAh cell --------------
+# v6.0 location: components/esp_hw_support/power_supply/port/esp32s3/Kconfig.power
+# Seven levels SEL_7 (2.44 V, default, lowest) ... SEL_1 (3.30 V). There is
+# NO SEL_0 on the S3. The 4.x-era CONFIG_ESP32S3_BROWNOUT_DET_LVL_SEL_* names
+# are silently renamed by esp_system/sdkconfig.rename.esp32s3 - do not use them.
+CONFIG_ESP_BROWNOUT_DET=y
+CONFIG_ESP_BROWNOUT_DET_LVL_SEL_7=y
+
+# ---- No radio in v1 (ADR 0017) ----------------------------------------------
+# SX1262 is held in reset with ALDO4 off; Wi-Fi and BT stacks never enter the
+# link line. BT_ENABLED is a real prompt (components/bt/Kconfig): n it is.
+CONFIG_BT_ENABLED=n
+# ESP_WIFI_ENABLED exists in components/esp_wifi/Kconfig but is PROMPTLESS:
+#     config ESP_WIFI_ENABLED
+#         bool
+#         default y if SOC_WIFI_SUPPORTED
+# kconfiglib silently ignores assignments to promptless symbols while loading
+# defaults, so "CONFIG_ESP_WIFI_ENABLED=n" here would have NO effect and the
+# generated sdkconfig would still read =y - a trap for the reviewer. The real
+# guard is structural: no component REQUIRES esp_wifi/esp_netif/esp_event for
+# networking, and the pre-commit grep asserts that. Line kept for intent only:
+# CONFIG_ESP_WIFI_ENABLED=n   (promptless on esp32s3 - cannot be overridden)
