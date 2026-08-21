@@ -1,0 +1,139 @@
+# 01 — Datasheets, reference manuals and schematics
+
+Every IC, module, board and bench instrument whose numbers end up in a firmware constant, a `sdkconfig` symbol, a validation target or a BOM row. Entries are grouped by subsystem in the order the hardware is brought up ([roadmap](../roadmap/documentation-roadmap.md) E2 → D4): SoC, board, audio, display, power, memory, peripherals, then the **instruments** that make the [validation plan](../validation/README.md) measurable.
+
+Priority key: ★★★ must-have/blocking · ★★ strongly recommended · ★ useful background (defined in [README](README.md)). ADR numbers refer to the index and backlog in [`../adr/README.md`](../adr/README.md); "§n" refers to the [proposal](../proposal/01-super-spectral-proposal.md); metric names are rows of the validation plan; component names are directories under [`firmware/twatch-s3/components/`](../../firmware/twatch-s3/README.md).
+
+**Two conventions specific to this file.** (1) Pin the revision in the filename — the Knowles and ST7789 entries below differ *numerically* between revisions. (2) Several gating numbers are **raster images** inside the PDFs (Knowles acoustic table and response curve, parts of the ST7789 timing table): `pdftotext` yields nothing for them, so `checked` in the [OCR ledger](../OCR/README.md) means a human read them visually and, for curves, digitised them (WebPlotDigitizer → `<name>_response.csv` with a provenance block, roadmap D3).
+
+---
+
+## SoC — ESP32-S3 (chip-down ESP32-S3-R8, not a module)
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 1 | **ESP32-S3 Series Datasheet** | Espressif, v2.2 or later (PDF, English) | ★★★ | Table 1-1 ordering codes (R8 vs R8V = 3.3 V vs 1.8 V VDD_SPI) and the pin-overview power-domain column (GPIO47 = PDM DATA and GPIO48 = I²S BCLK sit in the VDD_SPI domain) — ADR 0016 and the `twatch_bsp` I/O-domain check that must precede any audio or backlight code (roadmap E2). §5.6 current tables (dual-core 240 MHz, PIE, light-sleep + PSRAM adder) are the only primary numbers for the §4 **autonomy ≥3 h** model and `architecture/06-power-budget.md`. Single-precision-FPU statement → `-Wdouble-promotion` in the ADR 0001 warnings policy. I2S BCK range → ADR 0003. |
+| 2 | **ESP32-S3 Technical Reference Manual** | Espressif, v1.8 or later (PDF) | ★★★ | I2S chapter, PDM→PCM path (`f_Sampling = f_PDM / DSR`) and register map → ADR 0003 and `audio_source/pdm_mic`. PIE chapter (8/16/32-bit integer lanes, no FP multipliers) → the `sc16`/PIE option in `spectral_fft_backend` (§3 trade-off study, objective 4). eFuse-controller chapter → reading `docs/hw/efuse-baseline.json` (roadmap E2). GDMA chapter → zero-copy capture. LCD_CAM chapter → i80 fallback noted in ADR 0007. |
+| 3 | **ESP32-S3 Series Chip Errata** | Espressif, latest (PDF) | ★★★ | The §4 **reproducibility** row claims third-party rebuild + rerun; chip-revision-dependent behaviour (PSRAM/cache/USB errata) must be known and the revision recorded from `esptool chip-id` in `docs/devenv/env.lock.md`. Workarounds may force `sdkconfig.defaults.esp32s3` choices. |
+| 4 | **ESP Hardware Design Guidelines — ESP32-S3** | Espressif, master/latest (PDF export of the HTML guide) | ★★★ | The VDD_SPI voltage-control table (`EFUSE_VDD_SPI_FORCE` × GPIO45 level × `EFUSE_VDD_SPI_TIEH` → resulting rail) is the document that turns the E2 eFuse read into a decision — ADR 0016 (GPIO45 = backlight = strapping pin on a 1.8 V flash). Schematic checklist → review of `docs/hw/twatch-s3-pins.md`; antenna/RF notes only for ADR 0017 (radio held off in v1). |
+| 5 | **Xtensa LX7 processor datasheet** (ISA summary on request from Cadence) | Cadence Design Systems product datasheet (PDF) | ★ | FPU op latencies, alignment rules and the windowed ABI — needed only if `spectral_core` inner loops (MPM/YIN, LPC/Burg) are hand-tuned (§3); also explains why esp-dsp's float kernels gain little over ESP32. Not a bring-up dependency. |
+
+## Board — LilyGO T-Watch S3
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 6 | **T-Watch S3 schematic V1.4** (`T_WATCH_S3.pdf`) | LilyGO, `TTGO_TWatch_Library` branch `t-watch-s3`, `schematic/` | ★★★ | The only vendor document with an extractable text layer carrying the true BOM strings (`ESP32-S3-R8`, `W25Q128JWPIQ`, `SPM1423HM4H-B`, `MAX98357A`, `ULC0511C` …) → [`hardware/bom/bill-of-materials.csv`](../../hardware/README.md) and `docs/hw/twatch-s3-pins.md` (pins are derived from here, never from LGPL `variants/`, ADR 0004). AXP2101 rail assignment → the `twatch_bsp` rail order. Mic L/R strapping and the mic's rail → ADR 0003. **Link, do not commit** the PDF (redistribution terms unstated; facts are not copyrightable). |
+| 7 | **T-Watch S3 schematic, 2025 revision** (`T_WATCH-S3 25-03-24.pdf`) | LilyGO, `LilyGoLib` repo, `schematic/` | ★★★ | The current hardware revision. Answers four questions no text source resolves: exact SoC marking (R8 vs R8V), whether GPIO45 has an external pull-up, which rail powers the SPM1423 (GPIO47 domain) and the MAX98357A (GPIO48 domain), and whether the obsolete SPM1423HM4H-B was silently second-sourced (which would invalidate the §4 EIN/AOP expectations). Roadmap D4 hardware-fact closure; ADR 0003/0016 inputs. WebFetch cannot parse it — download and open locally. |
+| 8 | **ESP32-S3-EYE schematic + BSP** | Espressif, `esp-bsp/bsp/esp32_s3_eye` + devkit page | ★★ | Espressif's own 240×240 ST7789 + digital-mic + 8 MB octal-PSRAM board: canonical `esp_lcd` / `esp_lvgl_port` / `esp_codec_dev` wiring for `display_backend` and `audio_source`, and the lowest-risk platform to validate the DSP pipeline before the watch is opened (§3; roadmap D4 reference-project loop). |
+
+## Audio — microphone and amplifier
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 9 | **Knowles SPM1423HM4H-B** PDM MEMS microphone (top-port, omni) — **pin the revision** | Knowles product spec; Rev A (page-verified AOP ≤10 % THD @ 110 dB SPL) vs Rev D (115 dB SPL quoted by a secondary source) | ★★★ | **The gating document of the project.** PDM clock window 1.0–3.25 MHz → ADR 0003 (32 kHz / `DSR_8S` default; 48 kHz needs 3.072 MHz, gated on measurement — a threshold that changes the plan). Sensitivity −22 dBFS @ 94 dB SPL → the dBFS→SPL mapping and dBFS reference in ADR 0006 / `spectral_core`. SNR 61.5 dB(A) → §4 **EIN ≤ 35 dB(A)** expectation (≈32.5 dB(A)); it bounds *wideband level*, not per-bin spectral range. AOP → §4 **clipping-flag** metric (design to 110 dB SPL). Free-field response → the mic-EQ slot of the preset schema (ADR 0010) — digitise the raster curve before quoting any band bias. Supply range → the 1.8 V-domain question (ADR 0016, roadmap E2). Part is **obsolete** at distributors; see #10. |
+| 10 | **TDK InvenSense T3902** PDM microphone | TDK InvenSense product page + datasheet | ★★ | The T-Watch Ultra's mic and the likely second source if #7 shows a swap on late S3 units; gives the modern SNR/AOP baseline for §7 future work. Reason the `audio_source` abstraction must not bake SPM1423 constants into the capture path (ADR 0003). |
+| 11 | **MAX98357A / MAX98357B** I²S Class-D amplifier | Analog Devices (Maxim) datasheet, latest rev | ★★★ | `V_IH` vs DVDD is the crux of the GPIO48 1.8 V-domain concern (ADR 0016, E2). No-MCLK clocking, supported rates and BCLK/LRCLK ratios → the I2S1 standard-mode config in `twatch_bsp` (ADR 0003: mic on I2S0, amp on I2S1). `GAIN_SLOT`/`SD_MODE` → the **calibration-tone generator** that validates FFT bin mapping (§4 peak-frequency, injection path; `validation/experiments/0001`). |
+| 12 | **Speaker transducer** on `SPEAK1` / `SPK_VDD` | **Not published** — request from LilyGO support (impedance, rated power, Fs, SPL) | ★★ | Bounds safe MAX98357A gain for the calibration-tone path and completes the BOM (roadmap D4). `TBD` until LilyGO answers; the larger acoustic gap is the **port/case/gasket geometry**, which is a mechanical-documentation item ([`hardware/acoustic-port/`](../../hardware/README.md), [02](02-application-notes.md) acoustics section), not a datasheet. |
+
+## Display and touch
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 13 | **Sitronix ST7789V3** controller specification | ST7789V3 preliminary spec V0.0 (2020-01-02), Sipeed mirror | ★★★ | `T_SCYCW` (serial write cycle) sets the pixel-clock ceiling of `display_backend` and therefore the §4 **sustained refresh** row (50 Hz live-singing preset). `VSCRDEF (33h)` / `VSCSAD (37h)` + `MADCTL` → the scroll-axis verification that gates ADR 0007 (raw `esp_lcd` canvas + hardware vertical scroll; fails → ≈30 Hz full-frame target). `COLMOD (3Ah)` 16- vs 18-bit → ADR 0011 RGB565 LUT/dither decision. GRAM offset → `esp_lcd_panel_set_gap()`; reset timing after ALDO3 → `twatch_bsp` rail order. |
+| 14 | **ST7789V / ST7789VW / ST7789V2** datasheets (comparison set) | Sitronix; Newhaven (V), rhydolabz (VW), Mouser (V2) mirrors | ★ | `T_SCYCW` spans 66 ns (15 MHz) to 16 ns (62.5 MHz) across revisions — a 4× frame-rate-ceiling spread, which is why ADR 0007 is gated on measurement rather than a datasheet number. Keep until the panel marking is read (roadmap D4). |
+| 15 | **1.3″ / 1.54″ 240×240 IPS module datasheet** (panel + backlight LED electrical) | Board-specific; vendor unknown — via LilyGO support or the FPC marking | ★★ | Backlight current at usable brightness is plausibly the **largest single power term** (§4 autonomy; `architecture/06-power-budget.md`); also settles 1.3″ vs 1.54″ (active area vs module) and the panel's real SPI wiring. `TBD`. |
+| 16 | **FocalTech FT6336U** capacitive touch controller (FT6236/FT6336/FT6436 family datasheet) | FocalTech; buydisplay / displayfuture mirrors | ★★★ | `T_RST` is **unpopulated** on the board, so only low-power modes recoverable without a reset may be used → ADR 0015 sleep gating and `twatch_bsp` touch init. Post-power-on delay before address 0x38 ACKs → rail-order step "ALDO3, then ≥10 ms". Register map must match `esp_lcd_touch_ft5x06` ([02](02-application-notes.md)). Gesture/two-point data → pinch-zoom on the frequency axis (`ui`, ADR 0012). |
+
+## Power management and battery
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 17 | **X-Powers AXP2101** PMU datasheet + register map | X-Powers; Waveshare PDF mirror; copies in `lewisxhe/XPowersLib` `datasheet/` | ★★★ | Register addresses and encodings for DC1/ALDO2/ALDO3/ALDO4/BLDO2 enables and voltages → the ≈300-line `twatch_bsp` AXP2101 driver over `i2c_master_bus_handle_t` and its rail order (voltages → disable unused → ALDO3 → ≥10 ms → … → ALDO2 last, ramped). Charge-current cap ≤130 mA for the 470 mAh cell. PWRON/long-press and the 4 s PMU watchdog → ADR 0015 decision. 14-bit E-Gauge (battery %, voltage regs) → §4 **autonomy** cross-check against PPK2/Otii. |
+| 18 | **Battery cell** — 470 mAh @ 3.8 V (LilyGoLib, `BATTERY_PARAMS_470mAh[]`) vs 400 mAh @ 3.7 V (resellers) | No cell datasheet will be published; read the shipped cell label (roadmap D4) | ★★ | A 15 % capacity difference propagates straight into the §4 **autonomy ≥3 h** target and §7 limitations (capacity fade). Class documents (IEC 62133-2, UN 38.3) live in [03](03-standards.md); the PPK2 battery-pigtail procedure is a validation-equipment item. `TBD`. |
+| 19 | **Seiko Instruments MS412FE** rechargeable coin cell | SII datasheet | ★ | ≈1 mAh, charge limits, self-discharge → RTC/VBACKUP retention with the battery slide switch off (50 µA power-off draw) in `architecture/06-power-budget.md`; PCF8563 wake sources. |
+
+## Memory
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 20 | **Winbond W25Q128JW** 1.8 V serial NOR flash (`W25Q128JWPIQ`) | Winbond datasheet | ★★★ | 1.7–1.95 V supply window → keeps `BOOTLOADER_VDDSDIO_BOOST_1_9V` (in-window) and forbids `set-flash-voltage` forever (ADR 0015 eFuses read-only); forces the R8/R8V question (ADR 0016). QIO command set and max clock at 1.8 V → `FLASHMODE_QIO` / 80 MHz in `sdkconfig.defaults.esp32s3`, verified by the E2 full read/write/verify. |
+| 21 | **AP Memory APS6408L-3OB / -OBM** octal PSRAM (in-package; Espressif ESP-PSRAM64 quad datasheet as fallback reference) | AP Memory datasheet (portal); Espressif ESP-PSRAM64/64H datasheet | ★★ | Espressif publishes only the 140 µA light-sleep adder, not **active** current — the second-largest unquantified term in `architecture/06-power-budget.md`. Read/write latency behind the measured 32–57 MB/s → the "FFT working buffers in internal SRAM, spectrogram history in PSRAM" rule (§3; `spectral_fft_backend`) and the explicit `SPIRAM_SPEED_80M`. |
+
+## Sensors and peripherals
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 22 | **Bosch BMA423** accelerometer | BST-BMA423-DS000 | ★★ | Feature engine (wrist-tilt / wake-on-motion) → hands-free arming in ADR 0012; address 0x19 in the five-address I²C gate of `twatch_bsp`; low-power current → power budget. |
+| 23 | **Bosch BMA4xx Sensor API** (BSD-3; includes the binary feature-config blob) | GitHub `boschsensortec/BMA423-Sensor-API` | ★★ | The concrete reason `lewisxhe/sensorlib ~0.4.1` is pinned (ADR 0001 component set, `CONFIG_SENSORLIB_ESP_IDF_NEW_API=y`) instead of a hand-rolled driver: the feature blob cannot be rewritten. Licence line for `NOTICE` (ADR 0004). |
+| 24 | **NXP PCF8563** RTC | NXP datasheet | ★★ | Alarm/timer IRQ on GPIO17, CLKOUT, backup-supply current → timer-wake in the ADR 0015 sleep gating; session timestamps in the take record (`protocols/specs/`, ADR 0010). |
+| 25 | **TI DRV2605L** haptic driver | TI SLOS854 (latest rev) | ★★ | Enable is gated by AXP2101 **BLDO2** (no GPIO) → `twatch_bsp` rail order; ROM waveform library → the haptic confirmation of ADR 0012. |
+| 26 | **Semtech SX1262** transceiver (+ SX126x reference manual) | Semtech datasheet, download-resources tab | ★ | ADR 0017 (SX1262 held in reset, ALDO4 off, `WIFI_ENABLED=n`/`BT_ENABLED=n`, `phy_init` retained). DIO3/TCXO and BUSY only for BOM completeness (D4); TX current profile is the main brownout contributor if the radio is ever enabled. |
+| 27 | **Everlight IR12-21C** IR emitter | Everlight datasheet | ★ | GPIO2 via MMBT3904 — safe pulse current for the BOM; no v1 feature; completes the `_Static_assert` pin table in `twatch_bsp/pins.h`. |
+| 28 | **Panasonic AXK8 (AXK824145-0.4 mm, 24-pin)** board-to-board connector | Panasonic Industry product page | ★ | Display FPC connector — needed when the panel marking is read (D4) and for the acoustic-port teardown measurement ([`hardware/acoustic-port/`](../../hardware/README.md)). |
+| 29 | **`ULC0511C`** — unidentified part near USB/power (ESD array or load switch) | `TBD` — identify from the schematic symbol and package (D4) | ★ | If it is a USB load switch it sits on the **only recovery path** (ADR 0015); either way it is a BOM gap in `bill-of-materials.csv`. |
+
+## Instruments — the reference chain for the validation plan
+
+Bench equipment whose specifications enter the uncertainty budget (GUM, [03](03-standards.md)) and the equipment table of the [validation plan](../validation/README.md). Filed under [`../datasheets/instruments/`](../datasheets/README.md).
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 30 | **Brüel & Kjær Type 4231** sound calibrator | B&K product data BP1311 (94.0 / 114.0 dB @ 1 kHz, ±0.2 dB, IEC 60942 Class 1) | ★★★ | Anchors the §4 **absolute SPL** row and the calibration chain in [08](08-voice-metrology-on-the-wrist.md); needs a custom port adapter for the watch (`validation/experiments/0001`). A Class-2 calibrator is an acceptable fallback that caps SPL accuracy at ≈±2 dB. |
+| 31 | **miniDSP UMIK-1** USB measurement microphone (product brief + per-serial calibration file) | miniDSP product brief | ★★★ | Budget reference for the §4 **1/3-octave level ≤±1.5 dB** row — but reported >2 dB HF disagreement against Earthworks-class mics puts the target *inside the reference's own uncertainty*: this document is why that row is restated as repeatability (Bland–Altman / ICC) or backed by a GUM budget. A threshold that changes the plan. |
+| 32 | **Class-1 reference microphone option** — Earthworks M23R or GRAS 46AE (IEC 61094-4 WS2F class) (verify part choice) | Vendor datasheets | ★★ | The upgrade path if the ±1.5 dB claim is kept as *accuracy*; decides, with IEC 61094-4 ([03](03-standards.md)), whether the reference chain is defensible in a paper. |
+| 33 | **Nordic Power Profiler Kit II (PPK2)** user guide | Nordic Semiconductor PPK2 User Guide (200 nA–1 A, 100 kS/s, source mode 0.8–5 V) | ★★★ | Instrument for the §4 **autonomy** and **energy-per-preset** rows and the marginal mAh/h per decimation stage (objective 4); source mode is the basis of the battery-pigtail procedure for a sealed watch. |
+| 34 | **Qoitech Otii Arc Pro** technical specification | Qoitech tech spec (nA–5 A, 24-bit, ±(0.1 % + 50 nA) below 19 mA) | ★★ | Same §4 rows as #33 — **autonomy ≥ 3 h** and **energy-per-preset** (objective 4) — and the alternative instrument in the validation **equipment table** ([`../validation/README.md`](../validation/README.md)): preferred if budget allows because its 5 A range covers backlight-on peaks that the PPK2's 1 A ceiling may clip; whichever is bought, the equipment table records its tolerance against the autonomy row. |
+| 35 | **Brüel & Kjær Type 4128-C HATS** (mouth simulator per ITU-T P.58) | B&K product data BP0521 | ★★ | Makes the §4 acoustic-path factorial (6 presets × 3 SPL × 3 distances × 2 arm angles, (prov.)) repeatable in geometry; a standalone artificial mouth per ITU-T P.51 ([03](03-standards.md)) is the cheaper alternative. |
+| 36 | **GPSDO 10 MHz reference / ≤1 ppm frequency counter** (instrument `TBD`, verify model before purchase) | e.g. a GPS-disciplined 10 MHz source or counter with ≤1 ppm spec | ★★ | Bounds the §4 **sample-rate error ≤200 ppm** row (S3 has no APLL: error = crystal ppm + fractional-divider resolution); no cents claim is meaningful until this is measured (Phase 1 deliverable: the clock-correction constant). |
+
+---
+
+## Acquisition links
+
+> **📥 Filed locally:** nothing yet — the first bulk acquisition pass is roadmap phase D3. When a document lands, add `📥 Filed locally: <relative path>` to its entry here and mark it in [`acquisition-status.md`](acquisition-status.md).
+> **Redistribution:** vendor PDFs with unstated terms (LilyGO schematics, most IC datasheets) are filed locally but **not committed**; commit the `_notes.md` with derived facts and the sha256-keyed row in [`../OCR/manifest.tsv`](../OCR/README.md). See the Acquisition tips in the [README](README.md).
+
+Keyed to the entry numbers above. Links were gathered in the 2026-08-20 research session; when one rots, the identifier in the table is authoritative — search it on the vendor portal. "mirror" = non-vendor host: verify the revision against the vendor original before filing.
+
+| # | Access | Link |
+|---|--------|------|
+| 1 | free | [ESP32-S3 Series Datasheet (PDF)](https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf) · [documentation.espressif.com copy](https://documentation.espressif.com/esp32-s3_datasheet_en.pdf) · all Espressif docs: [technical-documents portal](https://www.espressif.com/en/support/documents/technical-documents) |
+| 2 | free | [ESP32-S3 Technical Reference Manual (PDF)](https://documentation.espressif.com/esp32-s3_technical_reference_manual_en.pdf) |
+| 3 | free | [ESP32-S3 Series Chip Errata (PDF)](https://www.espressif.com/sites/default/files/documentation/esp32-s3_errata_en.pdf) |
+| 4 | free | [ESP Hardware Design Guidelines — ESP32-S3 (PDF)](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/esp-hardware-design-guidelines-en-master-esp32s3.pdf) · [HTML](https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/) |
+| 5 | PORTAL | [Cadence Xtensa LX7 processor datasheet](https://www.cadence.com/en_US/home/resources/datasheets/xtensa-lx7-processor-ds.html) (ISA summary by request to Cadence) |
+| 6 | free | [`T_WATCH_S3.pdf` (raw, branch `t-watch-s3`)](https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library/raw/t-watch-s3/schematic/T_WATCH_S3.pdf) · [schematic folder](https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library/tree/t-watch-s3/schematic) |
+| 7 | free | [`T_WATCH-S3 25-03-24.pdf` (raw)](https://raw.githubusercontent.com/Xinyuan-LilyGO/LilyGoLib/master/schematic/T_WATCH-S3%2025-03-24.pdf) · [LilyGoLib `schematic/`](https://github.com/Xinyuan-LilyGO/LilyGoLib/tree/master/schematic) — download locally; WebFetch returns an unreadable stream |
+| 8 | REPO | [esp-bsp `bsp/esp32_s3_eye`](https://github.com/espressif/esp-bsp/tree/master/bsp/esp32_s3_eye) · [ESP-EYE / S3-EYE overview](https://www.espressif.com/en/products/devkits/esp-eye/overview) |
+| 9 | free / mirror | [Knowles product spec (vendor)](https://www.knowles.com/docs/default-source/model-downloads/spm1423hm4h-b.pdf) · mirrors: [Mouser](https://www.mouser.com/datasheet/2/218/SPM1423HM4H-B-876897.pdf) · [DigiKey](https://media.digikey.com/pdf/Data%20Sheets/Knowles%20Acoustics%20PDFs/SPM1423HM4H-B.pdf) · [M5Stack](https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/core/SPM1423HM4H-B_datasheet_en.pdf) — record which revision each mirror serves |
+| 10 | PORTAL | [TDK InvenSense T3902 product page](https://invensense.tdk.com/products/digital/t3902/) (datasheet under Documents) |
+| 11 | free | [MAX98357A/B datasheet (PDF)](https://www.analog.com/media/en/technical-documentation/data-sheets/MAX98357A-MAX98357B.pdf) — scripted fetch blocked; use a browser |
+| 12 | request | Request from LilyGO support ([lilygo.cc](https://lilygo.cc/products/t-watch-s3)); not published |
+| 13 | mirror | [ST7789V3 preliminary spec V0.0 (Sipeed)](https://dl.sipeed.com/fileList/MAIX/HDK/Chip_DS/ST7789V3_SPEC_Preliminary_V0.0_200102.pdf) |
+| 14 | mirror | [ST7789V (Newhaven)](https://newhavendisplay.com/content/datasheets/ST7789V.pdf) · [ST7789VW (rhydolabz)](https://www.rhydolabz.com/documents/33/ST7789.pdf) · [ST7789V2 (Mouser)](https://www.mouser.com/datasheet/2/744/ST7789V2-3314280.pdf) |
+| 15 | request | Via LilyGO support or the FPC marking (D4); no public datasheet located |
+| 16 | mirror | [FT6236/FT6336/FT6436L family datasheet (buydisplay)](https://buydisplay.com/download/ic/FT6236-FT6336-FT6436L-FT6436_Datasheet.pdf) (HTTP 403 to scripts) · [FT6336 (displayfuture)](https://www.displayfuture.com/Display/datasheet/controller/FT6336.pdf) · [focuslcds FT6236 (PDF)](https://focuslcds.com/wp-content/uploads/Drivers/FT6236.pdf) |
+| 17 | mirror | [XPowersLib `datasheet/`](https://github.com/lewisxhe/XPowersLib/tree/master/datasheet) · [Waveshare AXP2101 PDF](https://files.waveshare.com/wiki/common/X-power-AXP2101_SWcharge_V1.0.pdf) · [X-Powers product page](https://www.x-powers.com/en.php/Product/detail/id/145) |
+| 18 | n/a | No datasheet; LilyGoLib [`docs/hardware/lilygo-t-watch-s3.md`](https://github.com/Xinyuan-LilyGO/LilyGoLib/tree/master/docs/hardware) states 470 mAh; read the shipped cell |
+| 19 | free | [SII MS412FE datasheet page](https://www.sii.co.jp/en/me/datasheets/ms-rechargeable/ms412fe/) |
+| 20 | PORTAL | [Winbond W25Q128JW product page](https://www.winbond.com/hq/product/code-storage-flash-memory/serial-nor-flash/?__locale=en&partNo=W25Q128JW) (datasheet download on page) |
+| 21 | PORTAL / free | [AP Memory](https://www.apmemory.com/) (search APS6408L) · [ESP-PSRAM64 / 64H datasheet (PDF)](https://www.espressif.com/sites/default/files/documentation/esp-psram64_esp-psram64h_datasheet_en.pdf) |
+| 22 | free / mirror | [Bosch BMA423 product page](https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/bma423/) · [Mouser mirror (PDF)](https://www.mouser.com/datasheet/2/783/BSCH_S_A0010021471_1-2525113.pdf) |
+| 23 | REPO | [boschsensortec/BMA423-Sensor-API](https://github.com/boschsensortec/BMA423-Sensor-API) |
+| 24 | free | [NXP PCF8563 datasheet (PDF)](https://www.nxp.com/docs/en/data-sheet/PCF8563.pdf) — NXP CDN blocks scripts; browser |
+| 25 | free | [TI DRV2605L datasheet (PDF)](https://www.ti.com/lit/ds/symlink/drv2605l.pdf) |
+| 26 | free | [Semtech SX1262 product page → download resources](https://www.semtech.com/products/wireless-rf/lora-connect/sx1262#download-resources) |
+| 27 | free | [Everlight IR12-21C datasheet page](https://www.everlight-led.cn/zh/datasheet-download/item/ir12-21c-tr8-datasheet) |
+| 28 | PORTAL | [Panasonic AXK8 series](https://industrial.panasonic.com/ww/products/pt/nrw-bttb/axk8) |
+| 29 | n/a | Unidentified; start from the schematic symbol in #6/#7 |
+| 30 | free | [B&K Type 4231 product data BP1311 (PDF)](https://www.bksv.com/media/doc/bp1311.pdf) |
+| 31 | free | [UMIK-1 product brief (PDF)](https://www.minidsp.com/images/documents/Product%20Brief%20-%20Umik.pdf) · [product page](https://www.minidsp.com/products/acoustic-measurement/umik-1) (per-serial calibration file by serial number) |
+| 32 | PORTAL | Earthworks M23R and GRAS 46AE vendor pages (verify) |
+| 33 | free | [PPK2 User Guide (PDF, DigiKey-hosted)](https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7735/PPK2_User_Guide.pdf) |
+| 34 | free | [Otii Arc tech spec (SparkFun-hosted PDF, 2021)](https://cdn.sparkfun.com/assets/9/7/0/1/8/Otii_Arc_TechSpec_2021.pdf) · [Qoitech Otii Arc Pro](https://www.qoitech.com/otii-arc-pro/) |
+| 35 | free | [B&K Type 4128-C product data BP0521 (PDF)](https://www.bksv.com/media/doc/bp0521.pdf) |
+| 36 | n/a | Instrument not yet chosen; spec requirement recorded in the validation equipment table |
+
+## Disclosure
+
+Entries 1–4, 6–7, 9, 11, 13–14, 16–17, 20–22, 24–26, 30–31, 33–35 and their URLs come from the 2026-08-20 research session (agents fetched or searched them; the ESP32-S3 hardware-design-guidelines PDF and the schematics' existence were re-verified by the critic pass). Entries 3, 5, 8, 10, 19, 23, 27–28 carry URLs taken from the same session's reports but were not individually re-fetched. Entries 12, 15, 18, 29, 36 are acquisition *targets* without a document yet (`TBD`). Entry 32's part choices and the TI document number in entry 25 (SLOS854) are model-recalled; entry 32 is flagged "(verify)" inline. The Knowles AOP (110 vs 115 dB SPL) and ST7789 `T_SCYCW` figures are quoted as **conflicts to resolve**, not as settled values; the 470 mAh vs 400 mAh battery figure likewise. Nothing in this file has been filed yet (roadmap D3).

@@ -1,0 +1,194 @@
+# 03 — Standards, regulatory and normative documents
+
+The proposal targets **publishable, reproducible** numbers. Every "dB", "cents", "class 1", "±1.5 dB" in the [validation plan](../validation/README.md) must resolve to a normative definition, and every regulatory boundary the project chooses *not* to cross (medical device, radio placing-on-market, copyleft linking) must be stated with its source. This file is partitioned by the claim each document grounds, not by issuing body; the library directories under [`../standards/`](../standards/README.md) are by body.
+
+Priority key: ★★★ must-have/blocking · ★★ strongly recommended · ★ useful background (defined in [README](README.md)). ADR numbers refer to [`../adr/README.md`](../adr/README.md); "§n" refers to the [proposal](../proposal/01-super-spectral-proposal.md); metric names are rows of the validation plan.
+
+**Three conventions specific to this file.**
+
+1. **Buy only what changes a number.** Nothing here is strictly required for *relative*, within-session measurement (the ring/twang readout of ADR 0008, the repeatability framing of the 1/3-octave row). The paid IEC/ISO texts become necessary the moment an **absolute** claim ("dB SPL", "class 1", "1/3-octave per IEC 61260-1") is printed; the free alternatives (ANSI S1.11-2004, ITU-T, BIPM, ITU-R, EBU) are listed first and cover most of the methodology.
+2. **The "no EPA-equivalent" premise was wrong.** The research initially assumed a wearable audio analyzer has no external performance anchor; the voice field has two — the ASHA *Recommended Protocols* (Patel et al. 2018) and the ELS basic protocol (Dejonckere et al. 2001), both papers in [05](05-papers.md) — and this file names the **standards triple** that complements them: IEC 61672-1 for level, IEC 61260-1 for bands, the MIREX / `mir_eval` convention for pitch ([07](07-technical-reports.md) #13, #15). [08](08-voice-metrology-on-the-wrist.md) sections the argument.
+3. **This file is the home address for the `S`-numbered rows of [08](08-voice-metrology-on-the-wrist.md), [09](09-visual-feedback-for-singing.md) and [10](10-datasets-and-ground-truth.md)**; the cross-map is at the end.
+
+---
+
+## A. Acoustic measurement — level, weighting, bands, calibration chain
+
+Grounds the §4 **absolute SPL**, **1/3-octave band level**, **EIN** and **AOP** rows, ADR 0006 (band and level conventions shared by watch and host), the equipment table of the validation plan, and the calibration chain in [08](08-voice-metrology-on-the-wrist.md) §C. Coefficients for A/C/Z weighting are derived from the standard, never copied from GPL-3.0 tables ([06](06-reference-projects.md) #40).
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 1 | **ANSI S1.11-2004 — Octave-Band and Fractional-Octave-Band Analog and Digital Filters** (superseded, **freely readable**: incorporated by reference into US federal regulation) | ANSI S1.11-2004 (R2009); public copy at law.resource.org | ★★★ | Filter-design equations, base-10 mid-band frequencies, class 0/1/2 attenuation masks — turns "my 1/3-octave bank looks right" into a **numeric pass/fail mask** for the §4 1/3-octave row and the band definitions in ADR 0006 and the preset schema (ADR 0010). Read before buying #4: the 2014 adoption (#4) dropped class 0 and the base-2 option and re-tuned the masks, so use the 2004 text for *design* and the 2014 text for any printed *conformance* sentence. 08 S3. |
+| 2 | **IEC 61672-1:2013 — Electroacoustics: Sound level meters — Part 1: Specifications** (= ANSI/ASA S1.4-2014 Part 1) | IEC 61672-1:2013 · ANSI/ASA S1.4-2014/Part 1 | ★★ | Normative A/C/Z frequency weightings (pole-zero definitions from which `spectral_core` weighting filters are designed), Fast/Slow/Impulse time weightings, L_eq / L_E, **class 1 vs class 2 tolerance tables** — required before any readout is labelled "dB SPL" or "dB(A)" (`ui`; §4 absolute-SPL row). Buy one adoption only; IEC and ANSI texts are identical. 08 S2. |
+| 3 | **IEC 61672-2:2013 (pattern evaluation tests) + IEC 61672-3:2013 (periodic tests)** | IEC 61672-2:2013 · IEC 61672-3:2013 (verify editions) | ★ | Part 1 states tolerances; Parts 2–3 define what a *conformance* claim means. Without them "IEC 61672 class-2 reference" in a paper is a category error (a corrected claim). Needed only if the reference chain is ever described as conformant rather than "calibrated against #6". 08 S2. |
+| 4 | **IEC 61260-1:2014 — Octave-band and fractional-octave-band filters — Part 1: Specifications** (= ANSI/ASA S1.11-2014 Part 1) | IEC 61260-1:2014 · ANSI/ASA S1.11-2014/Part 1 | ★★ | The **current** normative class 1/2 masks for 1/1 … 1/24-octave filters; the anchor of the §4 1/3-octave row's *definition* (the row's ±1.5 dB target is a repeatability statement, see #2 of [01](01-datasheets.md) instruments). Buy only one of IEC/ANSI. 08 S3. |
+| 5 | **IEC 61260-3:2016 — Part 3: Periodic tests** | IEC 61260-3:2016 (verify) | ★ | §4 **1/3-octave level** metric, conformance wording: the periodic-test procedure to cite if the band analyzer is ever verified against the #4 mask with a calibrator ([01](01-datasheets.md) #30) rather than by simulation; until then the §4 row is worded as repeatability, not class conformance. |
+| 6 | **IEC 60942:2017 — Electroacoustics: Sound calibrators** | IEC 60942:2017 | ★★ | Classes LS/1/2 and their tolerances; ties the B&K 4231 ([01](01-datasheets.md) #30) to a Class-1 chain. A class-2 calibrator (94 dB @ 1 kHz) plus a one-line offset in the preset JSON converts every reading to absolute SPL but caps accuracy at ≈ ±2 dB — already outside the target, hence "absolute SPL claimed only if a Class-1 calibrator is available". 08 S4. |
+| 7 | **IEC 61094-4:1995 — Measurement microphones — Part 4: Specifications for working standard microphones** | IEC 61094-4:1995 (verify edition) | ★★ | The WS2F/WS3 classes that #6 references; decides whether a UMIK-1-class or a GRAS/B&K-class reference ([01](01-datasheets.md) #31–32) is defensible for a ±1.5 dB claim — the reference-mic class is a **threshold that changes the plan** (roadmap). 08 S5. |
+| 8 | **ISO 226:2023 — Acoustics: Normal equal-loudness-level contours** | ISO 226:2023 | ★ | Annex numerical contours at 1/3-octave centres 20 Hz–12.5 kHz: the perceptual weighting behind an optional loudness overlay and the citable explanation of **why the ≈ 3 kHz singer's formant is disproportionately audible** (§1 motivation; preset legends). |
+| 9 | **ISO 532-1:2017 / ISO 532-2:2017 — Methods for calculating loudness (Zwicker / Moore–Glasberg) + DIN 45692:2009 — Measurement technique for the simulation of the auditory sensation of sharpness** | ISO 532-1:2017 · ISO 532-2:2017 · DIN 45692:2009-08 (verify) | ★ | The psychoacoustic axis: for a *timbre* tool, standardised **sharpness** is arguably a better single scalar than a band ratio. Candidate host-side (ADR 0002) overlay for §7 future work; not in v1. |
+
+## B. Test geometry, test signals and level normalisation
+
+Grounds the two-path rule of §4 (digital injection vs acoustic path through a mouth simulator), the §4 **peak-frequency (acoustic)** row, the Tier-0/Tier-1 corpus handling in [10](10-datasets-and-ground-truth.md), and the equipment table (HATS / artificial mouth).
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 10 | **ITU-T P.58 — Head and torso simulator for telephonometry** | ITU-T Rec. P.58 (current edition) — free | ★★ | Defines the mouth simulator geometry (B&K 4128-C, [01](01-datasheets.md) #35) that makes corpus playback **repeatable in geometry** — the difference between "we played the corpus at the watch" and an experiment; the acoustic-path factorial (presets × SPL × distance × arm angle, (prov.)) is specified relative to the P.58 mouth reference point. 08 S6. |
+| 11 | **ITU-T P.51 — Artificial mouth** | ITU-T Rec. P.51 (current edition) — free | ★★ | §4 **acoustic-path factorial** geometry and the validation **equipment table** ([`../validation/README.md`](../validation/README.md)): the cheaper standalone alternative to the P.58 HATS (#10, [01](01-datasheets.md) #35) for the same purpose — specifies the mouth reference point and the on-axis response tolerance the playback rig must meet, so the distance and arm-angle factors are defined the same way whichever mouth is bought. 08 S6. |
+| 12 | **ITU-T P.56 — Objective measurement of active speech level** | ITU-T Rec. P.56 (current edition) — free | ★★ | The citable way to normalise corpus level on the injection path so injection and acoustic paths are compared at matched level; used by the Tier-1 preprocessing scripts in [`datasets/`](../../datasets/README.md). 08 S7. |
+| 13 | **ITU-T P.501 — Test signals for use in telephonometry** | ITU-T Rec. P.501 (current edition) — free | ★ | Standard artificial-voice and composite-source signals: a neutral level-setting stimulus for the acoustic path, alongside the in-repo Tier-0 generators. 10 S1. |
+| 14 | **ITU-R BS.1770-5 — Algorithms to measure audio programme loudness and true-peak audio level** | ITU-R Rec. BS.1770-5 (2023) — free | ★ | A defensible *relative* level readout (LKFS) for the `ui` when no calibrator is present — the project's likely field reality; also the K-weighting definition if a loudness meter is offered. 08 S8. |
+| 15 | **EBU Tech 3253 — Sound Quality Assessment Material (SQAM) recordings** | EBU Tech 3253 (2008) + the SQAM CD tracks — free | ★★ | Studio-grade reference recordings **including sung solo-voice tracks** with known provenance — the bridge between Tier-0 synthetics and Tier-1 corpora for the acoustic path; also a stable stimulus set for the §4 two-tone / peak-frequency rows. 10 S3. |
+| 16 | **ISO 16:1975 — Acoustics: Standard tuning frequency (Standard musical pitch)** | ISO 16:1975 | ★ | A4 = 440 Hz: the unambiguous Hz ↔ cents ↔ note-name anchor for every f0 display and for the cents conversions in the validation scripts and `spectral_core`. 10 S2. |
+| 17 | **ITU-R BT.1359-1 — Relative timing of sound and vision for broadcasting** | ITU-R Rec. BT.1359-1 (1998) — free | ★ | The closest *standardised* number for "sound, then picture" tolerance (detectability ≈ +45/−125 ms; acceptability ≈ +90/−185 ms); one of the anchors of the §4 **acoustic-to-photon ≤ 80 ms** row, together with the perception papers in [09](09-visual-feedback-for-singing.md). 09 S1. |
+
+## C. Test environment
+
+Grounds the "background ≤ 25 dB(A)" room requirement in the equipment table, which otherwise measures the room instead of the device's ≈ 32.5 dB(A) EIN.
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 18 | **ISO 26101-1:2021 — Test methods for the qualification of free-field environments — Part 1: Qualification of free-field and hemi-free-field environments** (and/or **ISO 3745:2012 Annex A**) | ISO 26101-1:2021 · ISO 3745:2012/Amd 1:2017 (verify) | ★★ | Justifies the "≤ 25 dB(A) room" requirement instead of asserting it, and gives the qualification procedure to report the room actually used (roadmap: availability risk). 08 S10. |
+| 19 | **ANSI/ASA S12.2-2019 — Criteria for Evaluating Room Noise** | ANSI/ASA S12.2-2019 (verify) | ★ | NC/NCB/RC vocabulary for *reporting* the room you have when a qualified free field is unavailable; the §4 EIN row is reported with the room's criterion curve. 08 S10. |
+
+## D. Uncertainty and metrological vocabulary
+
+Grounds the GUM skeleton in [`docs/validation/`](../validation/README.md) (roadmap D6) and the restatement of the ±1.5 dB row — the missing methodological spine identified by the critics. Bland & Altman 1986 and Koo & Li 2016 (the statistics of *agreement*) are papers, [05](05-papers.md) #86–87.
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 20 | **JCGM 100:2008 — Evaluation of measurement data: Guide to the expression of uncertainty in measurement (GUM)** + **JCGM 200:2012 — International vocabulary of metrology (VIM), 3rd ed.** | JCGM 100:2008 (GUM 1995 with minor corrections) · JCGM 200:2012 — free (BIPM) | ★★★ | Every ±X target in §4 becomes a combined standard uncertainty with a budget (calibrator ±0.2 dB, reference-mic class, room, placement, sample-rate error, clock); "accuracy", "repeatability", "reproducibility" are used in the VIM sense throughout the proposal and the experiment recipes. Without it the ±1.5 dB and ±20-cent claims are unfounded numbers. 08 S9. |
+
+## E. Anthropometry, ergonomics, HCI and accessibility
+
+Grounds the §4 **wrist-position envelope** row (distance/angle levels drawn from a distribution, not a guess), ADR 0012 (hands-free interaction), the companion UI, and the accessibility framing in [09](09-visual-feedback-for-singing.md).
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 21 | **ISO 7250-1:2017 — Basic human body measurements for technological design — Part 1** + **ANSUR II** public anthropometric tables + **DINED** database | ISO 7250-1:2017 (verify) · ANSUR II (2012, public release) · DINED (TU Delft) | ★★ | The wrist-to-mouth distance *distribution* for a raised arm (forearm + hand segment lengths), replacing the made-up 15/30/45 cm levels of the acoustic-path factorial with 5th/50th/95th percentiles; ANSUR II and DINED are free and sufficient, ISO 7250-1 defines the landmarks. 08 S1. |
+| 22 | **ISO 9241-210:2019 — Human-centred design for interactive systems** + **ISO 9241-112:2017 — Principles for the presentation of information** | ISO 9241-210:2019 · ISO 9241-112:2017 (verify) | ★ | The citable anchor for the UI claims and for objective 3's on-wrist sessions being a *usability evaluation* (task, context, measures) rather than an opinion poll. 09 S2. |
+| 23 | **WCAG 2.2 — Web Content Accessibility Guidelines** | W3C Recommendation, 2023-10-05 — free | ★★ | Non-colour redundancy (peak markers and numeric readouts alongside the spectrogram — ADR 0011 chooses a CVD-safe map for the same reason), contrast minima, motion — binding for the companion UI under `host/` and applied by analogy to the watch `ui`. 09 S3. |
+| 24 | **EN 301 549 — Accessibility requirements for ICT products and services** | ETSI EN 301 549 V3.2.1 (2021-03) (verify) — free | ★ | Mandatory framing if any companion UI is ever offered in the EU; cite once in §7. 09 S4. |
+
+## F. Radio, EMC, battery and product safety — what a chip-down prototype does *not* inherit
+
+The T-Watch S3 is a **bare ESP32-S3-R8 chip-down design, not a certified module**: no FCC grant, RED declaration or Bluetooth SIG qualification transfers ([07](07-technical-reports.md) #21). For a research prototype this is acceptable — RED applies at placing-on-market — but §7 must *state* it, and ADR 0017 (no radio in v1: SX1262 in reset, ALDO4 off, Wi-Fi/BT disabled and asserted by pre-commit) removes the question for the validation campaign.
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 25 | **Directive 2014/53/EU — Radio Equipment Directive (RED)** | OJ L 153, 22.5.2014 — free (EUR-Lex) | ★ | The legal frame that would apply if the device were ever placed on the EU market with its radios enabled; cited in §7 limitations and ADR 0017's rationale. |
+| 26 | **ETSI EN 300 328 — Wideband transmission systems; 2.4 GHz band** | ETSI EN 300 328 V2.2.2 (2019-07) (verify) — free | ★ | The harmonised standard for the Wi-Fi/BLE radio that ADR 0017 keeps off; listed so the "no radio in v1" decision names what it avoids. |
+| 27 | **ETSI EN 301 489-1 / EN 301 489-17 — EMC for radio equipment; common requirements / broadband data transmission systems** | ETSI EN 301 489-1 V2.2.3 · EN 301 489-17 V3.2.4 (verify) — free | ★ | §7 limitations / ADR 0017 **no radio in v1**: the EMC companion to #26 that the decision also avoids — named so §7 can state what a chip-down board with no inherited certification would owe if Wi-Fi/BLE were ever enabled (pairs with #28 for body-worn exposure). |
+| 28 | **IEC/EN 62479:2010 — Assessment of the compliance of low-power electronic equipment with RF exposure basic restrictions (+ EN 50663:2017 generic RF-exposure standard)** | IEC 62479:2010 · EN 50663:2017 (verify) | ★ | RF exposure exemption for low-power devices — **body-worn** matters because this is a wrist device; one sentence in §7 if radios are ever enabled. |
+| 29 | **IEC 62133-2:2017 — Secondary cells and batteries containing alkaline or other non-acid electrolytes — Safety requirements for portable sealed secondary lithium cells** | IEC 62133-2:2017 (+ Amd 1:2021) (verify) | ★ | No cell datasheet will be published ([01](01-datasheets.md) #18); the class document supplies the safety envelope for the battery-pigtail procedure and the capacity-fade / cycle-life caveat on the §4 **autonomy ≥ 3 h** target (§7). |
+| 30 | **UN 38.3 — Transport of lithium metal and lithium ion batteries** (UN Manual of Tests and Criteria, section 38.3) | UN Manual of Tests and Criteria, Rev. 8 (2023) (verify revision), §38.3 — free (UNECE) | ★ | §7 limitations and the Phase 3 **in-use validation** logistics (prov.): required if watches are shipped by air to collaborators or singers; sits next to #29 in the §7 battery caveat (no cell datasheet, [01](01-datasheets.md) #18). |
+| 31 | **IEC 62368-1:2023 — Audio/video, information and communication technology equipment — Safety requirements** | IEC 62368-1:2023 (verify) | ★ | Only if the project is ever framed as a product rather than a bench prototype; listed so §7 can say so explicitly. |
+
+## G. The medical-device boundary — ADR 0005
+
+The plan uses pathological-voice corpora (PVQD, Saarbrücken — [10](10-datasets-and-ground-truth.md) Tier 3) and computes dysphonia-adjacent measures (CPP, H1–H2, LTAS slope). Under MDR Rule 11 software that provides information used for diagnostic or therapeutic decisions is Class IIa or higher. ADR 0005 states that **Super Spectral makes no clinical claim** and uses pathology corpora only as acoustic material; these are its sources.
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 32 | **Regulation (EU) 2017/745 (MDR) — Annex VIII, Rule 11 (software)** | OJ L 117, 5.5.2017, consolidated text — free (EUR-Lex) | ★★★ | The classification rule that would capture a voice-quality feature set the moment it "provides information used to take decisions with diagnosis or therapeutic purposes"; ADR 0005 is written against its exact wording. |
+| 33 | **MDCG 2019-11 — Guidance on Qualification and Classification of Software in Regulation (EU) 2017/745 and 2017/746** | MDCG 2019-11 (October 2019) — free (European Commission) | ★★★ | The decision tree (is it software? is it a medical device? which class?) that ADR 0005 walks explicitly to land on "not a medical device: no medical purpose claimed"; the secondary explainer is [07](07-technical-reports.md) #22. |
+| 34 | **FDA — General Wellness: Policy for Low Risk Devices (Guidance for Industry and FDA Staff)** | FDA guidance, September 2019 (revised) (verify date) — free | ★★ | The US-side anchor: a "general wellness" intended use (singing training, vocal awareness) with low risk falls outside device regulation **as long as no disease claim is made** — the wording constraint ADR 0005 places on every UI label and README sentence. |
+| 35 | **Regulation (EU) 2024/1689 (AI Act) — Article 5(1)(f), emotion recognition in workplace and education** | OJ L, 12.7.2024 — free (EUR-Lex) | ★ | Not applicable to pitch/formant/band readouts; one line in §7 if any "expressiveness" or "confidence" feature is ever contemplated, so the boundary is on record. |
+
+## H. Licence texts and compatibility evidence — ADR 0004
+
+The repository is Apache-2.0; `host/` is GPL-3.0-or-later with its own `LICENSE` so it may import parselmouth/Praat in-process; the firmware link line admits only MIT/BSD/Apache code; LGPL-2.1 `arduino-esp32` is avoided entirely. These are the primary texts the ADR quotes, kept on file so the reasoning survives link rot.
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 36 | **Apache License, Version 2.0** (full text) | Apache Software Foundation, January 2004 — free | ★★★ | The repository licence (`LICENSE`); §4(d) is the source of the `NOTICE`-file obligation that the third-party notices skeleton satisfies. |
+| 37 | **GNU General Public License v3.0** (full text) | FSF, 29 June 2007 — free | ★★★ | The `host/LICENSE`; read §5–§7 for the "in-process import of parselmouth makes the combined work GPL" reasoning and the directory-boundary rule that nothing under `host/` is ever linked into firmware. |
+| 38 | **GNU Lesser General Public License v2.1** (full text) — §3, §5, §6 | FSF, February 1999 — free | ★★★ | **§6a verbatim** is the record of why the project stays Arduino-free: static linking an LGPL-2.1 core into firmware creates a relink/object-code obligation that a sealed OTA device cannot honour sensibly; §3 is the irreversible GPL-2 conversion. Paired with [02](02-application-notes.md) #58. |
+| 39 | **FSF — "Various Licenses and Comments about Them" (Apache 2.0 entry) + ASF — "GPL compatibility"** | gnu.org licence list, entry *Apache License, Version 2.0* · apache.org/licenses/GPL-compatibility — free | ★★★ | The **one-way** compatibility (Apache-2.0 code may be included in a GPLv3 work; not the reverse) that makes the split legal: `host/` (GPLv3) may reuse Apache-2.0 code from the repo, firmware may never take code from `host/`. |
+| 40 | **SPDX License List + REUSE Specification 3.3** | spdx.org/licenses · reuse.software/spec — free | ★★ | The identifiers in every SPDX header (`Apache-2.0`, `GPL-3.0-or-later`) and the `reuse lint` pre-commit hook; the licence-ledger vocabulary used in [06](06-reference-projects.md) and the dataset ledger in [10](10-datasets-and-ground-truth.md). |
+| 41 | **Espressif MIT licence with field-of-use restriction (ESP-ADF / ESP-SR `LICENSE`)** | `espressif/esp-adf` and `espressif/esp-sr` repository `LICENSE` files (snapshot) | ★★ | The "use only on Espressif chips" clause that is **not** OSI-open-source and is therefore excluded from the firmware by ADR 0004 even though the chip is Espressif's; kept as evidence that the exclusion was deliberate ([06](06-reference-projects.md) #47). |
+
+## I. Open science and reproducibility
+
+Grounds the §4 **reproducibility** row ("a third party rebuilds and reruns within tolerance"), `CITATION.cff`, the data-availability statement and objective 5 (open validation framework).
+
+| # | Document | Identifier | Priority | Why |
+|---|----------|------------|:--------:|-----|
+| 42 | **The FAIR Guiding Principles for scientific data management and stewardship** | Wilkinson et al. 2016, *Scientific Data* 3:160018, DOI 10.1038/sdata.2016.18 — open access | ★★ | Findable / Accessible / Interoperable / Reusable — the frame for the take record format (`protocols/specs/`, ADR 0010), the golden-file manifest (ADR 0009) and the dataset manifests in [`datasets/`](../../datasets/README.md); the §4 reproducibility row cites it. |
+| 43 | **Citation File Format (CFF) 1.2.0 specification + Zenodo–GitHub integration guide** | citation-file-format.github.io (schema 1.2.0) (verify) · Zenodo "GitHub integration" docs — free | ★ | The schema behind `CITATION.cff` at the repo root and the DOI-per-release mechanism planned for the first tagged validation release (roadmap D6). |
+| 44 | **OSF pre-registration templates** (Center for Open Science) | osf.io/registries; COS "Preregistration" templates — free | ★ | Pre-register the 108-trial factorial (prov.) and the acceptance thresholds before Phase 2 runs, so the §4 targets cannot be tuned to the data afterwards. |
+
+---
+
+## Home addresses for the `S` rows of the thematic files
+
+| Thematic row | 03 # | Thematic row | 03 # | Thematic row | 03 # |
+|---|---|---|---|---|---|
+| 08 S1 | #21 | 08 S7 | #12 | 09 S3 | #23 |
+| 08 S2 | #2, #3 | 08 S8 | #14 | 09 S4 | #24 |
+| 08 S3 | #1, #4 | 08 S9 | #20 | 10 S1 | #13 |
+| 08 S4 | #6 | 08 S10 | #18, #19 | 10 S2 | #16 |
+| 08 S5 | #7 | 09 S1 | #17 | 10 S3 | #15 |
+| 08 S6 | #10, #11 | 09 S2 | #22 | — | — |
+
+Not in any thematic file (home here only): #5, #8–9 (acoustics background), #25–31 (radio/battery/safety), #32–35 (medical boundary, ADR 0005), #36–41 (licences, ADR 0004), #42–44 (open science).
+
+---
+
+## Acquisition links
+
+> **📥 Filed locally:** nothing yet — the first bulk acquisition pass is roadmap phase D3. **Paid standards are never committed to the repository** even when purchased (single-user licences): file them locally under [`../standards/<body>/`](../standards/README.md), track only the `_notes.md` and the sha256-keyed row in [`../OCR/manifest.tsv`](../OCR/README.md). Free texts (ITU, BIPM, EBU, EUR-Lex, FDA, ETSI, licence texts, ANSI S1.11-2004) are committed. When a document lands, add `📥 Filed locally: <relative path>` to its entry and update [`acquisition-status.md`](acquisition-status.md).
+
+Keyed to the entry numbers above. Access vocabulary: **free** · **free, reg.** (free after registration / click-through) · **free (GET)** (HTML page; snapshot to PDF) · **paid** · **PORTAL** (search the body's store; no stable deep link given here). Paid IEC/ISO texts typically cost CHF 100–350 each; check institutional access first. Links gathered in the 2026-08-20 research session; when one rots, the document identifier is authoritative — search it on the issuing body's store.
+
+| # | Access | Link |
+|---|--------|------|
+| 1 | free | <https://law.resource.org/pub/us/cfr/ibr/002/ansi.s1.11.2004.pdf> (Public.Resource.Org copy of the text incorporated by reference) |
+| 2 | paid | <https://webstore.iec.ch/en/publication/5708> (IEC 61672-1:2013) · ANSI adoption with free preview: <https://webstore.ansi.org/standards/asa/asaansis12014partiec616722013> |
+| 3 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61672-2:2013" and "IEC 61672-3:2013" |
+| 4 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61260-1:2014" · ANSI adoption: <https://webstore.ansi.org/standards/asa/asaansis111partiec612602014> |
+| 5 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61260-3:2016" |
+| 6 | paid | <https://webstore.iec.ch/en/publication/30045> (IEC 60942:2017) |
+| 7 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 61094-4" |
+| 8 | paid | <https://www.iso.org/standard/83117.html> (ISO 226:2023) |
+| 9 | paid | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 532-1:2017", "ISO 532-2:2017" · [dinmedia.de](https://www.dinmedia.de/) — search "DIN 45692" |
+| 10 | free | <https://www.itu.int/rec/T-REC-P.58> |
+| 11 | free | <https://www.itu.int/rec/T-REC-P.51> |
+| 12 | free | <https://www.itu.int/rec/T-REC-P.56> |
+| 13 | free | <https://www.itu.int/rec/T-REC-P.501> |
+| 14 | free | <https://www.itu.int/rec/R-REC-BS.1770> (pick the "-5" edition) |
+| 15 | free | <https://tech.ebu.ch/publications/sqamcd> (document + track downloads) |
+| 16 | paid | <https://www.iso.org/standard/3601.html> (ISO 16:1975; the content — A4 = 440 Hz — is public knowledge; purchase only if a normative citation is required) |
+| 17 | free | <https://www.itu.int/rec/R-REC-BT.1359> |
+| 18 | paid | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 26101-1:2021" and "ISO 3745:2012" |
+| 19 | paid | [webstore.ansi.org](https://webstore.ansi.org/) — search "ANSI/ASA S12.2-2019" |
+| 20 | free | <https://www.bipm.org/en/committees/jc/jcgm/publications> (JCGM 100:2008 and JCGM 200:2012 PDFs) |
+| 21 | paid / free | ISO 7250-1:2017 via [iso.org/obp](https://www.iso.org/obp/ui) (paid) · ANSUR II public data: <https://www.openlab.psu.edu/ansur2/> (free) · DINED: <https://dined.io.tudelft.nl/> (free) |
+| 22 | paid | [iso.org/obp](https://www.iso.org/obp/ui) — search "ISO 9241-210:2019", "ISO 9241-112:2017" |
+| 23 | free | <https://www.w3.org/TR/WCAG22/> |
+| 24 | free | <https://www.etsi.org/deliver/etsi_en/301500_301599/301549/> (pick the V3.2.1 PDF) |
+| 25 | free | <https://eur-lex.europa.eu/eli/dir/2014/53/oj> |
+| 26 | free | <https://www.etsi.org/deliver/etsi_en/300300_300399/300328/> (pick the current version directory) |
+| 27 | free | <https://www.etsi.org/deliver/etsi_en/301400_301499/30148901/> · <https://www.etsi.org/deliver/etsi_en/301400_301499/30148917/> |
+| 28 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 62479:2010"; EN 50663 via national CENELEC members |
+| 29 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 62133-2:2017" |
+| 30 | free | <https://unece.org/transport/dangerous-goods> → "UN Manual of Tests and Criteria" (Rev. 8), Part III §38.3 |
+| 31 | paid | [webstore.iec.ch](https://webstore.iec.ch) — search "IEC 62368-1:2023" |
+| 32 | free | <https://eur-lex.europa.eu/eli/reg/2017/745/oj> (Annex VIII, Chapter III, Rule 11) |
+| 33 | free | <https://health.ec.europa.eu/medical-devices-sector/new-regulations/guidance-mdcg-endorsed-documents-and-other-guidance_en> → "MDCG 2019-11" PDF |
+| 34 | free | <https://www.fda.gov/regulatory-information/search-fda-guidance-documents/general-wellness-policy-low-risk-devices> |
+| 35 | free | <https://eur-lex.europa.eu/eli/reg/2024/1689/oj> (Article 5(1)(f)) |
+| 36 | free | <https://www.apache.org/licenses/LICENSE-2.0> (+ `LICENSE-2.0.txt` plain text) |
+| 37 | free | <https://www.gnu.org/licenses/gpl-3.0.html> (+ `gpl-3.0.txt`) |
+| 38 | free | <https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html> |
+| 39 | free | <https://www.gnu.org/licenses/license-list.html#apache2> · <https://www.apache.org/licenses/GPL-compatibility.html> |
+| 40 | free | <https://spdx.org/licenses/> · <https://reuse.software/spec-3.3/> |
+| 41 | REPO | <https://github.com/espressif/esp-sr/blob/master/LICENSE> · <https://github.com/espressif/esp-adf/blob/master/LICENSE> |
+| 42 | free | <https://doi.org/10.1038/sdata.2016.18> |
+| 43 | free | <https://citation-file-format.github.io/> · <https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content> (Zenodo integration) |
+| 44 | free | <https://www.cos.io/initiatives/prereg> · <https://osf.io/registries> |
+
+## Disclosure
+
+Entries 1, 2, 4, 6, 8, 10–17, 20, 23, 25, 32–33, 35, 38–39 and 42 have identifiers and URLs from the 2026-08-20 research session (the critic pass live-verified the ANSI S1.11-2004 copy, the MDR Rule 11 / MDCG 2019-11 framing, the RED chip-down FAQ, the BIPM GUM page, the ITU-T P.56 and ITU-R BS.1770 listings; the domain map captured the IEC 61672-1, IEC 60942, ISO 226 and ISO 16 store pages and the ITU-T P.51/P.58/P.501 and EBU SQAM links). Every row marked **(verify)** in its Identifier cell (3, 5, 7, 9, 18, 19, 21, 22, 24, 26–31, 34, 43) carries a model-recalled edition year or version number that must be checked against the store listing before purchase or citation; the standards themselves are real and their relevance does not depend on the edition. Deep links into webstore.iec.ch and iso.org are given only where the session captured them (#2, #6, #8, #16); the others are search instructions by design, because those stores renumber their catalogue pages. Licence texts (#36–41) and the W3C/EUR-Lex/FDA pages are stable canonical URLs. Nothing in this file has been filed yet (roadmap D3).
