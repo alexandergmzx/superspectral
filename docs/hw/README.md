@@ -5,26 +5,26 @@ The hardware facts the firmware configuration depends on, kept **next to the evi
 | File | Contents | Status |
 |---|---|---|
 | [twatch-s3-pins.md](twatch-s3-pins.md) | Pin map, AXP2101 rail map, I²S allocation, strapping-pin cautions (GPIO45/VDD_SPI, GPIO47/48 domain) — derived from the LilyGO schematic and the LilyGoLib MIT hardware document, **not** from arduino-esp32's LGPL `variants/` | (prov.) until D3 files the schematic and E2 reads the eFuses |
-| [efuse-baseline.json](efuse-baseline.json) | `espefuse summary --format json` of *this* unit | placeholder — written in E2 ([first-flash-checklist.md](../devenv/first-flash-checklist.md) step 3) |
+| [efuse-baseline.json](efuse-baseline.json) | `espefuse summary --format json` of *this* unit (112 fields, read 2026-08-20 with esptool 5.3.dev3 over `/dev/ttyACM0`) | **recorded** — human-readable copy in the off-repo backup folder |
 | [vendor-partition-table.md](vendor-partition-table.md) | The shipped partition table, decoded with `gen_esp32part.py` | placeholder — written in E2 (step 4) |
 
 ## Factory baseline ledger (filled in E2)
 
 | Item | Value | Recorded |
 |---|---|---|
-| `esptool chip-id` (chip revision) | TBD | |
-| `esptool flash-id` (manufacturer / device ID / size) | TBD — must be 16 MB | |
-| `esptool read-mac` | TBD | |
+| `esptool chip-id` (chip revision) | ESP32-S3 (QFN56) **revision v0.2**; features: Wi-Fi, BT 5 LE, dual core + LP core, 240 MHz, **embedded PSRAM 8 MB (AP_3v3)**; crystal 40 MHz; USB mode USB-Serial/JTAG | 2026-08-20 |
+| `esptool flash-id` (manufacturer / device ID / size) | manufacturer `ef` (Winbond), device `4018` → **W25Q128JV-class, 3.3 V** (a JW 1.8 V part would read `6018`); detected **16 MB**; eFuse flash type quad; *"Flash voltage set by eFuse: 3.3V"* | 2026-08-20 |
+| `esptool read-mac` | `48:27:e2:e9:b0:8c` | 2026-08-20 |
 | `esptool get-security-info` | TBD | |
-| `lsusb -d 303a:` before any custom flash | TBD — expect `303a:821b` | |
+| `lsusb -d 303a:` before any custom flash | `303a:1001 Espressif USB JTAG/serial debug unit` on `/dev/ttyACM0` — the shipped firmware already uses the native USB-Serial-JTAG console, not TinyUSB (so the `821b` expectation was wrong for this unit) | 2026-08-20 |
 | Full-flash backup file name | `twatch-s3-factory-backup-<YYYYMMDD>.bin` (off-repo, two copies — [backup-policy.md](../devenv/backup-policy.md)) | |
 | Full-flash backup sha256 | TBD | |
 | Vendor `nvs` slice (offset, size, sha256) | TBD | |
 | Scratch-region restore test (offset, size, result) | TBD | |
 | Vendor factory image flashed (optional): file, sha256, source URL | TBD | |
-| `VDD_SPI_FORCE` / `VDD_SPI_TIEH` / `VDD_SPI_XPD` | TBD → ADR 0016 | |
-| `DIS_USB_JTAG` / `DIS_USB_SERIAL_JTAG` | TBD — must both be `False` | |
-| `SPI_BOOT_CRYPT_CNT` / `SECURE_BOOT_EN` | TBD — must be `0` / `False` | |
+| `VDD_SPI_FORCE` / `VDD_SPI_TIEH` / `VDD_SPI_XPD` | **`True` / VDD_SPI connects to VDD3P3_RTC_IO (3.3 V) / `True`** → VDD_SPI is forced to 3.3 V by eFuse; GPIO45 is **not** sampled as a strap → backlight PWM is safe; GPIO47/48 are in the 3.3 V domain → ADR 0016 resolves to "free PWM" | 2026-08-20 |
+| `DIS_USB_JTAG` / `DIS_USB_SERIAL_JTAG` | `False` / `False` ✅ (also `DIS_DOWNLOAD_MODE=False`, `DIS_USB_SERIAL_JTAG_DOWNLOAD_MODE=False`, `DIS_PAD_JTAG=False`) — recovery path intact | 2026-08-20 |
+| `SPI_BOOT_CRYPT_CNT` / `SECURE_BOOT_EN` | `Disable (0b000)` / `False` ✅; `WR_DIS=0`, `RD_DIS=0`, all key purposes `USER` (unused) | 2026-08-20 |
 
 ## Rules
 

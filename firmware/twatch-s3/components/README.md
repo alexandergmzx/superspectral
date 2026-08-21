@@ -1,6 +1,6 @@
 # components — project components
 
-Six project-local ESP-IDF components, namespaced so none can shadow a managed component (a local `lvgl/` would silently win over `lvgl__lvgl`). Each directory has its own README stating the contract; each `CMakeLists.txt` lists planned sources behind `if(EXISTS ...)` guards so the tree configures before the sources land, and applies the per-component warning set (`-Werror -Wshadow -Wconversion -Wdouble-promotion -Wformat=2 -Wundef -Wvla`).
+Six project-local ESP-IDF components, namespaced so none can shadow a managed component (a local `lvgl/` would silently win over `lvgl__lvgl`). Each directory has its own README stating the contract; each `CMakeLists.txt` lists planned sources behind `if(EXISTS ...)` guards so the tree configures before the sources land, and applies the per-component warning set (`-Werror -Wshadow -Wconversion -Wdouble-promotion -Wformat=2 -Wvla`; `-Wundef` only on `spectral_core`, which includes no ESP-IDF headers).
 
 | Component | Contract | Runs on |
 |---|---|---|

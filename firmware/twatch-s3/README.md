@@ -82,7 +82,7 @@ firmware/twatch-s3/
 | `display_backend` | [README](components/display_backend/README.md) | `esp_lcd`, `twatch_bsp` | qemu_rgb on QEMU |
 | `ui` | [README](components/ui/README.md) | `spectral_core`, `display_backend`, LVGL | LVGL native screenshot harness |
 
-Each component stub lists its planned sources behind `if(EXISTS ...)` guards, so the tree configures today and grows without CMake edits. Per-component flags: `-Wall -Wextra -Werror -Wshadow -Wconversion -Wdouble-promotion -Wformat=2 -Wundef -Wvla` (the S3 FPU is single precision; `-Wdouble-promotion` is the one that pays).
+Each component stub lists its planned sources behind `if(EXISTS ...)` guards, so the tree configures today and grows without CMake edits. Per-component flags: `-Wall -Wextra -Werror -Wshadow -Wconversion -Wdouble-promotion -Wformat=2 -Wvla` (the S3 FPU is single precision; `-Wdouble-promotion` is the one that pays). `-Wundef` is kept only on `spectral_core` (pure C99): ESP-IDF headers use `#if CONFIG_X` idioms that trip it under `-Werror` (found in the E1 build on v6.0.2).
 
 ## Rules that are enforced here, not by memory
 

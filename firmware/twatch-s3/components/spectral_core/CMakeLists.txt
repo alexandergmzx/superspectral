@@ -35,5 +35,5 @@ if(_srcs)
         -std=gnu99
         -Wall -Wextra -Werror
         -Wshadow -Wconversion -Wdouble-promotion
-        -Wformat=2 -Wundef -Wvla)
+        -Wformat=2 -Wundef -Wvla)   # -Wundef kept here only: pure C99, no ESP-IDF headers
 endif()

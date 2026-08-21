@@ -28,5 +28,5 @@ if(_srcs)
     target_compile_options(${COMPONENT_LIB} PRIVATE
         -Wall -Wextra -Werror
         -Wshadow -Wconversion -Wdouble-promotion
-        -Wformat=2 -Wundef -Wvla)
+        -Wformat=2 -Wvla)   # -Wundef dropped: ESP-IDF headers use `#if CONFIG_X` idioms that trip it (verified on v6.0.2, E1)
 endif()

@@ -10,7 +10,7 @@ The firmware's single source of truth is [`firmware/twatch-s3/components/twatch_
 |---|---|---|
 | SoC | ESP32-S3-R8, bare QFN56 **chip-down** (not a module → no inherited RF certification) | schematic string `ESP32-S3-R8` |
 | SRAM / PSRAM | 512 KB / 8 MB **octal** in-package (R8) | schematic; Zephyr; PlatformIO `qio_opi` — LilyGoLib's "QSPI" wording loses |
-| Flash | 16 MB Winbond **W25Q128JWPIQ** — a **1.8 V** part | schematic; Zephyr board doc |
+| Flash | 16 MB Winbond, **JEDEC `ef 4018` = W25Q128JV-class, 3.3 V** on this unit (read 2026-08-20). The schematic/Zephyr marking `W25Q128JWPIQ` (1.8 V) does **not** match the silicon here — treat the schematic part number as unverified per unit | `esptool flash-id`; schematic; Zephyr board doc |
 | USB | Micro-USB, native USB-Serial-JTAG; `303a:821b` under the shipped Arduino/TinyUSB firmware, `303a:1001` under native ESP-IDF | Espressif `usb-pids` registry; `60-openocd.rules` |
 | Exposed GPIO | **none** (VBUS/GND/D± only); BOOT (GPIO0) on the internal PCB; the crown is the AXP2101 PWRKEY, not a GPIO | schematic; LilyGoLib |
 
@@ -24,7 +24,7 @@ The firmware's single source of truth is [`firmware/twatch-s3/components/twatch_
 | LCD SCK | 18 | out | SPI | |
 | LCD CS | 12 | out | SPI | |
 | LCD DC | 38 | out | SPI | |
-| LCD backlight | **45** | out (PWM) | LEDC | **VDD_SPI strapping pin (MTDI)** — see cautions; rail ALDO2 |
+| LCD backlight | **45** | out (PWM) | LEDC | VDD_SPI strapping pin (MTDI) — **neutralised on this unit: `VDD_SPI_FORCE=1`** (see cautions); rail ALDO2 |
 | LCD MISO / RESET | — | — | — | **not connected** (panel reset follows the ALDO3 rail) |
 | Touch SDA | 39 | i/o | I²C1 (FT6336U, addr `0x38`) | separate bus from the main I²C |
 | Touch SCL | 40 | out | I²C1 | |
@@ -36,8 +36,8 @@ The firmware's single source of truth is [`firmware/twatch-s3/components/twatch_
 | RTC IRQ | 17 | in | PCF8563 | |
 | Accelerometer INT1 | 14 | in | BMA423 | wrist-raise wake source (ADR 0012) |
 | **PDM mic CLK** | **44** | out | I2S0 PDM RX | SPM1423HM4H-B; PDM clock 1.0–3.25 MHz per the Knowles datasheet |
-| **PDM mic DATA** | **47** | in | I2S0 PDM RX | **VDD_SPI-domain pin** (`SPICLK_P`) — see cautions |
-| I²S BCLK | **48** | out | I2S1 std TX (MAX98357A) | **VDD_SPI-domain pin** (`SPICLK_N`) — see cautions |
+| **PDM mic DATA** | **47** | in | I2S0 PDM RX | VDD_SPI-domain pin (`SPICLK_P`) — **3.3 V on this unit** (eFuse-forced); see cautions |
+| I²S BCLK | **48** | out | I2S1 std TX (MAX98357A) | VDD_SPI-domain pin (`SPICLK_N`) — **3.3 V on this unit** (eFuse-forced); see cautions |
 | I²S LRCLK / WS | 15 | out | I2S1 | |
 | I²S DIN (to amp) | 46 | out | I2S1 | **strapping pin** (ROM messages / download-mode qualifier with GPIO0) — see cautions |
 | IR LED | 2 | out | GPIO → MMBT3904 → IR12-21C | |
@@ -77,6 +77,8 @@ Battery: **470 mAh @ 3.8 V** per LilyGoLib (`BATTERY_PARAMS_470mAh[]`) and Zephy
 Two independent `i2s_new_channel()` calls with different `i2s_chan_config_t.id`. DMA and ring buffers `MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA` ([pitfalls D5](../devenv/pitfalls.md#d-memory-placement-and-runtime)). PDM slot: LilyGoLib captures one channel only — which `slot_mask` (`I2S_PDM_SLOT_LEFT`/`RIGHT`) carries the SPM1423 is an E2 experiment; the wrong one captures silence and looks like a dead mic. Rates: 16 kHz/`DSR_16S` → 2.048 MHz clock; 32 kHz/`DSR_8S` comfortable; 48 kHz needs 3.072 MHz, 5.8 % under the mic's 3.25 MHz maximum — verify (ADR 0003). No hardware PDM high-pass on the S3 (`SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER` absent from `soc_caps.h` in v6.0.x): DC removal is software.
 
 ## Cautions — strapping pins and the 1.8 V domain
+
+> **Resolved on the first unit (2026-08-20, E2 step 3).** `espefuse summary` read `VDD_SPI_FORCE=True`, `VDD_SPI_XPD=True`, `VDD_SPI_TIEH="VDD_SPI connects to VDD3P3_RTC_IO"` — VDD_SPI is **forced to 3.3 V by eFuse**, so GPIO45 is never sampled as a strap and GPIO47/48 sit in the 3.3 V domain; the flash is a 3.3 V W25Q128JV-class part (`ef 4018`). The rows below are kept as the general hazard description and the check every *new* unit must pass ([`README.md`](README.md) ledger) before its backlight code runs.
 
 | Pin | Hazard | What we do |
 |---|---|---|
