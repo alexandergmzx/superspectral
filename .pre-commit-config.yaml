@@ -185,6 +185,24 @@ repos:
         files: '^(protocols/presets/.*\.json|protocols/specs/presets\.schema\.json|python-scripts/check_presets\.py)$'
         pass_filenames: false
 
+      # 5b. Every unresolved-value marker is either CLOSED (a correction that must not
+      #     come undone) or ALLOWED (it remains, and a named person owns it). On
+      #     2026-08-20 a correction written into ADR 0016 survived in eleven other
+      #     files for a day because nothing counted them; on 2026-08-21 four items
+      #     were handed back as "decisions" when three were lookups. This is the
+      #     arithmetic that makes both visible. Bare `TBD` is NOT scanned -- CLAUDE.md
+      #     sanctions it; the tagged `TBD (datasheet ...)` form is.
+      - id: markers-baseline
+        name: every (verify)/(prov.)/unread marker is closed or owned
+        language: system
+        entry: >-
+          python3 python-scripts/check_markers.py
+          --closed docs/roadmap/markers-closed-2026-08-21.tsv
+          --allow docs/roadmap/markers-allowlist.tsv
+        files: '\.(md|yaml|yml|csv|h|json|toml)$'
+        exclude: '(^|/)(managed_components|build|build_[^/]+|scratch)/|/clones/|\.ocr'
+        pass_filenames: false
+
       # 6. Needs an activated ESP-IDF shell: the lock must match the manifest.
       - id: lockfile-matches-manifest
         name: dependencies.lock is up to date (manual stage; needs idf.py)

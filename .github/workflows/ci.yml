@@ -105,6 +105,15 @@ jobs:
       # rule that quietly stops being true here would ship a preset the device
       # refuses to load. Runs the schema (draft 2020-12) and rules V0-V10 over
       # every shipped preset, plus a negative-case suite that must be rejected.
+      # A marker (verify)/(prov.)/unread is a promise to come back. This counts
+      # them against a baseline: a correction that comes undone fails, and a new
+      # marker without an owner fails. See python-scripts/check_markers.py.
+      - name: unresolved-value markers are closed or owned
+        run: |
+          python python-scripts/check_markers.py --self-test
+          python python-scripts/check_markers.py \
+            --closed docs/roadmap/markers-closed-2026-08-21.tsv \
+            --allow docs/roadmap/markers-allowlist.tsv
       - name: preset schema + loader rules V0-V10
         run: |
           python -m pip install --quiet "jsonschema>=4.10"
