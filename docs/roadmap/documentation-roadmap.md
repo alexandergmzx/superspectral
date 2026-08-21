@@ -172,10 +172,10 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
 - **Outputs:** ≈70 open-access PDFs filed under the library by the filing convention (`<vendor>_<part>_<doctype>_<version>.pdf` etc., lowercase, version/year-stamped); **all ESP-IDF/Espressif docs as PDF snapshots** (they track `stable` and drift); Tier-0 clones under `docs/reference-projects/clones/` (gitignored): esp-dsp, esp-idf, esp-bsp, LilyGoLib, TTGO_TWatch_Library (`t-watch-s3`), SensorLib, XPowersLib, circuitpython, zephyr (`boards/lilygo`), xiao-edge-audio, mir_eval, mirdata, Parselmouth, friture; manual browser batch (ADI MAX98357A, FocalTech FT6336U, ST7789V3, Knowles); purchase decision list (IEC 61672-1, IEC 61260-1, IEC 60942, ISO 226 — none strictly required for relative measurement; see Q39); board-reference capture (product page → PDF, schematic V1.4 **and** 2025-03-24, Zephyr board-doc snapshot); `doc_ocr extract` sidecars + `docs/OCR/manifest.tsv` rows; `acquisition-status.md` populated; `📥 Filed locally` stamps; **figure digitization** of the Knowles raster tables (sensitivity/SNR/AOP table and the free-field response curve → CSV with a provenance block, via WebPlotDigitizer).
 - **Definition of done**
   - [ ] Every ★★★ document is filed + `📥` stamped, or ledgered in `acquisition-status.md` with a reason tag.
-  - [ ] `doc_ocr` manifest covers 100 % of filed PDFs; Knowles SPM1423, ST7789V3, ESP32-S3 datasheet + TRM, HW Design Guidelines (VDD_SPI table), both schematics marked `checked` — where `checked` for the Knowles sheet means "the acoustic table and the response curve survived extraction or were digitized".
+  - [~] `doc_ocr` manifest covers 100 % of filed PDFs *(46/46 as of 2026-08-21; `doc_ocr verify` clean)*; the `checked` review flags are still 0/46 — the human read of Knowles SPM1423, ST7789V3, ESP32-S3 datasheet + TRM, HW Design Guidelines (VDD_SPI table), both schematics marked `checked` — where `checked` for the Knowles sheet means "the acoustic table and the response curve survived extraction or were digitized".
   - [ ] Schematic 2025-03-24 compared with V1.4 for a mic second-source (Q12) and the result written into `01-datasheets.md`.
-  - [ ] Clone shortlist cloned; licence column confirmed from each repo's `LICENSE` file, not from memory.
-  - [ ] No paywalled PDF under `docs/books/`; purchased standards filed only if their licence permits a private copy.
+  - [x] Clone shortlist cloned *(16 of 17; `dywapitchtrack` 404 — the GitHub repo is gone, ledgered)*; licence column confirmed from each repo's `LICENSE` file, not from memory *(2026-08-20; `esp-bsp` and `lvgl` carry `LICENCE.txt`/per-component SPDX rather than a root `LICENSE`, recorded in the clone log)*.
+  - [x] No paywalled PDF under `docs/books/`; purchased standards filed only if their licence permits a private copy *(2026-08-21: nothing purchased; the one book PDF is a free vendor sample chapter, `redistributable=unknown`, local only)*.
 
 ### D4 — Reference-project study loop + hardware-fact closure
 
@@ -209,11 +209,11 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   - [ ] `doc_ocr` manifest covers 100 % of filed PDFs; the gating docs `checked`.
   - [ ] Proposal RQ frozen; `CLAUDE.md` and `research-statement.md` quote it verbatim.
   - [ ] ADRs 0001 (toolchain+env, accepted after gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim), 0006 (FFT conventions) accepted.
-  - [ ] E1 complete: `dependencies.lock` committed, `env.lock.md` filled, old installs removed, CI firmware job green.
-  - [ ] E2 complete: eFuse baseline + vendor partition table committed; rollback + boot guard tested.
-  - [ ] Validation metrics table: every target has an external anchor and a measurement method.
+  - [~] E1 complete: `dependencies.lock` committed, `env.lock.md` filled, CI firmware job green *(2026-08-21)*; **old installs not yet removed** — the operator deletes `~/esp/esp-idf`, `~/esp/idf/v5.5.5`, `~/esp/tools/v5.5.5` himself (the `get_idf` alias is already retired).
+  - [x] E2 complete: eFuse baseline + vendor partition table committed; rollback + boot guard tested *(2026-08-21, experiment 0002: rollback 4/4, race 10/10 + 5/5)*.
+  - [x] Validation metrics table: every target has an external anchor and a measurement method *(and, since 2026-08-21, the [uncertainty budget](../validation/uncertainty-budget.md) that says what each ± actually means)*.
   - [ ] First reference-project ADR written; first experiment recipe written.
-  - [ ] CI link-check green.
+  - [x] CI link-check green *(and reproducible locally without an install: `python3 python-scripts/check_links.py`)*.
 
 ---
 
