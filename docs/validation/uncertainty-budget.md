@@ -26,9 +26,10 @@ recorded in `README.md` and here made computable:
 1. A band-level claim of "±1.5 dB **accuracy**" is not defensible with a
    non-IEC-61094-4 reference. What *is* defensible is **within-session
    repeatability** (Bland–Altman limits of agreement, ICC) plus this budget.
-2. Any absolute-SPL readout requires the calibrator's certificate in the budget
-   (IEC 60942 class, ±0.2 dB for a Class 1 unit) — otherwise the readout is
-   device-relative and must be labelled as such in the UI.
+2. Any absolute-SPL readout requires the calibrator's own certificate in the
+   budget — otherwise the readout is device-relative and must be labelled as such
+   in the UI, which is what [`README.md`](README.md) already commits to
+   ("claimed only if a Class-1 calibrator is available, else *not claimed*").
 3. A cents claim is dominated by a systematic term nobody thinks about — the
    sample-rate error — which is why it is row 1 below.
 
@@ -62,7 +63,7 @@ chain, in dB, over 100 Hz – 8 kHz.
 | # | Component | Type | Source of the estimate | Distribution | Status |
 |---|---|---|---|---|---|
 | B1 | **Reference-microphone response uncertainty** | B | The factory calibration file's stated uncertainty; for a UMIK-1-class unit this is the term that decides whether "±1.5 dB accuracy" can be claimed at all. An IEC 61094-4 WS2F reference replaces this row and shrinks it (threshold T6) | normal (k from the certificate) | **blocks the accuracy claim** |
-| B2 | Calibrator | B | IEC 60942 class and the certificate: ±0.2 dB (Class 1), ±0.3 dB (Class 2); plus the port-adapter coupling loss, which is *not* in the certificate and must be bounded separately | normal + rectangular | needs the adapter |
+| B2 | Calibrator | B | The unit's **own** certificate — for a B&K 4231 the product data states ±0.2 dB ([01](../bibliography/01-datasheets.md) #30) — **plus** the port-adapter coupling loss, which is *not* in any certificate (the watch has no standard coupler) and must be bounded by its own measurement. IEC 60942's per-class tolerances are **not quoted here**: the standard is paid and unacquired ([03](../bibliography/03-standards.md) #6), so the class is recorded as a fact about the instrument and the number comes from the certificate, never from a recalled table | normal + rectangular | needs the adapter |
 | B3 | Geometry repeatability | A | Re-mount the watch between runs; s.d. of the band level. The single largest Type-A term for a wrist device | normal | Phase 1 |
 | B4 | Room / background | B→A | Background level per band; where it is within 10 dB of the signal it biases the band up — corrected or the band is excluded and said so (ANSI S12.2 room report) | — | measured |
 | B5 | Mic-EQ fit residual | A | Residual of the fitted IIR against the measured in-situ response, per band | normal | experiment 0001 |
