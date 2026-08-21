@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Super Spectral pre-commit configuration.
-# Install:  pip install pre-commit && pre-commit install && pre-commit install -t commit-msg
+# Install:  pipx install pre-commit && pre-commit install && pre-commit install -t commit-msg
+#           (pipx, not `pip install --user` and not `uvx`: `pre-commit install` writes the
+#            interpreter path into .git/hooks/pre-commit, so the tool must stay on PATH.)
 # Manual-stage hooks (need an activated ESP-IDF shell):  pre-commit run --hook-stage manual -a
 #
 # Every `rev:` below was current on 2026-08-20 unless marked VERIFY. Run

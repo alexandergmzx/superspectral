@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# The Linux companion (ADR 0002). GPL-3.0-or-later, not Apache-2.0, because it
+# imports parselmouth in-process; the licence boundary is this directory
+# (ADR 0004). Nothing outside host/ imports anything in host/, and nothing here
+# imports the Apache tooling — the halves exchange files on disk only.
+#
+# praat-parselmouth is pinned EXACTLY, not with `~=`, because the pin IS the
+# Praat version: 0.4.0 through 0.4.7 all bundle Praat 6.1.38 (2021-01-02), which
+# registers `To Pitch (ac)`/`(cc)` and NOT `To Pitch (filtered autocorrelation)`
+# (that arrived in Praat 6.4, 2023-11-15). A silent bump to a future 0.5.x would
+# change the default pitch method underneath every golden file — exactly the
+# drift ADR 0009's verify step exists to catch, so the lock refuses it instead.
+
+[project]
+name = "superspectral-host"
+version = "0.1.0"
+description = "Super Spectral — Linux companion: offline analysis and Praat golden-file generation"
+requires-python = ">=3.11,<3.14"
+license = "GPL-3.0-or-later"
+dependencies = [
+  "praat-parselmouth==0.4.7",
+  "numpy>=2.0,<3",
+  "scipy>=1.13,<2",
+  "pyyaml>=6.0,<7",
+  "jsonschema>=4.10,<5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.uv]
+# No package build yet: host/ currently holds the schema and this environment.
+# The src layout (host/src/spectral_host/) and [project.scripts] land with the
+# first module (roadmap H0); this file is edited then, not replaced.
+package = false

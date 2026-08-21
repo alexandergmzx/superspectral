@@ -31,4 +31,27 @@ Rules that keep the boundary clean — they are the reason the boundary is a *di
 
 ## Environment
 
-Own, isolated Python environment (`uv`/`venv`, Python ≥ 3.11), pinned in a lock file in this directory when the first module lands (roadmap D6). parselmouth's version is load-bearing: it bundles a specific Praat whose default pitch method changed from raw to filtered autocorrelation in 2023 — see [`golden/README.md`](golden/README.md).
+Own, isolated Python environment, pinned here and nowhere else:
+
+```sh
+cd host && uv sync --extra dev      # creates host/.venv from uv.lock
+uv run --project host python -c "import parselmouth; print(parselmouth.VERSION, parselmouth.PRAAT_VERSION)"
+```
+
+`praat-parselmouth` is pinned **exactly** (`==0.4.7`), because the pin *is* the
+Praat version. Measured from this environment on 2026-08-21:
+
+| | |
+|---|---|
+| `parselmouth.VERSION` | `0.4.7` |
+| `parselmouth.PRAAT_VERSION` | **`6.1.38`** (2021-01-02) |
+| pitch methods available | `to_pitch`, `to_pitch_ac`, `to_pitch_cc`, `to_pitch_shs`, `to_pitch_spinet` |
+| `To Pitch (filtered autocorrelation)` | **`PraatError: Command "To Pitch (filtered autocorrelation)" not available for given objects.`** |
+
+Praat's default pitch method changed from raw to filtered autocorrelation in
+**Praat 6.4 (2023-11-15)**, and *no released parselmouth has reached it* — every
+0.4.x bundles 6.1.38. Golden sets therefore pin `method: raw` with 6.1.38's own
+defaults; see [`golden/README.md`](golden/README.md) and
+[ADR 0009](../docs/adr/0009-golden-file-strategy.md). praat.org itself is at
+7.0.01 (read 2026-08-21) — comparing the two is roadmap threshold T7b, and it
+needs an out-of-process binary.

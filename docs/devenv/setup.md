@@ -192,6 +192,30 @@ Launch VS Code from the direnv-activated shell (`code .`) so `${env:IDF_TOOLS_PA
 
 **E1 definition of done:** `idf.py --version` = v6.0.2 from a fresh shell inside the repo; `env | grep -E 'IDF_COMPONENT|PYTHONPATH'` empty; skeleton builds twice with identical `.bin` hashes; `dependencies.lock` + `env.lock.md` committed; ADR 0001 accepted; CI firmware job enabled; old trees gone.
 
+## 10. Python environments that are not the IDF's
+
+Three interpreters live on this machine and none of them is the other. Keeping
+them apart is the same discipline `.envrc` applies to ESP-IDF.
+
+| Environment | Where | What it is for | Licence |
+|---|---|---|---|
+| ESP-IDF venv | `~/esp/tools/v6.0.2/python_env/` | `idf.py`, `esptool`, `otatool` — created and owned by `install.sh`. **Never** used for repo scripts. | — |
+| Host companion | `host/.venv`, from `host/pyproject.toml` + `host/uv.lock` | parselmouth, numpy, scipy — the offline analysis and golden-file generation | **GPL-3.0-or-later** |
+| Apache tooling | system `python3` (stdlib only) or a per-package `uv` project under `python-scripts/` | `doc_ocr`, `check_links.py`, `check_presets.py`, `gen_colormap_lut.py` | Apache-2.0 |
+
+```sh
+cd host && uv sync --extra dev              # GPL side; host/.venv, gitignored
+uv run --project host python -c "import parselmouth; print(parselmouth.PRAAT_VERSION)"   # 6.1.38
+pipx install pre-commit                     # not `pip install --user`, not `uvx`
+```
+
+`uv` (0.11.32 here) is used rather than bare `venv` because the lock file is the
+artefact ADR 0009 needs: `praat-parselmouth==0.4.7` pins Praat 6.1.38, and a
+resolver that silently moved to a 0.5.x would change the default pitch method
+underneath every golden file. `uvx pre-commit` would work for a one-shot run, but
+`pre-commit install` writes the interpreter path into `.git/hooks/pre-commit`, so
+the tool has to stay on PATH — hence pipx.
+
 ## Quick reference
 
 | Need | Command |
