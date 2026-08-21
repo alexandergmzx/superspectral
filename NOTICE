@@ -2,19 +2,52 @@ Super Spectral
 Copyright 2026 Alexander Gomez
 
 Licensed under the Apache License, Version 2.0 (the "License"); see LICENSE.
+You may not use the files in this repository except in compliance with the
+License, save for the directory named below, which carries its own licence.
 
 SPLIT LICENSING
 ---------------
 Everything in this repository is Apache-2.0 EXCEPT the `host/` directory,
 which is licensed under the GNU General Public License v3.0 or later
-(see host/LICENSE). `host/` holds the Linux companion software, which
-imports Praat/parselmouth (GPLv3). No code crosses the `host/` boundary in
-either direction: firmware never depends on `host/`, and `host/` is never
-linked into firmware. See docs/adr/0004-split-licensing.md.
+(see host/LICENSE). `host/` holds the Linux companion software — offline
+analysis of recorded takes and the Praat golden-file generator — which
+imports Praat/parselmouth (GPLv3) in-process. No code crosses the `host/`
+boundary in either direction: firmware never depends on `host/`, and
+`host/` is never linked into firmware. The two halves communicate only
+through files on disk whose formats are specified under `protocols/specs/`.
+See docs/adr/0004-split-licensing.md (pre-registered in docs/adr/README.md).
+
+Consequently, on the firmware side only MIT-, BSD- and Apache-2.0-licensed
+components may appear in `idf_component.yml` or on the link line. GPL, AGPL
+and LGPL code, and code under field-of-use licences (the "Espressif MIT"
+licence of ESP-ADF/ESP-SR), is studied as read-only reference and never
+copied. Every source file carries `SPDX-FileCopyrightText` and
+`SPDX-License-Identifier` headers.
 
 THIRD-PARTY NOTICES
 -------------------
-(Append one entry per vendored or linked third-party component:
- name, version, licence, copyright line, URL. Managed ESP-IDF components
- are enumerated by `esp-idf-sbom`; this file carries the copyright lines
- that Apache-2.0 §4(d) requires to be preserved.)
+One entry per vendored or linked third-party component:
+  name, version, licence, copyright line, URL.
+Managed ESP-IDF components are enumerated and licence-checked by
+`esp-idf-sbom` in CI; this file carries the copyright lines that
+Apache-2.0 §4(d) requires to be preserved, and is extended in the same
+commit that adds a dependency to `firmware/twatch-s3/main/idf_component.yml`.
+
+Planned (pins per ADR 0001; copyright lines below are recalled, not yet
+verified — each is checked against the component's own LICENSE file and
+completed when `dependencies.lock` is first committed in roadmap E1):
+  - Espressif ESP-IDF v6.0.2 — Apache-2.0 — Copyright Espressif Systems (Shanghai) Co., Ltd.
+  - espressif/esp-dsp ~1.8.2 — Apache-2.0 — Copyright Espressif Systems (Shanghai) Co., Ltd.
+  - lvgl/lvgl ~9.5.0 — MIT — Copyright LVGL Kft (bundled font notices: see the component's LICENCE files)
+  - espressif/esp_lvgl_port ~2.9.0 — Apache-2.0 — Copyright Espressif Systems (Shanghai) Co., Ltd.
+  - espressif/esp_lcd_touch_ft5x06 ~1.1.1 — Apache-2.0 — Copyright Espressif Systems (Shanghai) Co., Ltd.
+  - espressif/esp_codec_dev ~1.6.2 — Apache-2.0 — Copyright Espressif Systems (Shanghai) Co., Ltd.
+  - joltwallet/littlefs ~1.22.3 — MIT — Copyright Brian Pugh; littlefs itself BSD-3-Clause, Copyright Arm Limited
+  - lewisxhe/sensorlib ~0.4.1 — MIT — Copyright Lewis He (includes Bosch BMA4 Sensor API, BSD-3-Clause, Copyright Bosch Sensortec GmbH)
+
+Derived hardware facts (pin map, rail assignment) are taken from the LilyGO
+T-Watch S3 schematic and LilyGoLib's MIT-licensed headers with attribution
+in docs/hw/twatch-s3-pins.md; the schematic PDF itself is linked, not
+redistributed. `python-scripts/doc_ocr/` originates from the author's
+`swarm` repository (MIT) and is carried here by the same copyright holder
+under this repository's Apache-2.0 licence.

@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+
+# --- Line endings ----------------------------------------------------
+# Everything text is LF. ESP-IDF's CMake, Kconfig and partition-table
+# tooling and the shell entry points under tools/ all assume LF.
+*               text=auto eol=lf
+*.sh            text eol=lf
+*.csv           text eol=lf
+.envrc          text eol=lf
+Kconfig*        text eol=lf
+sdkconfig.*     text eol=lf
+partitions.csv  text eol=lf
+
+# --- dependencies.lock: never three-way merged ------------------------
+# The IDF Component Manager lock file is generated (`idf.py reconfigure`)
+# from main/idf_component.yml. A hand-resolved merge conflict in it is how
+# silent component-version drift enters the build. Treat it as opaque:
+# resolve the manifest, regenerate the lock, commit. Diffs are suppressed
+# for the same reason — review the manifest change, not the solver output.
+dependencies.lock  merge=binary -diff
+
+# --- Binary documents and images --------------------------------------
+# Vendor PDFs are kept verbatim; firmware images and golden vectors are
+# opaque bytes. No EOL normalisation, no textual diff.
+*.pdf   binary
+*.bin   binary
+*.elf   binary
+*.png   binary
+*.jpg   binary
+*.wav   binary
+*.f32   binary
+*.ttf   binary
+*.docx  binary

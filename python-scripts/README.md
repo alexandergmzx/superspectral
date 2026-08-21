@@ -1,0 +1,28 @@
+# python-scripts
+
+All **Apache-2.0** Python lives here, by convention ([`CLAUDE.md`](../CLAUDE.md#where-python-lives)). Scripts in this tree are referenced from `firmware/`, `dsp/`, `tools/`, `analysis/`, `datasets/` and `tests/`, but never duplicated outside of it.
+
+**The one exception is [`../host/`](../host/)** — the Linux companion and the Praat golden-file generator — which imports parselmouth (GPLv3) in-process and is therefore licensed GPL-3.0-or-later under its own `LICENSE`. The exception exists so the licence boundary is a directory boundary a reviewer can see. The test for where a new script goes is its imports: if it needs parselmouth, librosa-with-GPL-extras, Demucs or any other copyleft dependency, it goes under `host/`; if it is stdlib/NumPy/SciPy-only tooling, it goes here. Never move Apache-2.0 tooling into `host/` for convenience — that relicenses it.
+
+## Current contents
+
+- `doc_ocr/` — turns the PDFs under `docs/` into grep-able markdown sidecars carrying a human review flag, and maintains the tracked ledger [`../docs/OCR/manifest.tsv`](../docs/OCR/manifest.tsv). Stdlib only (shells out to poppler / mutool / ocrmypdf); run as `python3 -m doc_ocr` from `doc_ocr/`. Carried over from the author's `swarm` repository with only `Settings.skip_dirs` adjusted. See [`../docs/OCR/README.md`](../docs/OCR/README.md). Tests: `cd doc_ocr && python3 -m pytest -q` (25 tests, no binary fixtures, no poppler needed) — run in CI.
+
+## Planned packages (added as their roadmap phase needs them)
+
+- `synth_signals/` — Tier-0 synthetic generators for [`../datasets/`](../datasets/): sines on/off bin centres, linear and exponential sweeps (Farina), two-tone at Δf = 0.5/1/2/4 bins, white/pink noise, Rosenberg/LF glottal-source vowels with known f0 and F1–F3, AM/FM vibrato tones. Ground truth exact by construction; every output carries its parameters and sha256 in a manifest.
+- `golden_compare/` — reads the arrays that [`../host/golden/`](../host/golden/) produced (as data, never as an import) and the watch's output, computes the tolerance-table metrics (median |Δcents|, RPA/RCA/OA/VR/VFA via `mir_eval`, dB-per-bin, F1/F2 %) and writes the validation tables.
+- `take_tools/` — reader/validator for the take format ([`../protocols/specs/`](../protocols/specs/)): CRC and `_Static_assert`-size checks, injection-path WAV → `PCM_BLOCK` packer, `FEATURE_FRAME` dump.
+- `bench/` — instrument drivers for the validation bench: PPK2 / Otii capture, oscilloscope latency extraction, AXP2101 E-Gauge log parser, phototransistor refresh-rate counter.
+- `bib_tools/` — bibliography self-checks (every row has identifier + priority + a "Why" naming a § / ADR / metric; `📥 Filed locally` stamps resolve; README counts match).
+
+## Adding a script
+
+1. Pick a `snake_case` name that says what it does (`pack_wav_as_take.py`, not `script1.py`).
+2. SPDX header on line 1–2 (`# SPDX-FileCopyrightText: 2026 Alexander Gomez` / `# SPDX-License-Identifier: Apache-2.0`), then a top-of-file docstring with its CLI (one usage example minimum).
+3. If it grows beyond ~200 lines or accretes dependencies, move it to a `<package>/` subfolder with a `pyproject.toml` and a `tests/` directory whose test names state the hazard they guard (see `doc_ocr/tests/`).
+4. Tools invoked from the bench or the shell get a thin entry point under [`../tools/`](../tools/) that calls the script by relative path.
+
+## Environment
+
+Scripts target the system Python 3.12 (`/usr/bin/python3`) and depend only on the standard library until a package justifies more; CI runs `python -m compileall -q python-scripts` on every push, which is why `doc_ocr` takes no runtime dependencies. When NumPy/SciPy/`mir_eval` arrive with `synth_signals/` and `golden_compare/`, they get a pinned `pyproject.toml` per package and a lock file — separate from the ESP-IDF Python environment (the IDF venv under `~/esp/tools/v6.0.2` is never used for repo scripts) and separate from `host/`'s GPL environment.

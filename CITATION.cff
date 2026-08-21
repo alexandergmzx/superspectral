@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Citation File Format 1.2.0 — https://citation-file-format.github.io/
+# No release, no DOI and no remote exist yet (Phase 0). `repository-code`,
+# `doi`, `version` and `date-released` are added at the first tagged release;
+# a Zenodo DOI is minted from that tag (roadmap: Phase 3 release deliverable).
+cff-version: 1.2.0
+message: >-
+  If you use Super Spectral — its firmware, DSP design notes, validation
+  plan, golden-file manifests or datasets — please cite it as below. Once a
+  release exists, prefer the versioned DOI that will be listed here.
+type: software
+title: "Super Spectral"
+abstract: >-
+  A wrist-worn singing-voice spectral analyzer on the LilyGO T-Watch S3
+  (ESP32-S3) with a single PDM MEMS microphone: the live-capture and
+  real-time-display front end of a preset-driven analyzer, with all
+  real-time DSP on-device and a Linux companion for offline analysis of
+  recorded takes. The repository is built documentation-first: research
+  question, prioritized bibliography and acquisition ledger, architecture
+  decision records, two-path validation plan (digital injection vs
+  acoustic), and a pinned, reproducible ESP-IDF v6.0.2 environment.
+authors:
+  - family-names: Gomez
+    given-names: Alexander
+    # ORCID: TBD
+keywords:
+  - singing voice
+  - spectral analysis
+  - spectrogram
+  - pitch estimation
+  - singer's formant
+  - ESP32-S3
+  - ESP-IDF
+  - PDM microphone
+  - wearable
+  - reproducible research
+license: Apache-2.0
+# The `host/` directory (Linux companion, Praat/parselmouth golden-file
+# generator) is licensed GPL-3.0-or-later under its own host/LICENSE;
+# see NOTICE and ADR 0004 (split licensing).

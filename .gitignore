@@ -1,1 +1,136 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+
+# --- Build artifacts -------------------------------------------------
+# Generic compiler/linker output. Firmware images are never tracked: the
+# reproducibility oracle is the digest-pinned CI container, not a checked-in
+# binary. The factory backup of the watch (factory-backup.bin, 16 MB) is
+# stored off-repo per docs/devenv/backup-policy.md and must never land here.
+*.o
+*.obj
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+*.dSYM/
+
+# --- ESP-IDF build output --------------------------------------------
+# sdkconfig is GENERATED from the committed sdkconfig.defaults* files and
+# churns on every IDF upgrade; never track it. Configuration is source:
+# edit sdkconfig.defaults / sdkconfig.defaults.esp32s3 / sdkconfig.ci.*.
+build/
+build_*/
+sdkconfig
+sdkconfig.old
+
+# --- IDF Component Manager -------------------------------------------
+# managed_components/ is regenerated from dependencies.lock; never hand-edit.
+# dependencies.lock itself IS tracked on purpose (roadmap E1 generates it;
+# see .gitattributes for its merge policy and ADR 0001).
+managed_components/
+**/.component_hash
+
+# --- direnv ----------------------------------------------------------
+# .envrc is committed (it is the ESP-IDF pin); direnv's cache is not.
+.direnv/
+
+# --- clang tooling ---------------------------------------------------
+# The real compile_commands.json lives in build/; clangd reads it from there.
+/compile_commands.json
+.cache/
+warnings.txt
+html_report/
+cppcheck.xml
+
+# --- Host tests (plain CMake) ----------------------------------------
+host-tests/build/
+
+# --- Python ----------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# --- Local scratch / working files ------------------------------------
+# Alexander prefers working files visible in the repo instead of /tmp.
+# Never track: holds the research syntheses, one-shot acquisition scripts
+# with their logs, OCR temporaries, and large regenerable artifacts.
 /scratch/
+
+# --- Reference-project clones ----------------------------------------
+# Shallow clones of upstream OSS for offline study; cloned on demand,
+# refreshed from upstream, never vendored into our history (several are
+# GPL/AGPL and are read-only references for an Apache-2.0 firmware).
+docs/reference-projects/clones/
+
+# --- Generated document sidecars --------------------------------------
+# Machine extractions of the reference-library PDFs, regenerated in seconds by
+# `python3 -m doc_ocr extract`. Not tracked: several source documents are not
+# freely redistributable and their extracted full text inherits that.
+# What IS tracked is the content-free ledger docs/OCR/manifest.tsv, which
+# records that each document was acquired and extracted, plus its review flag.
+# Human-written notes use the `<original>_notes.md` name and stay tracked.
+docs/**/*.ocr.md
+docs/**/*.ocr/
+
+# --- Datasets (large, licensed, not source) ---------------------------
+# Corpora (vocadito, Dagstuhl ChoirSet, VocalSet, PTDB-TUG, …) are fetched
+# by manifest, not vendored: each carries its own licence and several are
+# CC BY-NC or request-only. Tier-0 synthetic signals are regenerated from
+# their generator scripts. Only manifests, generators, and the licence
+# ledger are tracked.
+datasets/corpora/
+datasets/raw/
+datasets/**/*.wav
+*.csv.gz
+*.parquet
+*.h5
+*.hdf5
+
+# --- Jupyter ---------------------------------------------------------
+.ipynb_checkpoints/
+
+# --- IDE / editor ----------------------------------------------------
+# .clangd, .clang-format and .editorconfig are committed; the editor's own
+# state is not. No Espressif VS Code extension: the shell (.envrc) owns the
+# toolchain and the editor sits downstream of it.
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS --------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Secrets & local config ------------------------------------------
+# Genuine secrets only. Alexander works across multiple machines while
+# travelling, so per-repo Claude Code settings (.claude/settings.local.json)
+# are intentionally tracked so that pulling the repo on a new laptop restores
+# the working setup. The negation below is load-bearing: this host's global
+# excludes file (~/.config/git/ignore) matches **/.claude/settings.local.json,
+# and a repo .gitignore takes precedence over core.excludesFile, so without it
+# `git add` would silently skip the file. Never store credentials in it.
+!.claude/settings.local.json
+.env
+.env.local
+*.pem
+*.key
+secrets.yaml
+local-*.json
