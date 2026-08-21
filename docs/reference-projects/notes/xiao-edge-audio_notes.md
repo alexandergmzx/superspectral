@@ -19,7 +19,7 @@ Source layout (all under `firmware/`): `main/audio_capture.{c,h}` (I2S PDM RX), 
           ──► int16→float ×(1/32768) × Hann[i] → interleaved complex (im = 0)
           ──► dsps_fft2r_fc32(N=1024) → dsps_bit_rev_fc32
           ──► |X[k]| = sqrtf(re²+im²), k = 0..511 ; peak = argmax k≥1
-          ──► 20·log10(|X|+1e-9), pair-average 512→256 bins, clamp [−128, 0] → int8
+          ──► pair-average 512→256 bins (linear magnitude) → 20·log10(avg+1e-9) → clamp [−128, 0] → int8
           ──► 24-byte header + 256×int16 wave + 256×int8 spec = 792 B
           ──► httpd_ws_send_frame_async() to ≤4 clients, from the same task
 ```

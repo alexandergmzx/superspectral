@@ -4,22 +4,26 @@
 
 ## Why a manifest, not a file
 
-"Parselmouth is numerically identical to Praat" holds only for the Praat version parselmouth **bundles**. praat.org is at 7.0.01 (Boersma, Weenink & Shchupak — read 2026-08-21); Praat changed its default pitch method from raw to **filtered** autocorrelation in 2023; parselmouth's bundled Praat predates both. Praat's pitch floor, ceiling, voicing threshold, silence threshold and octave-jump cost all change the answer. **An unpinned golden file is not a golden file.** Before any tolerance is frozen, one WAV is run through the bundled Praat and through Praat 7.0.01 and the difference is recorded (roadmap threshold T7).
+"Parselmouth is numerically identical to Praat" holds only for the Praat version parselmouth **bundles**. praat.org is at 7.0.01 (Boersma, Weenink & Shchupak — read 2026-08-21); Praat changed its default pitch method from raw to **filtered** autocorrelation in 2023; parselmouth's bundled Praat predates both. Praat's pitch floor, ceiling, voicing threshold, silence threshold and octave-jump cost all change the answer. **An unpinned golden file is not a golden file.** Before any tolerance is frozen, one WAV is run through the bundled Praat and through Praat 7.0.01 and the difference is recorded (roadmap threshold **T7b**; T7a — *which* Praat parselmouth bundles — closed on 2026-08-21 at 6.1.38).
 
-## Manifest schema (`golden/manifest.yaml`, one entry per vector set)
+## Manifest schema (`manifest.yaml` — one manifest per vector set, per the schema's `set` field)
 
 ```yaml
 schema: 1
-generated: 2026-MM-DD
+set: tier0-synthetic          # also the output directory: outputs/<set>/
+generated: "2026-MM-DD"       # quoted: an unquoted date is not a JSON string
 generator:
   script: host/golden/generate.py
-  commit: <repo sha>
+  sha256: <64 hex of generate.py>
+  commit: <40 hex repo commit>
   python: 3.12.3              # `python3 --version`
   numpy: <version>
   scipy: <version>
   parselmouth: <version>      # `praat-parselmouth` PyPI version
   praat_bundled: <version>    # parselmouth.PRAAT_VERSION
   praat_reference: null       # T7b open: no out-of-process Praat has been run yet
+  platform: <uname -srm>
+  blas: <numpy.show_config() vendor + version>
 inputs:
   # 32 kHz is the watch's default rate (ADR 0003) and the only rate any preset
   # is set to today, so the primary Tier-0 set is generated at it. A 48 kHz
@@ -31,11 +35,15 @@ inputs:
     sample_rate: 32000
     bit_depth: 16
     channels: 1
+    source: {kind: tier0-synthetic, name: sine,
+             parameters: {frequency_hz: 440.0, level_dbfs: 0.0, phase_rad: 0.0}}
   - path: datasets/tier0/sine_440_0dBFS_48k.wav   # host-only until T3 passes
     sha256: <64 hex>
     sample_rate: 48000
     bit_depth: 16
     channels: 1
+    source: {kind: tier0-synthetic, name: sine,
+             parameters: {frequency_hz: 440.0, level_dbfs: 0.0, phase_rad: 0.0}}
 analyses:
   pitch:
     # `raw`, not `filtered`, and this is a measurement rather than a preference:
@@ -64,7 +72,7 @@ analyses:
   formant:
     method: burg
     time_step: 0.01
-    max_formants: 5
+    max_formants: 5            # Praat fits 2 x max_formants poles: LPC order 10, not 12
     ceiling_hz: 5500           # per Praat: ~5000 male / 5500 female; FormantPath later
     window_length: 0.025
     preemphasis_from_hz: 50
@@ -77,14 +85,27 @@ analyses:
   ltas:
     bandwidth_hz: 100
 outputs:
-  - path: golden/pitch/sine_440.npy
+  - path: host/golden/outputs/tier0-synthetic/pitch_sine_440.npy
     sha256: <64 hex>
+    analysis: pitch
+    input: datasets/tier0/sine_440_0dBFS_32k.wav
     dtype: float64
-    shape: [N, 2]              # (time, f0); 0 = unvoiced
-tolerances: see table below    # referenced, not duplicated
+    shape: [<n frames>, 2]     # Praat's frame grid decides n; compare by time, never by index
+    units: "s, Hz"
+    columns: [time, f0]
+    unvoiced_sentinel: 0       # Praat writes 0 for unvoiced; never read it as a frequency
+tolerances:
+  source: docs/validation/golden-files.md   # a pointer, never the limits themselves
+  revision: <40 hex commit of this file>
+regeneration:
+  date: "2026-MM-DD"
+  reason: initial generation
+  approved_by: <the human who reviewed the manifest diff>
+  previous_manifest_sha256: null
+  previous_set: null
 ```
 
-Every field above is **required**; a vector set whose manifest entry is missing any of them is rejected by the test harness, not silently defaulted. The sha256 of every input WAV and every output array is the only identity the tests trust.
+Every field above is **required**; a vector set whose manifest entry is missing any of them is rejected by the test harness, not silently defaulted. The example is prose *and* machine-checked: the required lists live once, in [`../../host/golden/manifest.schema.yaml`](../../host/golden/manifest.schema.yaml) (JSON Schema draft 2020-12, `additionalProperties: false`), and this block validates against it once the `<…>` placeholders are filled — that schema, not this page, is what `verify.py` loads. Where the two ever disagree the schema wins and this block is the bug. The sha256 of every input WAV and every output array is the only identity the tests trust.
 
 ## Tolerance table, not equality (prov.)
 
@@ -131,7 +152,7 @@ Bold callouts in swarm's style: name, cost, what the wrong answer looks like, wh
 - **`log10f` cost trap** (not a correctness trap, but it changes what gets golden-filed). ~150 cycles per call; the device uses a float-exponent bit-trick log or computes only the rendered columns. *Signature:* device dB values match the host to ±0.05 dB, not ±0.001 dB. *Pin:* the device-side log approximation's documented max error is part of the tolerance budget.
 - **Frame-grid trap.** librosa `center=True` pads by N/2; Praat places its first frame at `t1 = (duration − (nFrames − 1)·dt) / 2`; the device frames from sample 0 with a hop. *Signature:* RPA fine, but per-frame comparisons show a constant time offset → cents error spikes at every note onset. *Pin:* resample the host f0 track onto the device's frame times before comparing; never compare frame indices.
 - **Resampling trap.** CREPE's published numbers are at 16 kHz / 1024-sample frames; the device runs 32 or 48 kHz. *Signature:* apparent accuracy gap vs the literature that is really a resampler. *Pin:* the sample rate of every vector set in the manifest; compare like with like.
-- **Praat-version trap.** Bundled Praat ≠ praat.org Praat; raw vs filtered autocorrelation. *Signature:* the same WAV gives two f0 tracks that differ by a few cents in vibrato cycles and by whole frames at onsets. *Pin:* `praat_bundled`, `method` in the manifest; threshold T7 result recorded. **Measured 2026-08-21:** the trap does not currently have two sides to fall between — parselmouth 0.4.7 bundles Praat **6.1.38**, the filtered method does not exist there, and praat.org is at 7.0.01. Every golden set is therefore `method: raw` on 2021-era code until T7b measures the gap; the RQ's "vs Praat" anchor must name that version.
+- **Praat-version trap.** Bundled Praat ≠ praat.org Praat; raw vs filtered autocorrelation. *Signature:* the same WAV gives two f0 tracks that differ by a few cents in vibrato cycles and by whole frames at onsets. *Pin:* `praat_bundled`, `method` in the manifest; threshold T7b result recorded. **Measured 2026-08-21:** the trap does not currently have two sides to fall between — parselmouth 0.4.7 bundles Praat **6.1.38**, the filtered method does not exist there, and praat.org is at 7.0.01. Every golden set is therefore `method: raw` on 2021-era code until T7b measures the gap; the RQ's "vs Praat" anchor must name that version.
 
 ## Tooling
 

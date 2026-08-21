@@ -19,9 +19,10 @@
 | U5 D3 acquisition follow-ups | **DONE** 02:05 | `fc41e7d` — both quarantines resolved (mir_eval was the wrong paper, now correct and committed; XL2 re-fetched whole). YIN + Sundberg 1994: 5xx twice each, paths closed. Added `python-scripts/check_links.py` as the commit gate. |
 | U6 bibliography live-verification | **DONE** 02:21 | `3677960` — 430 URLs, 24 min of the 90-min box. 16 dead links replaced; **one cited DOI does not exist** (05 #23) and one author list is wrong (05 #44), both flagged without touching the numbers. Knowles and Bosch have delisted parts we depend on. |
 | U7 D2 proposal prose (DRAFT) | **DONE** 02:21 | `44cb4e8` — §1–§7 filled, 199→370 lines, 12 synthesis claims corrected against measured facts, 150 citations verified, RQ byte-identical in all three places (independently checked). Also fixed `architecture/README.md`, which said FFT scratch goes to PSRAM. |
-| U8 handback | **DONE** 03:55 | this file's final section. Written 3 h 5 m before the deadline because the queue emptied, not because it was rushed. |
+| U8 handback | **DONE** 03:55 | this file's final section. Written 3 h 35 m before the deadline because the queue emptied, not because it was rushed. |
 
-**Queue extended 02:50.** All eight approved units closed four hours inside the
+**Queue extended 02:50.** All seven approved units (U1 and U2 were ruled out of
+scope at 01:55 and never entered the queue) closed four hours inside the
 budget, so the following stretch units were added under the same rules. They are
 additions, not substitutions: nothing in the approved queue was skipped to reach
 them, and each is documentation of a decision already taken or a verification of
@@ -30,7 +31,7 @@ work already committed — no new science, no new scope.
 | Unit | State | Notes |
 |---|---|---|
 | U9 architecture documents (01 overview, 02 audio capture, 03 DSP pipeline, 06 power budget) | **DONE** 03:07 | `dd9939b` — 773 lines. Pure synthesis of accepted ADRs and measured facts; every open question carries an `OQ` number and an owner. |
-| U10 self-review sweep | **DONE** 03:55 | `a75b0ca` … `bd3c5b1` (11 commits). An adversarial re-read of everything committed tonight produced **4 blockers, 12 majors, 14 minors and 5 nits**; every one is fixed, none deferred. The two worst were factual: the 1.8 V flash correction had survived in eleven files, and the real-8192 FFT figure was wrong because `dsps_cplx2real_fc32` drags in the radix-4 twiddle table. Two findings were repairs to the gates themselves — a pre-commit hook that could never pass, and a spec reporting results from a script that did not exist. |
+| U10 self-review sweep | **DONE** 03:55 | `a75b0ca` … `bd3c5b1` (13 commits). An adversarial re-read of everything committed tonight produced **4 blockers, 12 majors, 14 minors and 5 nits**; every one is fixed, none deferred. The two worst were factual: the 1.8 V flash correction had survived in eleven files, and the real-8192 FFT figure was wrong because `dsps_cplx2real_fc32` drags in the radix-4 twiddle table. Two findings were repairs to the gates themselves — a pre-commit hook that could never pass, and a spec reporting results from a script that did not exist. |
 
 **Out of scope by the operator's decision (01:55):** U1 (promote the gate's bring-up
 into `twatch_bsp`) and U2 (`spectral_core` v0 + host golden tests). No firmware
@@ -82,7 +83,7 @@ Two facts constrain tonight:
 |---|---|---|---|
 | U0 | **Session setup.** Branch, `docs/session-plans/` + this plan; wait out workflow `w9e08cb66`, run its verifier's findings through a fix pass, commit its output. | 45 m | ADR index lists each new record once, sorted; link check 0 broken; plan committed. |
 | U3 | **D5 engineering ADRs.** 0009 golden-file strategy (+ `host/golden/manifest.schema.yaml`), 0010 preset schema (+ `protocols/specs/preset-schema.md`, `presets.schema.json`, the six presets as JSON), 0011 colormap (+ `python-scripts/gen_colormap_lut.py`, ADR `proposed`), 0012 hands-free interaction (design note, ADR `proposed`). | 75 m | Presets validate against the schema; index updated; links resolve. |
-| U4 | **D6 validation freeze, paper side.** Experiment 0001 to full recipe; `docs/validation/uncertainty-budget.md` (JCGM 100 shape); `datasets/manifest.yaml` for the Tier-1 CC BY corpora. | 60 m | Files lint; manifest parses; links resolve. |
+| U4 | **D6 validation freeze, paper side.** Experiment 0001 to full recipe; `docs/validation/uncertainty-budget.md` (JCGM 100 shape); `datasets/corpora/manifest.yaml` for the Tier-1 CC BY corpora. | 60 m | Files lint; manifest parses; links resolve. |
 | U5 | **D3 follow-ups (network reads only).** The two quarantined items re-fetched correctly, the two transient failures retried ×2; file, extract, stamp, ledger. | 30 m | Each item OK or ledgered with its final tag; `doc_ocr verify` clean. |
 | U6 | **Bibliography live-verification** (agent, hard 90-minute box). Every "(verify)" or model-recalled DOI/URL in 01–11 checked by fetching the page (never a PDF); dead links fixed; Disclosure wording flipped recalled → verified where true. | 90 m | Disclosures say what was verified tonight and when; 0 broken links; no content claim changed without a source. |
 | U7 | **D2 proposal prose — DRAFT.** §1–§7 filled from the syntheses and the measured facts; every unsettled number `(prov.)`; header says DRAFT. | 45 m | RQ verbatim unchanged; links resolve. |
@@ -128,14 +129,16 @@ At handback: `git log --oneline main..overnight-2026-08-21`, `git status`, and
 
 # HANDBACK
 
-**Written 2026-08-21 03:55 CST.** Ten units done — the eight approved plus two
+**Written 2026-08-21 03:55 CST.** Nine units done — the seven approved plus two
 stretch units — 3 h 35 m inside the budget. Nothing was pushed. `main` is
 untouched, `origin/main` is still `4468334`, and `git status` is clean.
 
 ## Headline
 
-**Phase 0's documentation is complete, and then it was audited.** Thirty-four
-commits on `overnight-2026-08-21`: 99 files, +7,306 / −353. Eleven ADRs written
+**Phase 0's documentation is complete, and then it was audited.** Thirty-three
+commits on `overnight-2026-08-21` up to `bd3c5b1`: 99 files, +7,306 / −353 —
+the diffstat is measured at `bd3c5b1`, before this handback commit, which is the
+thirty-fourth. Eleven ADRs written
 (nine accepted, two `proposed` because they are yours to decide), the preset
 protocol and the golden-file contract specified, four reference projects read at
 pinned revisions, five architecture documents written, and the bibliography's

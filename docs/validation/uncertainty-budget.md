@@ -38,22 +38,40 @@ recorded in `README.md` and here made computable:
 Measurand: the frequency of a spectral peak as reported by the watch, compared with
 the true frequency of the stimulus.
 
-`f̂ = f_true · (1 + ε_clock) + δ_interp + δ_drift`, and the reported quantity is
-`1200·log₂(f̂ / f_true)` cents. `∂(cents)/∂(relative error) ≈ 1200/ln2 ≈ 1731`
-cents per unit relative error, i.e. **1 ppm ≈ 0.0017 cents**.
+`f̂ = (f_nom + δ_stim) · (1 + ε_clock + ε_drift) + δ_interp + δ_window`, and the
+reported quantity is `y = 1200·log₂(f̂ / f_nom)` cents, where `f_nom` is the
+frequency the stimulus is *believed* to have. Every row of the table below is a
+term of that equation or a Type-A evaluation of `y` itself — a component with no
+term is a component that cannot be combined, which is the usual way a budget
+quietly stops being computable.
 
-| # | Component | Type | Source of the estimate | Distribution | Status |
-|---|---|---|---|---|---|
-| A1 | **Sample-rate error** `ε_clock` — the PCM rate differs from nominal | B (then A) | Crystal tolerance + the I²S fractional divider's resolution. **Not APLL**: the ESP32-S3 has none, so the mechanism is the 40 MHz crystal's ppm spec and the divider residue. Measured against a GPSDO/counter in Phase 1 | rectangular → `u = a/√3` | **dominant systematic; must be measured and corrected, then re-entered as the residual** |
-| A2 | Peak interpolation | B | Quadratic interpolation on the log-magnitude; bias depends on window and on the peak's bin offset. Bounded by simulation over the Tier-0 on/off-bin sines | rectangular | from Tier-0 |
-| A3 | Stimulus frequency | B | Signal generator / soundcard clock spec, or the GPSDO reference | rectangular | small if the reference is disciplined |
-| A4 | Frame-to-frame scatter | A | s.d. of the mean over repeated frames of a steady tone | normal | from data |
-| A5 | Thermal drift | A | Re-measure the same tone after a 60-minute soak; enters as a drift bound over the session | rectangular | Phase 1 |
-| A6 | Analysis-window effects on a non-stationary source | B | Vibrato and the window's time extent interact; applies to *singing*, not to the tone rows. Bounded from the vibrato literature (extent ±0.5–1 semitone at 5.5–7 Hz) | rectangular | Phase 3 only |
+Two kinds of input therefore appear, and they do **not** share a sensitivity
+coefficient:
+
+- **relative** terms (`ε_clock`, `ε_drift`, dimensionless, quoted in ppm):
+  `c = ∂y/∂ε = 1200/ln2 ≈ 1731` cents per unit relative error, i.e.
+  **1 ppm ≈ 0.0017 cents** — frequency-independent, which is why the
+  sample-rate row can be stated once for the whole band;
+- **absolute** terms (`δ_stim`, `δ_interp`, `δ_window`, in Hz):
+  `c = ∂y/∂δ ≈ 1731 / f_nom` cents per Hz — **frequency-dependent**: 3.93 cents/Hz
+  at 440 Hz, 0.216 cents/Hz at 8 kHz. A budget for these rows is evaluated per
+  stimulus frequency and never quoted once for the band.
+
+Signs are irrelevant in quadrature; magnitudes are not.
+
+| # | Component | Symbol · unit of `u_i` · `c_i` | Type | Source of the estimate | Distribution | Status |
+|---|---|---|---|---|---|---|
+| A1 | **Sample-rate error** — the PCM rate differs from nominal | `ε_clock` · relative (ppm) · `1731` | B (then A) | Crystal tolerance + the I²S fractional divider's resolution. **Not APLL**: the ESP32-S3 has none, so the mechanism is the 40 MHz crystal's ppm spec and the divider residue. Measured against a GPSDO/counter in Phase 1 | rectangular → `u = a/√3` | **dominant systematic; must be measured and corrected, then re-entered as the residual** |
+| A2 | Peak interpolation | `δ_interp` · Hz · `1731/f_nom` | B | Quadratic interpolation on the log-magnitude; bias depends on window and on the peak's bin offset. Bounded by simulation over the Tier-0 on/off-bin sines | rectangular | from Tier-0 |
+| A3 | Stimulus frequency — `f_nom` is not the frequency the source actually produced | `δ_stim` · Hz · `1731/f_nom` | B | Signal generator / soundcard clock spec, or the GPSDO reference | rectangular | small if the reference is disciplined |
+| A4 | Frame-to-frame scatter | evaluated on `y` directly · cents · `1` | A | s.d. of the mean over repeated frames of a steady tone; it is the Type-A evaluation of the reported quantity, not a term of the model | normal | from data |
+| A5 | Thermal drift — the *residual* clock error moves over the session | `ε_drift` · relative (ppm) · `1731` | A | Re-measure the same tone after a 60-minute soak; a crystal's tempco is a ppm quantity, so drift enters where `ε_clock` does, not as an additive Hz offset | rectangular | Phase 1 |
+| A6 | Analysis-window effects on a non-stationary source | `δ_window` · Hz (or cents directly) · `1731/f_nom` (or `1`) | B | Vibrato and the window's time extent interact; applies to *singing*, not to the tone rows. Bounded from the vibrato literature (extent ±0.5–1 semitone at 5.5–7 Hz) | rectangular | Phase 3 only |
 
 `u_c(cents) = √(Σ (c_i·u_i)²)`, `U = 2·u_c`. **A1 and A2 are correlated with nothing
 else and dominate**; A6 applies only to the acoustic-path singing rows, never to the
-injection path.
+injection path. A3 is exactly zero on the injection path — the WAV *is* the stimulus,
+so `f_nom` is exact by construction and only the acoustic path carries that row.
 
 ## Model B — 1/3-octave band level (dB)
 

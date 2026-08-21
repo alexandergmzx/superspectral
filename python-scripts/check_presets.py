@@ -9,12 +9,15 @@ watch enforces at runtime cannot silently stop being true in the repository:
 every rule below has the same number here, in that document, and in the C
 loader that will implement it.
 
-Three things run:
+Four things run:
 
   1. **Schema validation** of every ``protocols/presets/*.json`` against
      ``protocols/specs/presets.schema.json`` (JSON Schema draft 2020-12).
-     Requires ``jsonschema``; skipped with a loud notice if it is absent, and
-     the exit status then reflects only the rules below.
+     Requires ``jsonschema``; skipped with a loud notice if it is absent.  The
+     exit status then reflects only the rules below: the negative cases whose
+     owner is the schema are reported as *skipped*, not missed, and the
+     rule-coverage assertion is withheld because a partial run cannot make a
+     coverage claim.
   2. **Rules V0-V10** re-derived here in Python.  Nothing is coerced: a preset
      either satisfies a rule or is reported with the rule number, exactly as
      the loader must behave.
@@ -22,6 +25,12 @@ Three things run:
      and names the rule that must catch it.  A case that is *accepted* is a
      failure of this script, not of the preset -- it means the rule is not
      enforced.  Positive controls (the unmutated presets) must be accepted.
+  4. **Regression guards.**  One per defect found in this script itself, plus
+     the byte-level V0 cases the document suite cannot express.  A guard names
+     the rule that must fire *and* the rules that must stay silent, so a rule
+     that once fired on the wrong input cannot start doing so again.  Together
+     the two suites must exercise V0 and every rule in ``RULES``; a rule no
+     case reaches is reported as UNCOVERED and fails the run.
 
 Usage::
 
@@ -50,6 +59,17 @@ TOL = 1e-6  # preset-schema.md section 6: the 6-decimal canonical form guarantee
 
 # preset-schema.md section 4.3.  Coefficients are esp-dsp's own, so watch, host,
 # SciPy and Praat agree coefficient-for-coefficient.
+#
+# UNRESOLVED CONFLICT between V0 and V8, measured 2026-08-21: V0 admits at most
+# six decimal places, `blackman_nuttall` needs seven (0.3635819) and `flat_top`
+# up to nine (0.277263158), and V8's 1e-9 tolerance forbids rounding them.  A
+# canonical preset naming either family is therefore rejected by V0 -- two of
+# the six sanctioned families cannot be expressed by any file that passes both
+# rules.  No shipped preset uses them, so this is latent.  Resolving it is a
+# schema decision (raise the decimal limit for `analysis.window.*`, or drop the
+# two families from the enum), owned by preset-schema.md section 3/4.3 and
+# protocols/specs/presets.schema.json under ADR 0010; this script must not
+# decide it unilaterally.  Until then the conflict is (prov.) unresolved.
 WINDOW_FAMILIES = {
     "hann": [0.5, 0.5],
     "blackman": [0.42, 0.5, 0.08],
@@ -60,9 +80,14 @@ WINDOW_FAMILIES = {
 }
 
 # A JSON number as the canonical form permits it: decimal only, no exponent, no
-# leading '+', no trailing '.', at most six decimal places.
+# leading '+', no trailing '.', at most six decimal places.  It is matched
+# against the *numeric leaves* of the parsed document, never against the
+# serialised text: a decimal inside a free-text `description` is not a JSON
+# number and must not be rejected by a rule about JSON numbers.  This is exact
+# because the check below runs only after the file's bytes have been proved
+# equal to ``json.dumps(doc, sort_keys=True, indent=2)``, so each leaf's
+# shortest round-trip repr *is* the token on disk.
 CANONICAL_NUMBER = re.compile(r"^-?(?:0|[1-9][0-9]*)(?:\.[0-9]{1,6})?$")
-NUMBER_TOKEN = re.compile(r"(?<![\"\w.])-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?(?![\w.])")
 
 
 class Failure(Exception):
@@ -106,6 +131,27 @@ def resolve_pointer(doc, pointer):
 # ---------------------------------------------------------------- rules V0-V10
 
 
+def number_leaves(node, pointer=""):
+    """Yield ``(json_pointer, serialised_number)`` for every numeric leaf.
+
+    ``bool`` is excluded: it is a JSON boolean even though Python makes it an
+    ``int`` subclass.
+    """
+    if isinstance(node, bool):
+        return
+    if isinstance(node, (int, float)):
+        yield pointer, json.dumps(node)
+    elif isinstance(node, dict):
+        for key, value in node.items():
+            token = str(key).replace("~", "~0").replace("/", "~1")
+            for item in number_leaves(value, pointer + "/" + token):
+                yield item
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            for item in number_leaves(value, pointer + "/%d" % index):
+                yield item
+
+
 def check_v0_canonical(raw_bytes, doc):
     """V0 -- the file's bytes are exactly its canonical form."""
     if raw_bytes.startswith(b"\xef\xbb\xbf"):
@@ -127,9 +173,13 @@ def check_v0_canonical(raw_bytes, doc):
                     "not canonical at line %d: %r, canonical form has %r" % (i, a, b),
                 )
         raise Failure("V0", "not canonical (length differs from the canonical form)")
-    for token in NUMBER_TOKEN.findall(text):
+    for pointer, token in number_leaves(doc):
         if not CANONICAL_NUMBER.match(token):
-            raise Failure("V0", "number %r is not in canonical decimal form" % token)
+            raise Failure(
+                "V0",
+                "number %r at %s is not in canonical decimal form"
+                % (token, pointer or "/"),
+            )
 
 
 def check_v1_id(doc, basename):
@@ -147,8 +197,16 @@ def check_v2_watch(doc):
         raise Failure("V2", "watch preset asks for 48000 Hz; the PDM gate is not open")
     if "refresh_hz_target" not in doc.get("display", {}):
         raise Failure("V2", "watch preset has no display.refresh_hz_target")
-    if "host" in doc and "watch" in doc.get("targets", []) and "host" not in doc["targets"]:
-        raise Failure("V2", "watch-only preset carries a host-only overlay block")
+    # preset-schema.md section 5 (`overlays` row) and the schema's V2 branch:
+    # `stem_f0` and `dtw_path` are host-only and are rejected on any preset that
+    # targets the watch, whether or not it also targets the host.
+    host_only = {"stem_f0", "dtw_path"} & set(doc.get("display", {}).get("overlays", []))
+    if host_only:
+        raise Failure(
+            "V2",
+            "watch preset carries host-only overlay(s) %s"
+            % ", ".join(sorted(host_only)),
+        )
 
 
 def check_v3_host(doc):
@@ -202,6 +260,15 @@ def check_v6b_mic_eq(doc):
 
 def check_v7_rates(doc):
     a = doc["analysis"]
+    # Clause 1 (preset-schema.md section 4.2 `interval_ms` and section 6 V7) is
+    # *vacuous under the current schema*: `sample_rate_hz` is an enum of
+    # {16000, 32000, 48000} -- all multiples of 1000 -- and `interval_ms` is an
+    # integer, so the product is always a multiple of 1000 (checked
+    # exhaustively over the 3 x 1000 admissible pairs on 2026-08-21).  It is
+    # kept because the loader must also accept presets that arrive over the
+    # wire, and because it is the clause that would bite the day a rate not
+    # divisible by 1000 (e.g. 44100) enters the enum.  Nothing in the negative
+    # suite can exercise it while the enum stands.
     product = a["interval_ms"] * a["sample_rate_hz"]
     if product % 1000 != 0:
         raise Failure(
@@ -316,7 +383,7 @@ def apply_rules(doc, basename, raw_bytes=None):
             fn(raw_bytes, doc, basename)
         except Failure as exc:
             failures.append(exc)
-        except (KeyError, TypeError, IndexError, ValueError) as exc:
+        except (KeyError, TypeError, IndexError, ValueError, ZeroDivisionError) as exc:
             failures.append(
                 Failure("V?", "rule raised %s: %s" % (type(exc).__name__, exc))
             )
@@ -358,9 +425,16 @@ def _del(doc, path):
 def negative_cases(presets):
     """(name, basename, mutated document, rule that must catch it).
 
-    Each case changes exactly one thing.  The rule named is the one that owns
-    the violation in preset-schema.md section 6; a case caught only by the
-    schema is named "schema".
+    Each case changes one thing -- plus, where the mutation invalidates a
+    derived field, that field's dependent recomputation, so the case isolates
+    the rule it names instead of tripping V9 by accident.  The rule named is
+    the one that owns the violation in preset-schema.md section 6; a case
+    caught only by the schema is named "schema".
+
+    V0 is *not* exercised here: these cases are documents, and V0 is a rule
+    about a file's bytes.  The byte-level V0 guards live in
+    ``regression_guards()`` below, and ``main`` asserts that the union of the
+    two suites covers every rule.
     """
     live = presets["live_singing"]
     room = presets["room_noise_floor"]
@@ -428,7 +502,9 @@ def negative_cases(presets):
          _set(C(live), ["mic_eq"],
               {"mode": "inline", "design_sample_rate_hz": 48000,
                "biquads": [{"b": [1.0, 0.0, 0.0], "a": [1.0, 0.0, 0.0]}]}), "V6b"),
-        ("hop of fractional samples", "live_singing",
+        # 3 ms x 32000 Hz = 96000 IS a multiple of 1000, so clause 1 does not
+        # fire here; what this case tests is clause 2, 1000/3 frames per second.
+        ("analysis rate 1000/interval_ms is not an integer", "live_singing",
          _set(C(live), ["analysis", "interval_ms"], 3), "V7"),
         ("analysis rate not a multiple of the refresh rate", "live_singing",
          _set(_set(C(live), ["analysis", "interval_ms"], 25),
@@ -456,6 +532,77 @@ def negative_cases(presets):
          _set(C(live), ["provisional"], ["/display/overlays/9"]), "V10"),
     ]
     return cases
+
+
+def canonical_bytes(doc):
+    """The canonical serialisation of ``doc`` (rule V0, preset-schema.md section 3)."""
+    return (json.dumps(doc, sort_keys=True, indent=2, ensure_ascii=False) + "\n").encode(
+        "utf-8"
+    )
+
+
+def regression_guards(presets):
+    """(label, basename, raw_bytes|None, document, must_fire|None, must_not_fire).
+
+    Guards for defects that were found and fixed in this script, plus the
+    byte-level V0 cases the document suite above cannot express.  ``must_fire``
+    names the rule that has to appear (``None`` = the input must be accepted by
+    every rule); ``must_not_fire`` names rules that must stay silent, which is
+    how a rule that once fired on the wrong input is kept honest.
+    """
+    live = presets["live_singing"]
+    stem = presets["stem_analysis"]
+    C = copy.deepcopy
+    guards = []
+
+    # --- V0: the file's bytes are exactly its canonical form -----------------
+    good = canonical_bytes(live)
+    guards += [
+        ("V0 utf-8 BOM", "live_singing", b"\xef\xbb\xbf" + good, C(live), "V0", ()),
+        ("V0 CRLF line endings", "live_singing",
+         good.replace(b"\n", b"\r\n"), C(live), "V0", ()),
+        ("V0 no trailing newline", "live_singing",
+         good.rstrip(b"\n"), C(live), "V0", ()),
+        ("V0 duplicated trailing newline", "live_singing",
+         good + b"\n", C(live), "V0", ()),
+        ("V0 trailing whitespace", "live_singing",
+         good.replace(b'"id":', b'"id":  ', 1).replace(b"\n", b" \n", 1),
+         C(live), "V0", ()),
+        ("V0 four-space indent", "live_singing",
+         (json.dumps(live, sort_keys=True, indent=4, ensure_ascii=False) + "\n").encode(
+             "utf-8"), C(live), "V0", ()),
+    ]
+    unsorted = dict(reversed(list(live.items())))
+    guards.append((
+        "V0 keys not sorted", "live_singing",
+        (json.dumps(unsorted, sort_keys=False, indent=2, ensure_ascii=False) + "\n"
+         ).encode("utf-8"), C(unsorted), "V0", ()))
+    seven = _set(C(live), ["analysis", "dc_blocker_hz"], 0.1234567)
+    guards.append(("V0 seven-decimal number", "live_singing",
+                   canonical_bytes(seven), seven, "V0", ()))
+    # ... and the converse: a decimal inside a free-text string is not a JSON
+    # number.  V0 used to regex the serialised text and rejected this preset.
+    described = _set(C(live), ["description"], "matches Spectroid 32768 at 0.1234567 s")
+    guards.append(("V0 decimal inside a description string", "live_singing",
+                   canonical_bytes(described), described, None, ("V0",)))
+
+    # --- V2 clause 4: host-only overlays on a watch preset -------------------
+    for overlay in ("stem_f0", "dtw_path"):
+        doc = _set(C(live), ["display", "overlays"], ["f0", overlay])
+        guards.append(("V2 watch preset with a %s overlay" % overlay, "live_singing",
+                       None, doc, "V2", ()))
+    # The clause used to test V3's condition instead, so it fired on this input
+    # -- a host block, no overlays -- and reported an overlay that was not there.
+    host_on_watch = _set(_set(C(live), ["host"], C(stem["host"])), ["targets"], ["watch"])
+    guards.append(("V2 stays silent on a host block with no overlay", "live_singing",
+                   None, host_on_watch, "V3", ("V2",)))
+
+    # --- rules must report, never crash --------------------------------------
+    guards.append(("V? interval_ms 0 does not escape apply_rules", "live_singing",
+                   None, _set(C(live), ["analysis", "interval_ms"], 0), "V?", ()))
+    guards.append(("V? fft_size 0 does not escape apply_rules", "live_singing",
+                   None, _set(C(live), ["analysis", "fft_size"], 0), "V?", ()))
+    return guards
 
 
 # --------------------------------------------------------------------- driver
@@ -503,10 +650,18 @@ def main(argv=None):
     cases = negative_cases(presets)
     print("Negative cases -- %d mutations, each must be rejected" % len(cases))
     caught_by_schema = caught_by_rules = 0
-    missed, unowned = [], []
+    missed, unowned, skipped = [], [], 0
+    owners_seen = set()
     for label, basename, doc, owner in cases:
+        if owner == "schema" and validator is None:
+            # Without jsonschema there is nothing to run this case against.  It
+            # is skipped, not missed: counting it as a failure would make the
+            # pre-commit hook block a commit for a reason unrelated to presets.
+            skipped += 1
+            continue
         rule_failures = apply_rules(doc, basename)
         fired = sorted({f.rule for f in rule_failures})
+        owners_seen.update(fired)
         schema_errors = list(validator.iter_errors(doc)) if validator else []
         if schema_errors:
             caught_by_schema += 1
@@ -530,14 +685,48 @@ def main(argv=None):
                   % (label, how, owner))
         elif args.verbose:
             print("  ok     %-52s caught by %s" % (label, how))
-    total = len(cases)
+    evaluated = len(cases) - skipped
     print("  %d/%d rejected -- %d by the schema, %d only by the rules"
-          % (total - len(missed), total, caught_by_schema, caught_by_rules))
+          % (evaluated - len(missed), evaluated, caught_by_schema, caught_by_rules))
+    if skipped:
+        print("  %d schema-owned cases skipped -- jsonschema is not installed" % skipped)
     owners = sorted({o for _, _, _, o in cases if o != "schema"},
                     key=lambda r: (len(r), r))
     print("  rule coverage: %s\n" % ", ".join(owners))
 
-    ok = failed == 0 and not missed and not unowned
+    guards = regression_guards(presets)
+    print("Regression guards -- %d fixed defects, each must stay fixed" % len(guards))
+    broken = []
+    for label, basename, raw, doc, must_fire, must_not_fire in guards:
+        fired = sorted({f.rule for f in apply_rules(doc, basename, raw)})
+        why = []
+        if must_fire is not None and must_fire not in fired:
+            why.append("%s did not fire (fired: %s)"
+                       % (must_fire, ", ".join(fired) or "nothing"))
+        if must_fire is None and fired:
+            why.append("expected acceptance, got %s" % ", ".join(fired))
+        for rule in must_not_fire:
+            if rule in fired:
+                why.append("%s fired and must not" % rule)
+        if why:
+            broken.append((label, "; ".join(why)))
+            print("  BROKEN %-52s %s" % (label, "; ".join(why)))
+        elif args.verbose:
+            print("  ok     %-52s %s" % (label, ", ".join(fired) or "accepted"))
+        owners_seen.update(fired)
+    print("  %d/%d held\n" % (len(guards) - len(broken), len(guards)))
+
+    # Arithmetic, not diligence: a rule no case ever fires is an untested rule.
+    expected_rules = {"V0"} | {name for name, _ in RULES}
+    uncovered = sorted(expected_rules - owners_seen - {o for _, _, _, o in cases},
+                       key=lambda r: (len(r), r))
+    if skipped:
+        uncovered = []  # a partial run cannot make a coverage claim
+        print("Rule coverage not asserted -- the run was partial.\n")
+    elif uncovered:
+        print("UNCOVERED rules -- no case exercises: %s\n" % ", ".join(uncovered))
+
+    ok = failed == 0 and not missed and not unowned and not broken and not uncovered
     print("RESULT: %s" % ("PASS" if ok else "FAIL"))
     return 0 if ok else 1
 

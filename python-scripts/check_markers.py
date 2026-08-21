@@ -21,7 +21,10 @@ allowlist in the same commit, and an owner cannot be left implicit.
 The markers
 -----------
 ``(verify``          a claim that has not been checked against its source
-``(prov.)``          a provisional value (CLAUDE.md's sanctioned tag)
+``(prov.``           a provisional value (CLAUDE.md's sanctioned tag), with or
+                     without a qualifier inside the parentheses: ``(prov.)``,
+                     ``(prov., vendor)``, ``(prov. -- pending D4)``, and the
+                     spelled-out ``(provisional)``
 ``unread`` /         a document or register that has not been read
 ``unconfirmed``
 ``TBD (datasheet``   a number that exists on a page nobody has opened
@@ -40,11 +43,17 @@ Usage
 File formats, both tab-separated, ``#`` comments and blank lines ignored:
 
     closed.tsv   <path>\\t<python regex that must NOT match any line>\\t<what closed it>
-    allow.tsv    <path>\\t<max count>\\t<owner>
+    allow.tsv    <path>\\t<exact count>\\t<owner>
 
 ``<owner>`` is free text and is the point of the file: "D4 schematic read",
 "Phase 1 measured", "purchase", "owner: taste". A row without one is rejected,
 because "allowed" without "whose" is how a marker becomes permanent.
+
+The count is **exact, not a ceiling**: going over it fails as GREW and going
+under it fails as SHRANK. That is deliberate -- the ledger is a ratchet, so the
+commit that resolves a marker is the commit that lowers the number, and a file
+cannot quietly bank credit for markers it no longer carries. It is also why the
+field is not called "max".
 """
 
 from __future__ import annotations
@@ -56,7 +65,16 @@ import re
 import subprocess
 import sys
 
-MARKERS = re.compile(r"\(verify|\(prov\.\)|\bunread\b|\bunconfirmed\b|TBD \(datasheet")
+# `\(prov(?:\.|isional\b)` and not `\(prov\.\)`: measured 2026-08-21, 17
+# provisional values in the tree carry a qualifier inside the parentheses --
+# `(prov., vendor)`, `(prov.; claimed)`, `(prov. -- two vendor figures)`,
+# `(prov.*`, `(provisional)` -- and every one of them was invisible to the
+# ledger, in the proposal, the validation plan and the power budget. They are
+# the same tag with a reason attached, which is more accountable, not less.
+# `(verify` was already matched without its closing paren for the same reason.
+MARKERS = re.compile(
+    r"\(verify|\(prov(?:\.|isional\b)|\bunread\b|\bunconfirmed\b|TBD \(datasheet"
+)
 
 SCAN_SUFFIXES = (".md", ".yaml", ".yml", ".csv", ".h", ".json", ".toml")
 SKIP_PARTS = ("/clones/", "/managed_components/", "/build/", ".ocr")
@@ -133,6 +151,21 @@ def read_tsv(path: str, fields: int) -> list[list[str]]:
     return rows
 
 
+def closed_hits(text: str, pattern: str) -> list[tuple[int, str]]:
+    """[(line_no, matched_text)] for one closed pattern against a whole file.
+
+    The pattern is matched against the file as **one string**, with ``re.M`` so
+    ``^`` and ``$`` still anchor to lines.  Matching line by line -- which is
+    what this did until 2026-08-21 -- silently voids any row that spans a line
+    break: ``FFT scratch,\\n?.*PSRAM`` guards a two-line comment in
+    ``firmware/twatch-s3/sdkconfig.defaults.esp32s3``, and no single line can
+    ever contain a ``\\n``, so the guard could never fire.  ``.`` still stops at
+    a newline (no ``re.S``), so a row only spans lines when it says so.
+    """
+    rx = re.compile(pattern, re.M)
+    return [(text.count("\n", 0, m.start()) + 1, m.group(0)) for m in rx.finditer(text)]
+
+
 def check_closed(root: str, spec: str) -> int:
     """Each row names a pattern that must no longer appear in a file."""
     failures = 0
@@ -142,12 +175,11 @@ def check_closed(root: str, spec: str) -> int:
             print("REOPENED %s: file is gone, but it was closed by: %s" % (path, why))
             failures += 1
             continue
-        rx = re.compile(pattern)
-        for n, line in enumerate(io.open(full, encoding="utf-8").read().split("\n"), 1):
-            if rx.search(line):
-                print("REOPENED %s:%d matches /%s/ — closed by: %s" % (path, n, pattern, why))
-                print("         %s" % line.strip()[:150])
-                failures += 1
+        text = io.open(full, encoding="utf-8").read()
+        for n, hit in closed_hits(text, pattern):
+            print("REOPENED %s:%d matches /%s/ — closed by: %s" % (path, n, pattern, why))
+            print("         %s" % " / ".join(hit.strip().split("\n"))[:150])
+            failures += 1
     return failures
 
 
@@ -179,16 +211,33 @@ def check_allow(found: dict, spec: str) -> int:
 
 
 def write_allow(found: dict, path: str) -> None:
+    """Re-baseline the allowlist, carrying every owner that is already recorded.
+
+    Without this, re-baselining after a marker-regex change would overwrite the
+    owner column -- the point of the file -- with AUTO-GENERATED, and the person
+    doing the re-baseline would have to reconstruct every owner from the diff.
+    """
+    owners = {}
+    if os.path.exists(path):
+        for row_path, _count, owner in read_tsv(path, 3):
+            if owner and not owner.startswith("AUTO-GENERATED"):
+                owners[row_path] = owner
     with io.open(path, "w", encoding="utf-8") as fh:
         fh.write("# SPDX-FileCopyrightText: 2026 Alexander Gomez\n")
         fh.write("# SPDX-License-Identifier: Apache-2.0\n#\n")
         fh.write("# Baseline for python-scripts/check_markers.py. THREE tab-separated fields:\n")
-        fh.write("#   <path>\\t<max marker count>\\t<owner>\n#\n")
+        fh.write("#   <path>\\t<exact marker count>\\t<owner>\n#\n")
+        fh.write("# The count is EXACT: over it fails as GREW, under it as SHRANK.\n")
         fh.write("# The owner is the point. Replace every AUTO-GENERATED with a real one, and\n")
         fh.write("# lower a count in the same commit that removes a marker.\n")
+        kept = 0
         for p, hits in sorted(found.items()):
-            fh.write("%s\t%d\tAUTO-GENERATED — needs an owner\n" % (p, len(hits)))
-    print("wrote %s with %d rows" % (path, len(found)))
+            owner = owners.get(p)
+            kept += owner is not None
+            fh.write("%s\t%d\t%s\n"
+                     % (p, len(hits), owner or "AUTO-GENERATED — needs an owner"))
+    print("wrote %s with %d rows (%d owners carried forward, %d need one)"
+          % (path, len(found), kept, len(found) - kept))
 
 
 def self_test() -> int:
@@ -203,6 +252,14 @@ def self_test() -> int:
         ("verify the build with idf.py", False),            # prose, not a marker
         ("unreadable file", False),                         # 'unread' must be a whole word
         ("provisional wording without the tag", False),
+        # The qualified forms the regex used to miss (17 of them in the tree on
+        # 2026-08-21).  If MARKERS ever narrows back to `\(prov\.\)`, these fail.
+        ("470 mAh `(prov., vendor)` until teardown", True),
+        ("3 h `(prov.; **claimed**, not measured)`", True),
+        ("12 mW (prov. — two vendor figures disagree)", True),
+        ("`(prov.*` — research question, not yet frozen", True),
+        ("**Shape is unsettled (provisional).**", True),
+        ("improvised, provisionally, a proverb", False),    # no false positives
     ]
     bad = 0
     for text, want in cases:
@@ -210,7 +267,27 @@ def self_test() -> int:
         if got != want:
             print("SELF-TEST FAIL: %r -> %s, expected %s" % (text, got, want))
             bad += 1
-    print("self-test: %d/%d cases pass" % (len(cases) - bad, len(cases)))
+
+    # A closed row is a regression guard only if the engine can match what the
+    # row was written against.  Row 22 of markers-closed-2026-08-21.tsv guards a
+    # comment that spans two lines; the line-by-line matcher this replaced could
+    # never fire on it, so the guard was vacuous for as long as it existed.
+    two_line = ("# ... SPI bounce buffer. FFT scratch,\n"
+                "# spectrogram history and fonts go to PSRAM explicitly.\n")
+    engine = [
+        (two_line, r"FFT scratch,\n?.*PSRAM", 1),           # spans a line break
+        (two_line, r"^# \.\.\. SPI bounce", 1),               # ^ still anchors per line
+        (two_line, r"FFT scratch,.*PSRAM", 0),              # `.` must not cross \n
+        ("nothing to see here\n", r"FFT scratch,\n?.*PSRAM", 0),
+    ]
+    for text, pattern, want_n in engine:
+        got_n = len(closed_hits(text, pattern))
+        if got_n != want_n:
+            print("SELF-TEST FAIL: /%s/ matched %d time(s), expected %d"
+                  % (pattern, got_n, want_n))
+            bad += 1
+    print("self-test: %d/%d cases pass" % (len(cases) + len(engine) - bad,
+                                           len(cases) + len(engine)))
     return bad
 
 

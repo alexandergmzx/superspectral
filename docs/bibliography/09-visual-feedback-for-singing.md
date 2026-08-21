@@ -78,7 +78,7 @@ Grounds [ADR 0012](../adr/0012-hands-free-interaction.md) (wrist-raise arm via B
 |---|------|:--------:|-----|
 | R3 | **Apple — Human Interface Guidelines: Designing for watchOS** (snapshot) — home: [07](07-technical-reports.md) | ★★ | Glance duration, minimum touch targets, "interactions should take seconds", complications vs full apps — the vocabulary for a display meant to be read mid-phrase, not operated — grounds ADR 0012's glance-time and target-size rules and the `ui` component's screen budget. |
 | R4 | **Google — Wear OS app quality guidelines + design principles** (snapshot) — home: [07](07-technical-reports.md) | ★★ | The Android-side equivalent; its "one-handed / no-handed" guidance is the closest published rule for a singing context — the second source under ADR 0012's auto-arm rule. |
-| S2 | **ISO 9241-210:2019** human-centred design · **ISO 9241-112:2017** presentation of information — home: [03](03-standards.md) | ★ | The citable anchor for the UI claims of ADR 0012 and for the §4 O3 session protocol being a *usability evaluation*, not an opinion poll. Paid. |
+| S2 | **ISO 9241-210** human-centred design · **ISO 9241-112** presentation of information — **the edition of each is owned by [03 #22](03-standards.md)**, which corrected 9241-112 on 2026-08-21; do not restate a year here, and read it there before buying (the edition this row used to name has been replaced) | ★ | The citable anchor for the UI claims of ADR 0012 and for the §4 O3 session protocol being a *usability evaluation*, not an opinion poll. Paid. |
 | — | **Hands-busy / eyes-busy interaction literature** — no specific source yet | ★ | Gap: the singing context is hands-busy (score, instrument), breath-busy (no voice commands) and partially eyes-busy. Route to a search task in D3; until then ADR 0012 rests on R3/R4. |
 
 ## E. Accessibility as a feature, not a checkbox
@@ -137,7 +137,7 @@ Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` 
 | # | Access | Link |
 |---|--------|------|
 | S1 | free | [itu.int/rec/R-REC-BT.1359](https://www.itu.int/rec/R-REC-BT.1359) |
-| S2 | paid (CDN-BLOCK) | [iso.org — ISO 9241-210:2019](https://www.iso.org/standard/77520.html) · [ISO 9241-112:2017](https://www.iso.org/standard/64840.html) (verify record numbers) |
+| S2 | paid (CDN-BLOCK) | **Buy from the record [03 #22](03-standards.md) names** — that file owns the editions and their ISO catalogue numbers. The link previously carried here, `iso.org/standard/64840.html`, is the **2017** edition of ISO 9241-112, which 03 #22 records as replaced; following it buys the wrong text. |
 | S3 | free (CDN-BLOCK) | [w3.org/TR/WCAG22](https://www.w3.org/TR/WCAG22/) (HTML; print-to-PDF) |
 | S4 | free (GET) | [etsi.org — EN 301 549](https://www.etsi.org/deliver/etsi_en/301500_301599/301549/) (pick the latest version directory) |
 | R1 | free | [singandsee.com/research-visual-feedback](https://www.singandsee.com/research-visual-feedback) (living page — print-to-PDF) |

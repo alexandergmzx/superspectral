@@ -290,7 +290,7 @@
           ]
         },
         "fft_size": {
-          "description": "Real transform length N. 16384 is host-only: 224 KB of internal SRAM is the watch's hard ceiling.",
+          "description": "Real transform length N. 16384 is host-only: its working set is ~192-224 KB of internal SRAM on the two itemisations of 03-dsp-pipeline 4.1, against a budget that also holds the I2S DMA buffers, the LVGL partial buffers and the SPI bounce buffer. Both the cost and the budget are (prov.) and unmeasured -- roadmap H13. See preset-schema.md 4.2.",
           "enum": [
             512,
             1024,
@@ -343,7 +343,7 @@
           "maximum": 1000
         },
         "smoothing": {
-          "description": "Exponential-averaging coefficient. Upper bound 0.95 follows Spectroid's documented range.",
+          "description": "Exponential-averaging coefficient. Upper bound 0.95 is (prov.): recalled from Spectroid, not read from it, until the manual capture of bibliography 07 #9 (roadmap D3).",
           "type": "number",
           "minimum": 0,
           "maximum": 0.95
@@ -606,7 +606,7 @@
           "maximum": 0
         },
         "refresh_hz_target": {
-          "description": "Frames pushed to the panel per second. 50 is the measured ceiling of the hardware-scrolled analyzer canvas. 1000 / interval_ms MUST be an integer multiple of this (rule V7).",
+          "description": "Frames pushed to the panel per second. 50 is the (prov.) TARGET ceiling of the hardware-scrolled analyzer canvas -- ADR 0007 is pre-registered, not written, and the Sustained refresh row of docs/validation/README.md is a target with a measurement method, not a measurement. 1000 / interval_ms MUST be an integer multiple of this (rule V7).",
           "type": "integer",
           "minimum": 1,
           "maximum": 50

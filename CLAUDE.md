@@ -109,7 +109,7 @@ A full layout summary lives in [`README.md`](README.md).
 
 1. **All real-time DSP stays on the watch.** The host never sees live audio; it sees takes. Latency and refresh are therefore properties of the firmware alone.
 2. **The microphone decides everything.** One PDM mic on I2S0, 16-bit, software DC removal, no hardware high-pass on the S3. Its in-situ response through the case is measured, not assumed; every level or band-ratio readout is relative/within-session until a calibration chain says otherwise.
-3. **Internal SRAM is the binding resource.** FFT working buffers (real-8192 costs ≈ 112–144 KB depending on whether it runs on the radix-2 or radix-4 kernel — `(prov.)`, see [`docs/architecture/03-dsp-pipeline.md`](docs/architecture/03-dsp-pipeline.md) §4.1) are internal and 16-byte aligned; PSRAM is for history, fonts and LVGL assets only, never DMA.
+3. **Internal SRAM is the binding resource.** FFT working buffers (real-8192 costs ≈ 104 KB with our own `cplx2real` and ≈ 160 KB on esp-dsp's tables — the difference is the `16·N_c` radix-4 twiddle table `dsps_cplx2real_fc32` pulls in even on the radix-2 path; both `(prov.)` until the roadmap H13 measurement, and the older ≈ 112–144 KB estimate is superseded rather than reconciled. See [`docs/architecture/03-dsp-pipeline.md`](docs/architecture/03-dsp-pipeline.md) §4.1 and [ADR 0006](docs/adr/0006-fft-normalisation-and-window-conventions.md) D5, still `proposed`) are internal and 16-byte aligned; PSRAM is for history, fonts and LVGL assets only, never DMA.
 4. **The analyzer canvas may bypass LVGL** (raw `esp_lcd` + ST7789 hardware vertical scroll) to reach 50 Hz; LVGL renders chrome. Gated on verifying the scroll axis against `MADCTL` (ADR 0007).
 5. **Recovery before features.** Boot guard, USJ console, OTA rollback, partition offsets frozen (ADR 0014/0015) ship from the first firmware commit.
 6. **Validation is part of the design.** Every architectural choice maps to a measurable acceptance metric in [`docs/validation/`](docs/validation/), reported on both measurement paths, with an external anchor and a stated uncertainty.
@@ -133,7 +133,7 @@ A full layout summary lives in [`README.md`](README.md).
 ### When to commit and push
 
 - Make small, semantically meaningful, subsystem-prefixed commits (`docs: …`, `devenv: …`, `firmware: …`, `ADR 0003: …`). Avoid "WIP" commits to `main`.
-- **There is no remote yet.** Commits stay local on `main` until Alexander creates the GitHub repository and asks to push. Never add a remote or push on your own initiative.
+- **The remote exists.** `origin` is `github.com/alexandergmzx/superspectral` (public, created 2026-08-21) and `origin/main` is at `4468334`. Never add a second remote, and never push — any branch, `main` included — unless Alexander asks for that specific push.
 - Never `git push --force` or `git reset --hard` on `main` without explicit authorization for the specific operation.
 - The orchestrating session commits; agents writing files do not run state-mutating git commands.
 
@@ -153,5 +153,5 @@ A full layout summary lives in [`README.md`](README.md).
 - **Environment:** [`.envrc`](.envrc) · [`docs/devenv/setup.md`](docs/devenv/setup.md) · [`docs/devenv/brick-runbook.md`](docs/devenv/brick-runbook.md) · [`docs/devenv/first-flash-checklist.md`](docs/devenv/first-flash-checklist.md)
 - **Board facts:** [`docs/hw/twatch-s3-pins.md`](docs/hw/twatch-s3-pins.md) · [`hardware/bom/bill-of-materials.csv`](hardware/bom/bill-of-materials.csv)
 - **Record formats:** [`protocols/specs/`](protocols/specs/)
-- **Architecture decisions:** [`docs/adr/`](docs/adr/) — toolchain: [0001](docs/adr/0001-toolchain-esp-idf-v6-pinned-environment.md); companion split 0002, mic path 0003, split licensing 0004, anti-brick 0015 are pre-registered in the index
+- **Architecture decisions:** [`docs/adr/`](docs/adr/) — toolchain [0001](docs/adr/0001-toolchain-esp-idf-v6-pinned-environment.md), companion split [0002](docs/adr/0002-companion-architecture.md), mic path [0003](docs/adr/0003-microphone-path.md), split licensing [0004](docs/adr/0004-split-licensing.md) and anti-brick [0015](docs/adr/0015-anti-brick-policy.md) are written and accepted; the [index](docs/adr/README.md) backlog is now 0007 (display path), 0008 (ring/twang metric) and 0020 (f0 estimator)
 - **Validation:** [`docs/validation/README.md`](docs/validation/README.md) · **Bibliography:** [`docs/bibliography/README.md`](docs/bibliography/README.md)

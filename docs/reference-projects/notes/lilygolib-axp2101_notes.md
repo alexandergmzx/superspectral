@@ -14,7 +14,7 @@
 
 `XPowersLib` is a header-only C++ PMU library; `src/XPowersAXP2101.hpp` (3 142 lines) holds the whole AXP2101 implementation (the `.tpp` is an 18-line stub), and `src/REG/AXP2101Constants.h` the register addresses. Read as a **register reference**, not as a dependency: bibliography 06 #8 already forbids adding it as a component next to SensorLib (duplicate AXP2101 symbols), and the gate established that the registry tarball of `lewisxhe/sensorlib 0.4.1` ships no AXP2101 code at all — so `twatch_bsp` writes its own driver either way.
 
-Files read in full or in the relevant part: `LilyGoWatchS3.cpp` (1 062 lines), `LilyGoWatchS3.h`, `LilyGoDispInterface.{h,cpp}` (818 lines), `BrightnessController.h`, `PDM.{h,cpp}` (207 lines), `docs/hardware/lilygo-t-watch-s3.md`, `examples/peripheral/RecordWAV/RecordWAV.ino`, `examples/factory/hal_interface.cpp` (audio/FFT part); XPowersLib `REG/AXP2101Constants.h`, `XPowersAXP2101.hpp`, `XPowersParams.hpp`, `XPowersCommon.hpp`, `examples/ESP_IDF_Example/main/port_axp2101.cpp`; TTGO `src/LilyGoLib.cpp` (PMU block); SensorLib `src/pmic/xpowers/axp2101/AXP2101Core.cpp`, `AXP2101Watchdog.{hpp,cpp}`.
+Files read in full or in the relevant part: `LilyGoWatchS3.cpp` (1 062 lines), `LilyGoWatchS3.h`, `LilyGoDispInterface.{h,cpp}` (253 + 818 = 1 071 lines), `BrightnessController.h`, `PDM.{h,cpp}` (54 + 207 = 261 lines), `docs/hardware/lilygo-t-watch-s3.md`, `examples/peripheral/RecordWAV/RecordWAV.ino`, `examples/factory/hal_interface.cpp` (audio/FFT part); XPowersLib `REG/AXP2101Constants.h`, `XPowersAXP2101.hpp`, `XPowersParams.hpp`, `XPowersCommon.hpp`, `examples/ESP_IDF_Example/main/port_axp2101.cpp`; TTGO `src/LilyGoLib.cpp` (PMU block); SensorLib `src/pmic/xpowers/axp2101/AXP2101Core.cpp`, `AXP2101Watchdog.{hpp,cpp}`.
 
 ## 2. The LGPL boundary — LilyGoLib contains no pin numbers
 
@@ -56,11 +56,11 @@ Every row is `LilyGoLib call → XPowersLib body → register write`, with the d
 | 6 | `setALDO4Voltage(3300)` | `0x95` | `(old & 0xE0) \| 0x1C` | ALDO4 = 3.3 V (**SX1262**) | EFUSE |
 | 7 | `setBLDO2Voltage(3300)` | `0x97` | `(old & 0xE0) \| 0x1C` | BLDO2 = 3.3 V (**DRV2605L enable**) | EFUSE |
 | 8 | `setBLDO1Voltage(3300)` | `0x96` | `(old & 0xE0) \| 0x1C` | BLDO1 = 3.3 V (GPS — *not fitted on T-Watch-S3*) | EFUSE |
-| 9 | `setDC3Voltage(3300)` | `0x84` | `(old & 0x80) \| 0x69` | DC3 = 3.3 V (GPS on older variants) — see §3.8 | EFUSE |
+| 9 | `setDC3Voltage(3300)` | `0x84` | `(old & 0x80) \| 0x69` | *What the vendor writes.* `0x69` = `1101001b` falls in the `1011000`–`1111111` band that **both** filed AXP2101 datasheets call **reserved** — it is not a documented 3.3 V setting. See §3.8 | EFUSE |
 | 10 | `setButtonBatteryChargeVoltage(3300)` | `0x6A` | `(old & 0xF8) \| 0x07` | RTC coin-cell charge termination 3.3 V | `011b` (2.9 V) |
 | 11 | `setDC4Voltage(850)` | `0x85` | `(old & 0x80) \| 0x23` | DC4 = 0.85 V (LS550G GPS core) | EFUSE |
 | 12 | `disableDC2()` | `0x80` | bit1 ← 0 | DC2 off | EFUSE |
-| 13 | `disableDC5()` | `0x80` | bit4 ← 0 | *bit4 is **RO** and there is no DCDC5 at all in the filed (SWcharge) datasheet variant, which lists 4 DCDCs — see §3.8. Harmless either way* | RO/0 |
+| 13 | `disableDC5()` | `0x80` | bit4 ← 0 | *The two datasheets disagree: the filed SWcharge v1.0 §6.13.2.69 makes `0x80[4]` **RO** with no DCDC5 anywhere, while XPowersLib's bundled V1.4 §6.13.2.68 makes it **RW “DCDC5 enable”** and adds §6.13.2.74 REG 86 DCDC5 voltage. Do **not** assume this call is a no-op — see §3.8* | RO/0 (v1.0) · EFUSE (V1.4) |
 | 14 | `disableALDO1()` | `0x90` | bit0 ← 0 | ALDO1 off | EFUSE |
 | 15 | `disableCPUSLDO()` | `0x90` | bit6 ← 0 | CPUSLDO off | EFUSE |
 | 16 | `disableDLDO1()` | `0x90` | bit7 ← 0 | DLDO1 off — **see §6, this is the audio rail** | EFUSE |
@@ -101,7 +101,15 @@ Every row is `LilyGoLib call → XPowersLib body → register write`, with the d
 | `0x30` | `0x1D` = `0b0001_1101` | VBAT + VBUS + VSYS + TDIE on, TS off |
 | `0x41` / `0x42` | `0xFC` / `0x18` | see §3.4 |
 
-Bit map for `0x90`, confirmed identical in XPowersLib and in the datasheet: `b0` ALDO1 · `b1` ALDO2 · `b2` ALDO3 · `b3` ALDO4 · `b4` BLDO1 · `b5` BLDO2 · `b6` CPUSLDO · `b7` DLDO1; `0x91 b0` DLDO2. LDO voltage registers are contiguous: `0x92` ALDO1 … `0x95` ALDO4, `0x96` BLDO1, `0x97` BLDO2, `0x98` CPUSLDO, `0x99` DLDO1, `0x9A` DLDO2; all encode `(mV − 500) / 100` in bits `4:0` with `7:5` read-only — so **3300 mV is always `0x1C`**, and the `& 0xE0` read-modify-write in XPowersLib is preserving read-only bits, i.e. a plain write of `0x1C` is equivalent.
+Bit map for `0x90`, confirmed identical in XPowersLib and in the datasheet: `b0` ALDO1 · `b1` ALDO2 · `b2` ALDO3 · `b3` ALDO4 · `b4` BLDO1 · `b5` BLDO2 · `b6` CPUSLDO · `b7` DLDO1; `0x91 b0` DLDO2. LDO voltage registers are contiguous: `0x92` ALDO1 … `0x95` ALDO4, `0x96` BLDO1, `0x97` BLDO2, `0x98` CPUSLDO, `0x99` DLDO1, `0x9A` DLDO2 — but **the encoding is not uniform across them**, and a driver author who applies one rule to all nine will write a reserved code. Bits `7:5` are read-only on all nine; bits `4:0` split three ways (identical in the filed SWcharge v1.0 and in XPowersLib's bundled V1.4):
+
+| Registers | Field | Range | Max code |
+|---|---|---|---|
+| `0x92`–`0x97` (ALDO1–4, BLDO1–2) | `(mV − 500) / 100` | 0.5–3.5 V, 100 mV/step, 31 steps | `11110` = 3.5 V (`11111` reserved) |
+| `0x99` (DLDO1) | `(mV − 500) / 100` | 0.5–3.3 V, 100 mV/step, 29 steps | `11100` = 3.3 V (`11101`–`11111` reserved) |
+| `0x98` (CPUSLDO), `0x9A` (DLDO2) | `(mV − 500) / 50` | **0.5–1.4 V, 50 mV/step, 20 steps** | `10011` = 1.40 V (`10100`–`11111` reserved) |
+
+So **3300 mV is `0x1C` on `0x92`–`0x97` and `0x99` only** — the five rails LilyGoLib actually sets, plus DLDO1 — and **is not encodable at all on `0x98` or `0x9A`**. XPowersLib agrees with the datasheet for CPUSLDO (`XPOWERS_AXP2101_CPUSLDO_VOL_STEPS` = 50, `_VOL_MAX` = 1400) but **disagrees for DLDO2**: `setDLDO2Voltage()` uses `DLDO2_VOL_STEPS` = 100 (mV/step), `_VOL_MIN` 500 and `_VOL_MAX` 3400 — the DLDO1 encoding applied to a 50 mV/step, 1.4 V-max register. Since §7 tells the `twatch_bsp` author to re-implement this table, do not carry that setter across. The `& 0xE0` read-modify-write in XPowersLib is preserving read-only bits, i.e. a plain write of the code is equivalent.
 
 ### 3.3 Rail enable order — the vendor does **not** do what our pin document says it does
 
@@ -121,7 +129,7 @@ Similarly, "DC2, DC3, DC4, DC5, ALDO1, BLDO1, CPUSLDO, DLDO1, DLDO2 … **explic
 | `0x41` (INTEN2) | `0xFC` | b2 PKEY long · b3 PKEY short · b4 BAT remove · b5 BAT insert · b6 VBUS remove · b7 VBUS insert |
 | `0x42` (INTEN3) | `0x18` | b3 charge start · b4 charge done |
 
-Notable omissions for a battery-powered analyzer: **`WARNING_LEVEL1/2`** (SOC drop, `0x40` b6/b7) and **`GAUGE_NEW_SOC`** (`0x40` b4) are *not* enabled by LilyGoLib, yet `checkPowerStatus()` tests `isDropWarningLevel1Irq()`/`Level2Irq()` — and XPowersLib's `is*Irq()` helpers gate on the cached `intRegister[]`, so those two branches are permanently dead in the vendor firmware. If we want a low-battery warning we must enable `0x40` bits 6/7 ourselves; `setLowBatWarnThreshold()` writes `0x1A` (5–20 %, defaults 20 %/6 %).
+Notable omissions for a battery-powered analyzer: **`WARNING_LEVEL1/2`** (SOC drop, `0x40` b6/b7) and **`GAUGE_NEW_SOC`** (`0x40` b4) are *not* enabled by LilyGoLib, yet `checkPowerStatus()` tests `isDropWarningLevel1Irq()`/`Level2Irq()` — and XPowersLib's `is*Irq()` helpers gate on the cached `intRegister[]`, so those two branches are permanently dead in the vendor firmware. If we want a low-battery warning we must enable `0x40` bits 6/7 ourselves; `setLowBatWarnThreshold()` writes `0x1A`, whose POR defaults are **15 % (level2, `0x1A[7:4]` = `1010b`) and 1 % (level1, `0x1A[3:0]` = `0001b`)** — §6.13.2.16, identical in both filed datasheets. The setter accepts 5–20 % and touches **level2 only** (`val &= 0x0F; write(val | ((percentage − 5) << 4))`); level1 is never written, so a hand-written driver that wants a two-stage warning must write the low nibble itself.
 
 Reading the status: `getIrqStatus()` reads `0x48`,`0x49`,`0x4A` into `statusRegister[0..2]` and returns `(s[2]<<16)|(s[1]<<8)|s[0]` — i.e. **`INTSTS1` is the low byte**. The studied commit is the fix for that byte order (upstream issue #60), so any code written from an older copy of XPowersLib has it backwards. Clearing writes `0xFF` to all three (write-1-to-clear).
 
@@ -130,7 +138,7 @@ The pin: `pinMode(PMU_INT, INPUT_PULLUP)` + `attachInterrupt(…, FALLING)` on G
 ### 3.5 Charging, and the numbers that follow from it
 
 - **CC = 125 mA** (`0x62` ← 5), against LilyGoLib's own documented guidance "*use a charging current below 130 mA. Excessive charging current can damage the battery*". Confirms the `< 130 mA` cap in our rail table, now with the exact code.
-- **CV target = 4.35 V** (`0x64` ← 4), commented "T-Watch-S3 uses a high-voltage (4.35 V) battery by default". This is **new** to our documentation: [`docs/hw/twatch-s3-pins.md`](../../hw/twatch-s3-pins.md) records only "470 mAh @ 3.8 V" (nominal). A 4.35 V high-voltage cell has ~5 % more usable capacity than a 4.2 V one, and the datasheet POR default is 4.2 V — so a `twatch_bsp` that never writes `0x64` will silently under-charge the cell by ~5 %, which lands directly on the §4 **autonomy ≥ 3 h** metric. Decide deliberately; do not leave `0x64` at its default by accident.
+- **CV target = 4.35 V** (`0x64` ← 4), commented "T-Watch-S3 uses a high-voltage (4.35 V) battery by default". This is **new** to our documentation: [`docs/hw/twatch-s3-pins.md`](../../hw/twatch-s3-pins.md) records only "470 mAh @ 3.8 V" (nominal). The datasheet POR default for `0x64[2:0]` is `011b` = **4.2 V** (§6.13.2.63), so a `twatch_bsp` that never writes `0x64` charges to 4.2 V, not 4.35 V. How much usable capacity that costs is **`(prov.)` — unquantified**: the delta depends on the fitted cell, and the cell is unidentified (the vendor hardware document says only "Battery Voltage 3.8 V / Battery capacity 470 mA"). Settling it needs either a cell datasheet (D3 acquisition, unowned) or a discharge-curve measurement at both CV targets on the PPK2 (owned by the §4 autonomy experiment). The actionable half needs no number: **`0x64` defaults to 4.2 V while the vendor deliberately writes 4.35 V — decide deliberately, do not inherit the default by accident.**
 - Pre-charge 50 mA, termination 25 mA (both below the POR default of 125 mA).
 - `0x67` (charge safety timers, defaults: 12 h charge-done timer, 60 min pre-charge timer, both enabled) is **never touched** by the vendor.
 
@@ -142,7 +150,7 @@ For us: the parameters live in the **PMU**, not in ESP flash, so whatever the fa
 
 ### 3.7 Sleep and wake — rail handling and the vendor's own power numbers
 
-`lightSleep()`: radio sleep → backlight/haptic/GPS/speaker rails off → `disableIRQ(ALL)` + `clearIrqStatus()` → optionally `rtc_gpio_pullup_en(PMU_INT)` and `enableIRQ(PKEY_SHORT)` → `esp_sleep_enable_ext1_wakeup_io(mask, ESP_EXT1_WAKEUP_ANY_LOW)` → `esp_light_sleep_start()` → rails back on, IRQ mask restored.
+`lightSleep()`: radio sleep → backlight/haptic/GPS/speaker rails off → `disableIRQ(ALL)` + `clearIrqStatus()` → optionally `rtc_gpio_pullup_en(PMU_INT)` and `enableIRQ(PKEY_SHORT)` → `esp_sleep_enable_ext1_wakeup_io(mask, ESP_EXT1_WAKEUP_ANY_LOW)` → `esp_light_sleep_start()` → rails back on **except `POWER_SPEAK` (DLDO1, the amplifier rail — §6.3)**, and with a **narrower** IRQ mask than `initPMU()` left. The post-wake block is `disableIRQ(ALL)` then `enableIRQ(PKEY_SHORT | PKEY_LONG | VBUS_INSERT | VBUS_REMOVE | BAT_CHG_START | BAT_CHG_DONE)`: `BAT_INSERT` (`_BV(13)`) and `BAT_REMOVE` (`_BV(12)`) are **not** re-enabled, so `0x41` comes back as `0xCC`, not the `0xFC` of row 35 / §3.4 — battery insert/remove are silently dropped across a light sleep. `0x42` is unchanged at `0x18`.
 
 `sleep()` (deep): `enableSleep()` (`0x26` bit0), all ADC channels disabled, ALDO3 off *only if* touch is not a wake source (`touch.sleep()` first), ALDO2/ALDO4/BLDO2/DC3/BLDO1 off, optionally the RTC backup charge off, then a 4-second countdown printed to serial, then `Serial1.end()`/`SPI.end()`/`Wire.end()`/`Wire1.end()`, then `gpio_reset_pin()` + `pinMode(pin, OPEN_DRAIN)` over an explicit pin list, then `esp_deep_sleep_start()`.
 
@@ -150,7 +158,7 @@ Useful numbers, from vendor comments and the hardware document — inputs to the
 
 | Item | Value | Source |
 |---|---|---|
-| Leaving the display rail (ALDO3) off in deep sleep | **+≈600 µA** anomalous increase | code comment in `sleep()` |
+| Turning a display rail off in deep sleep instead of sleeping the panel | **+≈600 µA** anomalous increase | code comment in `sleep()` — **which rail is `(prov.)`**, see below |
 | Display + touch asleep but powered | ≈103.4 µA (screen 100 + touch 3.4) | same comment |
 | Light sleep, PWR + BOOT + touch wake | 2.38 mA | hardware doc |
 | Deep sleep, PWR + BOOT wake, backup on / off | 530 µA / 460 µA | hardware doc |
@@ -158,14 +166,29 @@ Useful numbers, from vendor comments and the hardware document — inputs to the
 | Power off, backup only | 50 µA | hardware doc |
 | RTC backup battery charging | ≈+200 µA | code comment |
 
+**The 600 µA row does not name its rail reliably.** The comment reads *"Do not turn off the screen power in deep sleep, otherwise the current will increase abnormally by about 600uA. The correct way is to keep the power supply and set the screen and touch to sleep. At this time, the screen and touch consume a total of about 103.4uA (screen 100uA, touch 3.4uA)"* and sits immediately above the disabled line `//! pmu.disableALDO2(); // Display`. It therefore names **ALDO2** — but §3.2's own rail map assigns ALDO2 to the *backlight* and ALDO3 to *display + touch*, and the code that follows disables ALDO2 unconditionally while disabling ALDO3 only when touch is not a wake source. The vendor's code contradicts its own comment; the source cannot settle which rail the 600 µA belongs to. **Rail attribution `(prov.)` pending a bench measurement** (owned by the `docs/architecture/06-power-budget.md` sleep-current experiment). The 103.4 / 100 / 3.4 µA and ≈+200 µA figures are verbatim from the comments and are not in doubt; the four hardware-document rows check out against `docs/hardware/lilygo-t-watch-s3.md`.
+
 Two anti-brick observations ([ADR 0015](../../adr/0015-anti-brick-policy.md)):
 
 - The vendor's deep-sleep pin list is **USB-safe**: it contains display, I²C, I²S, mic, IR, LoRa, GPS and SPI pins, and *not* GPIO19/20. A vendor library that does the right thing here is worth recording, because the naive `gpio_reset_pin()` loop over a range is exactly what ADR 0015 rule 2 forbids.
 - The same list **does** contain `DISP_BL` (GPIO45): `gpio_reset_pin()` then `pinMode(OPEN_DRAIN)` leaves the VDD_SPI strap in a state decided by the pull network across the wake reset. On this unit `VDD_SPI_FORCE = 1` ([ADR 0016](../../adr/0016-backlight-gpio45-vdd-spi-strap.md)), so it is harmless; on a unit where the eFuse is not forced it is precisely the hazard ADR 0016 exists for. Keep the per-unit check.
 
-### 3.8 One datasheet discrepancy worth recording
+### 3.8 Two datasheets, read side by side — and what XPowersLib does that neither documents
 
-`setDC3Voltage(3300)` encodes `0x84 ← 0x69` (105) using XPowersLib's third DCDC3 range, 1.6–3.4 V at 100 mV/step from base 88. The **filed** AXP2101 PDF — revision 1.0, 2022-11-04, the *SWcharge* variant ([01 #17](../../bibliography/01-datasheets.md), Waveshare mirror) — documents REG 84 as 0.5–1.54 V only, with codes `1011000`–`1111111` (88–127) **reserved**. XPowersLib mirrors `AXP2101_Datasheet_V1.4_en.pdf` in its own `datasheet/` folder, which evidently documents the wider DCDC3 range; LilyGO ships DC3 = 3.3 V on real GPS hardware, so the wider range is real on the part we have. Everything else we touch (`0x15`, `0x16`, `0x18`, `0x19`, `0x24`, `0x26`, `0x27`, `0x30`, `0x61`–`0x64`, `0x68`–`0x6A`, `0x80`, `0x82`, `0x90`–`0x9A`) matches between the two documents bit for bit. **Action:** note the variant mismatch in bibliography 01 #17 and acquire `AXP2101_Datasheet_V1.4_en.pdf` in the next D3 pass. Nothing is blocked — we never enable DC3.
+The comparison document was not hypothetical and did not need acquiring: **XPowersLib ships `datasheet/AXP2101_Datasheet_V1.4_en.pdf` inside the clone this study read** (63 pp, "AXP2101 Single Cell NVDC PMU with E-gauge", revision history 1.0 May 2021 → 1.4 Oct. 13 2022). Both documents were opened for the registers below.
+
+**DCDC3 (`0x84`) — XPowersLib is out of spec against *both* documents.** `setDC3Voltage(3300)` encodes `0x84 ← 0x69` (105) via XPowersLib's *third* DCDC3 range (`XPOWERS_AXP2101_DCDC3_VOL3_MIN` 1600 … `_MAX` 3400, `_STEPS3` 100, `_STEPS3_BASE` 88 — `src/REG/AXP2101Constants.h`, used at `src/XPowersAXP2101.hpp` `setDC3Voltage()`). That third range has **no datasheet basis in either document**:
+
+- Filed SWcharge v1.0 §6.13.2.73 "REG 84: DCDC3 voltage setting": *"0.5~1.2V,10mV/step,71steps / 1.22~1.54V,20mV/step,17steps … 1000110: 1.20V / 1000111: 1.22V / … / 1010111: 1.54V / **1011000~1111111: reserved**"*.
+- Bundled V1.4 §6.13.2.72, same register: **word for word the same field**, same reserved band. V1.4's own revision note "Update description of DCDC3" changed the prose, not the range; V1.4's feature list still reads *"DCDC3: 0.5~1.2V, 1.22~1.54V, IMAX=2A"*.
+
+So `0x69` = `1101001b` is a **reserved code**, not a documented 3.3 V setting. The earlier inference in this note — that V1.4 documents a wider range and therefore the range "is real on the part we have" — was wrong and is withdrawn. What DC3 physically does when written `0x69` on this silicon is **`(prov.)` and unresolved**; the only evidence for 3.3 V is that LilyGO ships this write on GPS-equipped variants and those boards work, which is a field observation, not a specification. Nothing is blocked: `twatch_bsp` never enables DC3, and it must not learn a DC3 voltage encoding from XPowersLib. Settling it would need a bench measurement of the DC3 rail on a GPS variant (unowned, and not worth a session) or an X-Powers erratum.
+
+**`0x80` — the two documents genuinely differ, and the difference matters for row 13.** Filed SWcharge v1.0 §6.13.2.69 "REG 80: DCDC ON/OFF and DVM control" gives bit4 as `RO / / 0b`, and the document contains no DCDC5 anywhere. Bundled V1.4 §6.13.2.68 "REG 80: DCDCS ON/OFF and DVM control" gives bit4 as *"DCDC5 enable / 0: disable 1: enable / RW / System Reset / EFUSE"*, and V1.4 additionally carries §6.13.2.74 "REG 86: DCDC5 voltage setting" (1.4–3.7 V, 100 mV/step, 24 steps). `disableDC5()` (`clrRegisterBit(0x80, 4)`) is therefore **not** a guaranteed no-op — which variant of the die is in this watch is `(prov.)` until `0x80` and `0x86` are read back on hardware, an E2 I²C-gate item that costs two register reads.
+
+**Scope of the comparison.** `0x18`, `0x19` and `0x1A` were diffed field by field and are identical in the two documents — which is what the ADR 0015 watchdog amendment in §6.2 rests on, so that amendment stands. `0x84` and `0x92`–`0x9A` were diffed as part of §3.2/§3.5 and are identical. `0x64` is the other named V1.4 change ("Update reg 64 in Chapter6.13"): code `000` reads *reserved* in v1.0 and **5.0 V** in V1.4 — the bits we use (`011b` = 4.2 V default, `100` = 4.35 V) are the same in both, so §3.5 is unaffected. **The rest of the register set has not been diffed**; the earlier blanket claim that everything we touch "matches between the two documents bit for bit" was not performed and is withdrawn.
+
+**Action:** file `AXP2101_Datasheet_V1.4_en.pdf` under `docs/datasheets/x-powers/axp2101/` and run `doc_ocr` on it (D3 filing pass — it is a redistribution question, not an acquisition one, since the copy on disk arrived inside an MIT repository), record the v1.0/V1.4 variant split in bibliography 01 #17, and add the `0x80`/`0x86` read-back to the E2 I²C gate.
 
 ## 4. Display — the init argument list, the vendor command list, rotation and offset
 
@@ -289,7 +312,7 @@ Three vendor artefacts, three different answers:
 2. `initMicrophone()` (IDF ≥ 5): `I2S_STD_SLOT_LEFT`.
 3. `examples/factory/hal_interface.cpp`: reads `FFT_SIZE × 2` int16 (`FFT_SIZE = 512`, `SAMPLE_RATE = 16000`), then de-interleaves even/odd indices into `left_channel[]` and `right_channel[]` and runs two FFTs — **treating a mono PDM stream as interleaved stereo**. What it actually produces is two ×2-decimated copies of the same signal, aliased above 4 kHz. (The same function also calls `dsps_cplx2reC_fc32()` after a full complex FFT of a real-only input, which is the two-real-signals unpack applied to one signal.)
 
-So **open question H-slot stays open** and remains an E2 bench item, as [`docs/hw/twatch-s3-pins.md`](../../hw/twatch-s3-pins.md) already says. The one thing the vendor *does* settle is the constraint, not the value: PDM RX is I2S0-only and 16-bit — asserted twice in LilyGoLib's own comments, independently of the `ESP_RETURN_ON_FALSE` guards in `esp_driver_i2s/i2s_pdm.c` that ADR 0003 cites.
+So **open question H-slot stays open** and remains an E2 bench item, as [`docs/hw/twatch-s3-pins.md`](../../hw/twatch-s3-pins.md) already says. The one thing the vendor *does* settle is the constraint, not the value: **PDM RX is I2S0-only**. `PDM.h` carries exactly two "cannot be changed" comments and **neither is about bit width**: *"// !The PDM microphone can only be up to 16KHZ and cannot be changed"* above `#define MIC_I2S_SAMPLE_RATE 16000`, and *"// !The PDM microphone can only use I2S channel 0 and cannot be changed"* above `#define MIC_I2S_PORT I2S_NUM_0`. `#define MIC_I2S_BITS_PER_SAMPLE I2S_BITS_PER_SAMPLE_16BIT` carries no comment, and the whole block sits inside `#if ESP_IDF_VERSION < ESP_IDF_VERSION_VAL(5,0,0)` — on IDF ≥ 5 `initMicrophone()` goes through arduino-esp32's `ESP_I2S`, which takes no port argument at all. Only the I2S0 half is independently corroborated, by `ESP_RETURN_ON_FALSE(handle->controller->id == I2S_NUM_0, …, "This channel handle is registered on I2S1, but PDM is only supported on I2S0")` in v6.0.2 `esp_driver_i2s/i2s_pdm.c`, which is what ADR 0003 cites. The sample-rate comment is the 16 kHz claim the next paragraph rejects. **Nothing in LilyGoLib constrains the PDM slot bit width.**
 
 The 16 kHz ceiling is confirmed to be exactly what PLAN §2 calls it — a **legacy-driver artefact**, traceable to one `#define` and one comment in `PDM.h`, with no datasheet basis (the SPM1423 clock window is 1.0–3.25 MHz, [01 #9](../../bibliography/01-datasheets.md)). Nothing in LilyGoLib argues against 32 kHz/`DSR_8S`.
 
@@ -345,7 +368,7 @@ Consequences for `twatch_bsp`: disabling DLDO1 at boot is safe for v1 (no playba
 - `disableTSPinMeasure()` as a mandatory step — this board has no NTC on the TS pin, and the datasheet warns that leaving TS measurement on causes abnormal charging. Both XPowersLib and SensorLib do it inside `init()`; a hand-written driver must not forget it.
 - IRQ discipline: mask-all → enable-wanted → clear-all → attach the pin last; `INTSTS1` is the low byte.
 - The display argument list of §4.1 (with `flags`/`vendor_config` brace-initialised), the command list of §4.2 as a *starting point to bisect against* the in-tree `esp_lcd` ST7789 init, and the `(mirror_y, y_gap)` pairing of §4.3.
-- The mic constraint (I2S0, 16-bit) and the rail knowledge of §6.3.
+- The mic constraint (**I2S0 only** — the bit width is *not* a vendor constraint, §5.3) and the rail knowledge of §6.3.
 
 **Must not be copied:**
 
@@ -368,6 +391,6 @@ Consequences for `twatch_bsp`: disabling DLDO1 at boot is safe for v1 (no playba
 | H-slot | PDM slot mask | **Still open** — the vendor contradicts itself three ways (§5.3). E2 bench item, unchanged |
 | H-batt | 470 vs 400 mAh | 470 mAh from two vendor sources; **plus** a 4.35 V CV target that our documentation did not record |
 | H-R8 | R8 vs R8V | Already closed by the eFuse read (`VDD_SPI_FORCE = 1`, 3.3 V); §6.3's mic-rail reading is consistent with it |
-| — | AXP2101 datasheet variant | The filed PDF is the **SWcharge v1.0** variant and disagrees with XPowersLib on REG 84's upper range (§3.8). Acquire `AXP2101_Datasheet_V1.4_en.pdf`; nothing blocked |
+| — | AXP2101 datasheet variant | Both documents now read (V1.4 was already on disk inside the XPowersLib clone). They **agree** on REG 84 (0.5–1.54 V, `1011000`+ reserved) — it is **XPowersLib** that is out of spec, and its `0x84 ← 0x69` is a reserved code. They **differ** on `0x80[4]`: RO in v1.0, RW "DCDC5 enable" in V1.4, which V1.4 backs with REG 86. New open item: **read back `0x80` and `0x86` on hardware** at the E2 I²C gate to learn which die variant this watch carries. Nothing blocked — DC3 and DC5 are never enabled (§3.8) |
 
 Reference basis: LilyGoLib `38e6f8d` (`src/LilyGoWatchS3.cpp`, `src/LilyGoDispInterface.cpp`, `src/PDM.{h,cpp}`, `src/BrightnessController.h`, `docs/hardware/lilygo-t-watch-s3.md`, `examples/peripheral/RecordWAV`, `examples/factory/hal_interface.cpp`) and XPowersLib `d699758` (`src/REG/AXP2101Constants.h`, `src/XPowersAXP2101.hpp`, `src/XPowersParams.hpp`, `examples/ESP_IDF_Example/main/port_axp2101.cpp`) — [bibliography 06 #4 and #8](../../bibliography/06-reference-projects.md); TTGO_TWatch_Library `9884d62` branch `t-watch-s3` and SensorLib `2b9e591` as second witnesses ([06 #5](../../bibliography/06-reference-projects.md), [06 #7](../../bibliography/06-reference-projects.md)); AXP2101 register semantics and reset defaults from the filed datasheet ([01 #17](../../bibliography/01-datasheets.md), §6.13.2); ST7789V3 command names to be confirmed against [01 #13](../../bibliography/01-datasheets.md); measured facts from [`docs/hw/README.md`](../../hw/README.md), [`docs/hw/twatch-s3-pins.md`](../../hw/twatch-s3-pins.md), [ADR 0016](../../adr/0016-backlight-gpio45-vdd-spi-strap.md), [ADR 0017](../../adr/0017-no-radio-in-v1-trimmed-component-set.md) and [`firmware/idf-gate/README.md`](../../../firmware/idf-gate/README.md) (2026-08-20/21).

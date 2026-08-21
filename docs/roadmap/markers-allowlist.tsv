@@ -7,50 +7,53 @@
 # The owner is the point. Replace every AUTO-GENERATED with a real one, and
 # lower a count in the same commit that removes a marker.
 .github/workflows/ci.yml	3	prose describing the marker gate and the (verify) class it checks
-.pre-commit-config.yaml	4	prose describing the marker gate; two hook revs marked VERIFY before first use
+.pre-commit-config.yaml	4	prose describing the marker gate; two hook revs annotated with what their first run found
 CHANGELOG.md	2	historical record
 CLAUDE.md	4	the constitution quotes the proposal; follows the RQ freeze
-README.md	2	follows the documents it indexes
+README.md	5	follows the documents it indexes
+datasets/README.md	1	fetch-time confirmation
+datasets/corpora/manifest.yaml	4	fetch-time confirmation (now tracked; was gitignored until 2026-08-21)
 docs/README.md	1	follows the documents it indexes
 docs/adr/0002-companion-architecture.md	4	(prov.) values inside accepted records — each names its revisit trigger
 docs/adr/0003-microphone-path.md	1	(prov.) values inside accepted records — each names its revisit trigger
-docs/adr/0006-fft-normalisation-and-window-conventions.md	2	(prov.) values inside accepted records — each names its revisit trigger
-docs/adr/0009-golden-file-strategy.md	3	(prov.) values inside accepted records — each names its revisit trigger
+docs/adr/0006-fft-normalisation-and-window-conventions.md	5	(prov.) values inside accepted records — each names its revisit trigger
+docs/adr/0009-golden-file-strategy.md	4	(prov.) values inside accepted records — each names its revisit trigger
 docs/adr/0010-preset-schema.md	2	(prov.) values inside accepted records — each names its revisit trigger
 docs/adr/0011-spectrogram-colormap.md	2	(prov.) values inside accepted records — each names its revisit trigger
 docs/adr/0012-hands-free-interaction.md	2	(prov.) values inside accepted records — each names its revisit trigger
 docs/adr/0018-first-reference-project-study.md	2	(prov.) values inside accepted records — each names its revisit trigger
-docs/architecture/01-overview.md	4	follows the ADRs it summarises
-docs/architecture/02-audio-capture-path.md	9	E2/Phase 1 bench — mic behaviour is measured, not read
-docs/architecture/03-dsp-pipeline.md	15	owner: ADR 0006 acceptance + H13 measurement
+docs/architecture/01-overview.md	5	follows the ADRs it summarises
+docs/architecture/02-audio-capture-path.md	11	E2/Phase 1 bench — mic behaviour is measured, not read
+docs/architecture/03-dsp-pipeline.md	17	owner: ADR 0006 acceptance + H13 measurement
 docs/architecture/06-power-budget.md	6	Phase 1 measured — rail currents are properties of this board running this firmware
-docs/architecture/12-interaction-model.md	2	owner: ADR 0012 is a UX judgement (proposed)
+docs/architecture/12-interaction-model.md	3	owner: ADR 0012 is a UX judgement (proposed)
 docs/architecture/README.md	1	follows the ADRs it summarises
-docs/bibliography/01-datasheets.md	5	acquisition — Knowles and Bosch parts are delisted
+docs/bibliography/01-datasheets.md	6	acquisition — Knowles and Bosch parts are delisted
 docs/bibliography/02-application-notes.md	6	dated Disclosure prose — historical record, not an open flag
 docs/bibliography/03-standards.md	6	purchase — editions confirmed, the texts are paid
 docs/bibliography/04-books.md	3	purchase / ISBN confirmation
 docs/bibliography/05-papers.md	13	model-recalled rows: R7 re-audit, then acquisition
 docs/bibliography/06-reference-projects.md	7	dated Disclosure prose — historical record, not an open flag
 docs/bibliography/08-voice-metrology-on-the-wrist.md	5	model-recalled rows: R7 re-audit
-docs/bibliography/09-visual-feedback-for-singing.md	4	model-recalled rows: R7 re-audit
-docs/bibliography/10-datasets-and-ground-truth.md	1	open per-entry licensing (OpenAIR) + CMU ARCTIC _egg availability
+docs/bibliography/09-visual-feedback-for-singing.md	3	model-recalled rows: R7 re-audit
+docs/bibliography/10-datasets-and-ground-truth.md	2	open per-entry licensing (OpenAIR) + CMU ARCTIC _egg availability
+docs/bibliography/11-esp-idf-platform-and-toolchain.md	1	model-recalled rows: R7 re-audit
 docs/bibliography/README.md	3	dated Disclosure prose — historical record, not an open flag
 docs/bibliography/acquisition-status.md	3	dated Disclosure prose — historical record, not an open flag
 docs/devenv/brick-runbook.md	1	E1/E2 host state — owner's shell
 docs/devenv/first-flash-checklist.md	1	E1/E2 host state — owner's shell
 docs/hw/README.md	1	E2 measured on the unit
 docs/hw/twatch-s3-pins.md	1	E2 measured on the unit
-docs/proposal/01-super-spectral-proposal.md	15	owner: the RQ freeze and the author's voice
+docs/proposal/01-super-spectral-proposal.md	18	owner: the RQ freeze and the author's voice
 docs/proposal/README.md	1	owner: the RQ freeze and the author's voice
-docs/reference-projects/notes/esp-dsp_notes.md	3	read at a pinned revision; re-read at the next bump
-docs/reference-projects/notes/lilygolib-axp2101_notes.md	3	read at a pinned revision; re-read at the next bump
+docs/reference-projects/notes/esp-dsp_notes.md	5	read at a pinned revision; re-read at the next bump
+docs/reference-projects/notes/lilygolib-axp2101_notes.md	8	read at a pinned revision; re-read at the next bump
 docs/roadmap/README.md	1	tracks the questions; closes when they do
 docs/roadmap/documentation-roadmap.md	8	tracks the questions; closes when they do
 docs/session-plans/2026-08-21-daytime-remediation.md	1	dated session record — historical
 docs/session-plans/2026-08-21-overnight-phase0.md	2	dated session record — historical
 docs/standards/README.md	1	follows the documents it indexes
-docs/validation/README.md	6	Phase 1 measured — every target has a method, not yet a number
+docs/validation/README.md	10	Phase 1 measured — every target has a method, not yet a number
 docs/validation/experiments/0001-pdm-mic-in-situ-characterization.md	2	Phase 1 measured — every target has a method, not yet a number
 docs/validation/golden-files.md	5	Phase 1 measured — every target has a method, not yet a number
 dsp/README.md	1	follows the documents it indexes
@@ -66,6 +69,6 @@ host/golden/manifest.schema.yaml	3	follows ADR 0009
 protocols/README.md	7	provisional preset values — freeze with experiment 0001
 protocols/presets/README.md	1	provisional preset values — freeze with experiment 0001
 protocols/specs/README.md	1	provisional preset values — freeze with experiment 0001
-protocols/specs/preset-schema.md	3	provisional preset values — freeze with experiment 0001
-protocols/specs/presets.schema.json	1	provisional preset values — freeze with experiment 0001
+protocols/specs/preset-schema.md	8	provisional preset values — freeze with experiment 0001
+protocols/specs/presets.schema.json	4	provisional preset values — freeze with experiment 0001
 python-scripts/README.md	5	prose describing check_markers.py and the marker class

@@ -28,9 +28,11 @@ Platform abstraction is a three-layer template sandwich: `SensorPlatform.hpp` pi
 #include "driver/i2c_master.h"
 #else
 #include "driver/i2c.h"
-#define SENSORLIB_USE_I2C_LEGACY 1
+#define USEING_I2C_LEGACY 1
 #endif
 ```
+
+(`USEING_I2C_LEGACY` is the registry 0.4.1 spelling — an upstream misspelling that guards every legacy branch in that header and in ~20 others. Master `2b9e591` has renamed it to `SENSORLIB_USE_I2C_LEGACY`; the tarball is normative for us.)
 
 `CONFIG_SENSORLIB_ESP_IDF_NEW_API` is **mandatory for us, not merely preferred**, and the reason is stronger than "the legacy header is gone": in v6.0.2 `driver/i2c.h` still exists (`components/driver/i2c/include/driver/i2c.h`) and prints *"This legacy I2C driver (driver/i2c.h) is officially END-OF-LIFE (EOL) as of ESP-IDF v6.0"*. Selecting `CONFIG_SENSORLIB_ESP_IDF_OLD_API` would therefore still compile, then install a second, EOL driver on a port `twatch_bsp` already owns through `i2c_master_bus_handle_t` and trip the driver's legacy-conflict check (`CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK`, `components/driver/Kconfig`). This sharpens [pitfall B14](../../devenv/pitfalls.md), which currently frames the symbol as a build-compatibility switch.
 
@@ -54,13 +56,13 @@ Mitigation for `twatch_bsp` (§6.3): construct the BMA423 through the **custom-H
 
 | Item | Registry 0.4.1 | GitHub master `2b9e591` |
 |---|---|---|
-| `CMakeLists.txt` | 570 B. `SRC_DIRS` = `src`, `src/touch`, `src/platform`, `src/bosch{,/BMM150,/bma4xx,/bhi260x,/bhi36x}`. Nothing else is compiled. | ~250 lines: per-driver `sensorlib_excluded()` gating, `src_dirs` assembled from Kconfig, `EXCLUDE_SRCS`, `target_compile_definitions(SENSORLIB_EXCLUDE_*=1)` |
-| `Kconfig` | 18 lines: the `SensorLib_ESP_IDF_API` choice only | The same choice **plus** a "Driver exclusion" menu with **60** `SENSORLIB_EXCLUDE_*` symbols |
+| `CMakeLists.txt` | 570 B. `SRC_DIRS` = `src`, `src/touch`, `src/platform`, `src/bosch{,/BMM150,/bma4xx,/bhi260x,/bhi36x}`. Nothing else is compiled. | **330 lines**: per-driver `sensorlib_excluded()` gating, `src_dirs` assembled from Kconfig, `EXCLUDE_SRCS`, `target_compile_definitions(SENSORLIB_EXCLUDE_*=1)` |
+| `Kconfig` | 16 lines / 490 B: the `SensorLib_ESP_IDF_API` choice only | The same choice **plus** a "Driver exclusion" menu with **58** `SENSORLIB_EXCLUDE_*` symbols (60 `config` symbols in the file, the API choice included) |
 | `REQUIRES` | `esp_timer esp_driver_gpio esp_driver_i2c esp_driver_spi driver` | identical |
 | `idf_component.yml` | `license: MIT`, `idf >=4.4`, `files.use_gitignore: true`, excludes `examples/`, `tools/`, `tests/`, `docs/`, `datasheet/`, PlatformIO/Arduino metadata | identical |
 | README | no exclusion documentation; registry badge reads `v0.4.0` | documents `idf.py menuconfig → Component config → SensorLib Configuration → Driver exclusion` |
 
-`REQUIRES driver` drags the legacy umbrella component into our deliberately trimmed set ([ADR 0017](../../adr/0017-no-radio-in-v1-trimmed-component-set.md)). SensorLib is **not** uniquely responsible: `espressif__esp_lcd_touch` and `espressif__esp_codec_dev` also require `driver`, so removing SensorLib would not remove it. Cost is small in v6.0.2 (the umbrella itself requires only `esp_hal_i2c esp_hal_twai esp_hal_touch_sens`), but it should be recorded, not discovered later.
+`REQUIRES driver` drags the legacy umbrella component into our deliberately trimmed set ([ADR 0017](../../adr/0017-no-radio-in-v1-trimmed-component-set.md)). SensorLib is **not** uniquely responsible: `espressif__esp_lcd_touch` also requires `driver`, so removing SensorLib would not remove it. (`espressif__esp_codec_dev` requires `driver` only on IDF < 5.3 — its `CMakeLists.txt` takes the `esp_driver_gpio esp_driver_i2c esp_driver_i2s esp_driver_spi` branch on v6.0.2. Parsing `build/project_description.json` for components whose `reqs`+`priv_reqs` contain `driver` yields exactly two: `lewisxhe__sensorlib` and `espressif__esp_lcd_touch`.) Cost is small in v6.0.2 (the umbrella itself requires only `esp_hal_i2c esp_hal_twai esp_hal_touch_sens`), but it should be recorded, not discovered later.
 
 ## 3. Registry tarball vs GitHub tree — the `src/pmic` question, resolved
 
@@ -73,7 +75,7 @@ Mitigation for `twatch_bsp` (§6.3): construct the BMA423 through the **custom-H
 | files matching `xpowers` (case-insensitive) | **0** | **84** |
 | `PmicAXP2101.hpp`, `AXP2101Regs.hpp`, `AXP2101Core.cpp`, … | absent | present (20 files under `src/pmic/xpowers/axp2101/`) |
 | `CHECKSUMS.json` (the registry's own manifest of the published archive) | 1 283 files, `created_at 2026-04-02T08:31:31Z`; `src/pmic` = 34 entries, `xpowers` = **0** entries | n/a |
-| `src/pmic` in `SRC_DIRS` | **no** — none of the 13 `.cpp` files under `src/pmic` is compiled | yes, gated by `CONFIG_SENSORLIB_EXCLUDE_PMIC_*` |
+| `src/pmic` in `SRC_DIRS` | **no** — none of the 10 `.cpp` files under `src/pmic` is compiled | yes, gated by `CONFIG_SENSORLIB_EXCLUDE_PMIC_*` |
 | `src/haptic_drivers` in `SRC_DIRS` | **no** — `HapticDriver_DRV2605.cpp` (46 out-of-line member definitions) is never compiled | yes (`src/haptic`), gated by `CONFIG_SENSORLIB_EXCLUDE_HAPTIC_DRV2605` |
 | Top-level `src/` subdirectories | `bosch haptic_drivers platform pmic sensor touch` (357 files) | `actuator bosch expander gauge haptic pmic platform sensor time touch` (438 files) |
 | Objects actually built by our configured project | **52**, listed in `build/esp-idf/lewisxhe__sensorlib/CMakeFiles/__idf_lewisxhe__sensorlib.dir/` — Bosch BHI/BMA/BMM `.c`, 11 touch `.cpp`, `SensorRtcHelper.cpp`, `SensorWireHelper.cpp`, `SensorCommStatic.cpp`, `SensorCommDebug.cpp`, `SensorLibExceptionFix.cpp` | n/a |
@@ -84,19 +86,19 @@ Three practical conclusions:
 2. **SensorLib is not an AXP2101 fallback at 0.4.1.** The "schedule-pressure fallback" recorded in [bibliography 06 #7](../../bibliography/06-reference-projects.md), in [ADR 0001](../../adr/0001-toolchain-esp-idf-v6-pinned-environment.md)'s consequences and in [`twatch_bsp/README.md`](../../../firmware/twatch-s3/components/twatch_bsp/README.md) does not exist in the artefact we link. The AXP2101 register cross-check must come from [bibliography 06 #8](../../bibliography/06-reference-projects.md) (XPowersLib, read-only, never added as a component) or from the AXP2101 datasheet ([01 #17](../../bibliography/01-datasheets.md)); the hand-written `twatch_pmu_axp2101.c` is now the only plan, not the preferred one of two.
 3. **DRV2605L via SensorLib does not link at 0.4.1.** `SensorDRV2605.hpp` → `HapticDrivers.hpp` → `haptic_drivers/HapticDriver_DRV2605.hpp` resolves (because `src/` is on the include path), but the definitions are in a `.cpp` outside `SRC_DIRS`, so any use is an undefined-reference at link. ADR 0012's haptic confirmation therefore needs either a local `EXCLUDE_SRCS`-free re-registration of that file, a wait for the next release, or a ~60-line DRV2605L driver of our own — a decision ADR 0012 must make explicitly.
 
-Why the divergence: master carries a large post-0.4.1 refactor (new `actuator`/`expander`/`gauge`/`time` trees, `AccelerometerDrv.hpp`-style aggregate headers, the deprecation shims that turn `src/SensorBMA423.hpp` from an 839-line class into a 9-line `#pragma message` alias, and the exclusion machinery). None of it is on the registry as of 2026-08-21. `files.use_gitignore: true` in the manifest is worth remembering as a packaging hazard in general, but it is not the cause here: the tarball's own `CMakeLists.txt` and `Kconfig` are simply the pre-refactor versions.
+Why the divergence: master carries a large post-0.4.1 refactor (new `actuator`/`expander`/`gauge`/`time` trees, `AccelerometerDrv.hpp`-style aggregate headers, the deprecation shims that turn `src/SensorBMA423.hpp` from an 839-line class into a 9-line `#pragma message` + include forwarder, and the exclusion machinery). None of it is on the registry as of 2026-08-21. `files.use_gitignore: true` in the manifest is worth remembering as a packaging hazard in general, but it is not the cause here: the tarball's own `CMakeLists.txt` and `Kconfig` are simply the pre-refactor versions.
 
 ## 4. The BMA423 driver and the Bosch feature-config blob
 
 ### 4.1 Where the blob is and what loading it costs
 
-`src/bosch/bma4xx/bma423.c` (76 581 B, 1 700 lines) opens with `const uint8_t bma423_config_file[] = { … }` — **6 144 bytes** (`BMA423_CONFIG_FILE_SIZE UINT16_C(6144)` in `bma423.h`), confirmed as `.rodata.bma423_config_file  6144` in the compiled object. This is the microcode for the sensor's feature engine; without it the BMA423 is a plain accelerometer with no step counter, no tilt, no wake-up. It cannot be regenerated from a datasheet, which is the whole argument of ADR 0001's "mandatory for the BMA423's Bosch feature blob".
+`src/bosch/bma4xx/bma423.c` (76 508 B, 1 695 lines; the registry `CHECKSUMS.json` records the same 76 508) opens with `const uint8_t bma423_config_file[] = { … }` — **6 144 bytes** (`BMA423_CONFIG_FILE_SIZE UINT16_C(6144)` in `bma423.h`), confirmed as `.rodata.bma423_config_file  6144` in the compiled object. This is the microcode for the sensor's feature engine; without it the BMA423 is a plain accelerometer with no step counter, no tilt, no wake-up. It cannot be regenerated from a datasheet, which is the whole argument of ADR 0001's "mandatory for the BMA423's Bosch feature blob".
 
 Upload path: `SensorBMA423::boschInitImpl()` → `bma423_init()` → `bma423_write_config_file()` → `bma4_write_config_file()`, which disables advanced power save, clears `BMA4_INIT_CTRL_ADDR`, streams the 6 144 bytes in `dev->read_write_len` chunks (**32** bytes, set by `SensorBMA4XX::initImpl()`, i.e. **192 I²C transactions**), re-enables config loading, waits `delay_us(BMA4_MS_TO_US(150))` and verifies `BMA4_INTERNAL_STAT == BMA4_ASIC_INITIALIZED`. At 400 kHz that is roughly 190 ms of bus time plus the 150 ms wait — and per §2.2 the wait is a busy-wait. Budget ≈350 ms of blocking init and run it before the DSP task exists.
 
 ### 4.2 Licence findings for the Bosch part — the one that needs an ADR sentence
 
-SensorLib's `THIRD_PARTY_NOTICES.md` states, for `src/bosch/`: *"BSD 3-Clause License … Copyright (c) 2023 Bosch Sensortec GmbH … The original license text and copyright notices are retained in the header of each source file."* `src/bosch/bma4xx/LICENSE` likewise carries plain BSD-3-Clause (2024 Bosch Sensortec). **Per-file inspection contradicts the blanket claim.** Of the 17 files in `src/bosch/bma4xx/`:
+SensorLib's `THIRD_PARTY_NOTICES.md` states, for `src/bosch/`: *"BSD 3-Clause License … Copyright (c) 2023 Bosch Sensortec GmbH … The original license text and copyright notices are retained in the header of each source file."* `src/bosch/bma4xx/LICENSE` likewise carries plain BSD-3-Clause (2024 Bosch Sensortec). **Per-file inspection contradicts the blanket claim.** Of the 17 C sources in `src/bosch/bma4xx/` (the directory holds 19 files in all — those 17 plus `LICENSE` and `README.md`):
 
 | Files | Header |
 |---|---|
@@ -185,19 +187,21 @@ The E1 gate's "zero warnings" result covers SensorLib's own translation units on
 - (−) **SensorLib's touch stack.** `esp_lcd_touch_ft5x06` already owns the LVGL-integrated path; two touch drivers on one controller is a coherency bug waiting to happen. Take the register numbers for the ID gate, not the driver.
 - (−) **`_maxTouchPoints = 5` and the unmasked TD_STATUS byte** (§5).
 - (−) **`SensorWireHelper`, the BHI260/BHI360 sensor-hub layer, `SensorRTC_POSIX.hpp`.** None of it is on this board; at 0.4.1 it cannot be excluded, so it must at least never be *called*.
-- (−) **Assuming master's API.** `src/SensorBMA423.hpp` is a real class at 0.4.1 and a deprecation shim on master (`#pragma message`, `using SensorBMA423 = ...`); `AccelerometerDrv.hpp`, `PmicXPowers.hpp`, `TouchDrv.hpp` do not exist at our pin. Write against the tarball, and re-read this section at every version bump.
+- (−) **Assuming master's API.** `src/SensorBMA423.hpp` is a real class at 0.4.1 and a deprecation shim on master (a `#pragma message` plus `#include "sensor/accelerometer/bma/SensorBMA423.hpp"` under `#if !SENSORLIB_EXCLUDE_BMA423` — an include forwarder, not a `using` alias); `AccelerometerDrv.hpp` and `PmicXPowers.hpp` do not exist at our pin (`TouchDrv.hpp` does — it is an aggregated touch header, present in both trees). Write against the tarball, and re-read this section at every version bump.
 
 ## 8. Corrections to carry into existing documents
 
-| Document | Current statement | Correction |
-|---|---|---|
-| [bibliography 06 #7](../../bibliography/06-reference-projects.md) | "`src/pmic/xpowers/axp2101` is the schedule-pressure fallback … read `AXP2101Regs.hpp` as the register cross-check" | True of GitHub master; **absent from the registry 0.4.1 tarball**. Point the cross-check at 06 #8 (XPowersLib) or the datasheet |
-| [bibliography 11](../../bibliography/11-esp-idf-platform-and-toolchain.md), entry keyed `06 #7` ("SensorLib README (ESP-IDF section) + `Kconfig`") | "the full `CONFIG_SENSORLIB_EXCLUDE_*` matrix that trims the build to BMA423 + PCF8563 + DRV2605 (+ AXP2101 as fallback)" | The matrix exists only on master; 0.4.1's `Kconfig` has the API choice and nothing else |
-| [pitfalls H4](../../devenv/pitfalls.md) | "SensorLib 0.4.x absorbed the X-Powers PMIC drivers … `CONFIG_SENSORLIB_EXCLUDE_PMIC_AXP2101=y` if the AXP2101 driver is written in-house" | Neither the driver nor the symbol exists at 0.4.1. The pitfall's *conclusion* (use one library, not both) still holds — for the opposite reason |
-| [pitfalls B14](../../devenv/pitfalls.md) | frames `CONFIG_SENSORLIB_ESP_IDF_NEW_API=y` as a build-compatibility switch | On v6.0.2 the legacy path still **compiles**; the real hazard is an EOL second I²C driver and the legacy-conflict check (§2.1) |
-| [`NOTICE`](../../../NOTICE) | "includes Bosch BMA4 Sensor API, BSD-3-Clause" | True for 15 of 17 files; `bma423.{c,h}` carry the 2017–2018 legacy Bosch Sensortec notice (§4.2) |
-| [`twatch_bsp/README.md`](../../../firmware/twatch-s3/components/twatch_bsp/README.md), [ADR 0001](../../adr/0001-toolchain-esp-idf-v6-pinned-environment.md) consequences | "SensorLib `PmicAXP2101` is the fallback" | No fallback exists at the pin; amend rather than supersede |
-| [`main/idf_component.yml`](../../../firmware/twatch-s3/main/idf_component.yml) comment | "the per-driver `CONFIG_SENSORLIB_EXCLUDE_*` trims are added to `sdkconfig.defaults` once the lock exists" | The lock exists; the symbols do not. Note the version they are expected in |
+Change log, not a to-do list: the **Status** column says whether the correction has already landed. Re-verified against branch HEAD, 2026-08-21 — do not re-edit a row marked *applied*.
+
+| Document | Statement as this study found it | Correction | Status |
+|---|---|---|---|
+| [bibliography 06 #7](../../bibliography/06-reference-projects.md) | "`src/pmic/xpowers/axp2101` is the schedule-pressure fallback … read `AXP2101Regs.hpp` as the register cross-check" | True of GitHub master; **absent from the registry 0.4.1 tarball**. Point the cross-check at 06 #8 (XPowersLib) or the datasheet | **applied** |
+| [bibliography 11](../../bibliography/11-esp-idf-platform-and-toolchain.md), entry keyed `06 #7` ("SensorLib README (ESP-IDF section) + `Kconfig`") | "the full `CONFIG_SENSORLIB_EXCLUDE_*` matrix that trims the build to BMA423 + PCF8563 + DRV2605 (+ AXP2101 as fallback)" | The matrix exists only on master; 0.4.1's `Kconfig` has the API choice and nothing else | **applied** |
+| [pitfalls H4](../../devenv/pitfalls.md) | "SensorLib 0.4.x absorbed the X-Powers PMIC drivers … `CONFIG_SENSORLIB_EXCLUDE_PMIC_AXP2101=y` if the AXP2101 driver is written in-house" | Neither the driver nor the symbol exists at 0.4.1. The pitfall's *conclusion* (use one library, not both) still holds — for the opposite reason | **applied** |
+| [pitfalls B14](../../devenv/pitfalls.md) | frames `CONFIG_SENSORLIB_ESP_IDF_NEW_API=y` as a build-compatibility switch | On v6.0.2 the legacy path still **compiles**; the real hazard is an EOL second I²C driver and the legacy-conflict check (§2.1) | **partly applied** — B14 now records that `driver/i2c.h` still exists in v6.0.x, but still presents the symbol as a compatibility switch rather than an EOL-driver hazard |
+| [`NOTICE`](../../../NOTICE) | "includes Bosch BMA4 Sensor API, BSD-3-Clause" | True for 15 of 17 files; `bma423.{c,h}` carry the 2017–2018 legacy Bosch Sensortec notice (§4.2) | **outstanding** |
+| [`twatch_bsp/README.md`](../../../firmware/twatch-s3/components/twatch_bsp/README.md), [ADR 0001](../../adr/0001-toolchain-esp-idf-v6-pinned-environment.md) consequences | "SensorLib `PmicAXP2101` is the fallback" | No fallback exists at the pin; amend rather than supersede | **`twatch_bsp/README.md` applied**; [ADR 0001](../../adr/0001-toolchain-esp-idf-v6-pinned-environment.md) §Consequences still reads "with SensorLib's `PmicAXP2101` as the schedule-pressure fallback" — **outstanding** |
+| [`main/idf_component.yml`](../../../firmware/twatch-s3/main/idf_component.yml) comment | "the per-driver `CONFIG_SENSORLIB_EXCLUDE_*` trims are added to `sdkconfig.defaults` once the lock exists" | The lock exists; the symbols do not. Note the version they are expected in | **outstanding** |
 
 ## 9. Alternatives considered for the study (input to ADR 0018)
 
@@ -213,7 +217,7 @@ The E1 gate's "zero warnings" result covers SensorLib's own translation units on
 |---|---|
 | Legacy `driver/i2c.h` still ships in v6.0.2 and announces itself *"officially END-OF-LIFE (EOL) as of ESP-IDF v6.0"*; `CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK` and the deprecation-warning suppressor live in `components/driver/Kconfig` | `~/esp/idf/v6.0.2/components/driver/i2c/include/driver/i2c.h`, `components/driver/Kconfig` |
 | `i2c_device_config_t` in v6.0.2 has exactly `dev_addr_length`, `device_address`, `scl_speed_hz`, `scl_wait_us`, `flags.disable_ack_check` | `components/esp_driver_i2c/include/driver/i2c_master.h`, v6.0.2 |
-| Legacy `driver` umbrella requires only `esp_hal_i2c esp_hal_twai esp_hal_touch_sens`; three registry components in our build require it (`lewisxhe__sensorlib`, `espressif__esp_lcd_touch`, `espressif__esp_codec_dev`) | `components/driver/CMakeLists.txt` v6.0.2; the three managed components' `CMakeLists.txt` |
+| Legacy `driver` umbrella requires only `esp_hal_i2c esp_hal_twai esp_hal_touch_sens`; two registry components in our build require it (`lewisxhe__sensorlib`, `espressif__esp_lcd_touch`); `espressif__esp_codec_dev` requires it only on IDF < 5.3 | `components/driver/CMakeLists.txt` v6.0.2; the managed components' `CMakeLists.txt`; `build/project_description.json` |
 | `portTICK_PERIOD_MS == 1` in our build (`CONFIG_FREERTOS_HZ=1000`) | [`firmware/twatch-s3/sdkconfig.defaults`](../../../firmware/twatch-s3/sdkconfig.defaults) |
 | BMA423 at `0x19` on I²C0 (SDA 10 / SCL 11), INT1 on **GPIO14**; DRV2605L `0x5A`; FT6336U `0x38` on I²C1; all five addresses answered on hardware at the E1 gate | [`docs/hw/twatch-s3-pins.md`](../../hw/twatch-s3-pins.md), [ADR 0001](../../adr/0001-toolchain-esp-idf-v6-pinned-environment.md) |
 | C++ exceptions and RTTI are off in this project | `CONFIG_COMPILER_CXX_EXCEPTIONS` / `CONFIG_COMPILER_CXX_RTTI` absent from the generated `sdkconfig` |

@@ -148,9 +148,10 @@ properties:
       praat_reference:
         description: >-
           The praat.org Praat release the side-by-side comparison of roadmap
-          threshold T7 was run against (praat.org is at 7.0.01, read 2026-08-21).
-          May be `null` ONLY while T7 is open; a set carrying `null` here may not
-          back a "vs Praat" claim outside the project.
+          threshold T7b was run against (praat.org is at 7.0.01, read 2026-08-21).
+          May be `null` ONLY while T7b is open — T7a (which Praat parselmouth
+          bundles) is closed; a set carrying `null` here may not back a "vs Praat"
+          claim outside the project.
         type:
           - string
           - "null"
@@ -285,10 +286,18 @@ properties:
         properties:
           method:
             description: >-
-              `raw` = `To Pitch (raw ac)` (the classic autocorrelation of
-              Boersma 1993); `filtered` = `To Pitch (filtered ac)` (Praat's
-              default since 6.4, 2023-11-15); `cc` = cross-correlation, only
-              where a set explicitly needs it. There is no default: state it.
+              `raw` = `To Pitch (ac)...` on the pinned Praat 6.1.38 (the classic
+              autocorrelation of Boersma 1993) — that is the command name a
+              generator must actually call; `To Pitch (raw ac)...` and
+              `To Pitch (raw autocorrelation)...` are Praat 6.4+ synonyms for the
+              same `Sound_to_Pitch_rawAc()` entry point and raise `Command "..."
+              not available for given objects.` on 6.1.38 (measured with
+              parselmouth 0.4.7, 2026-08-21). The 6.4 form also reorders the
+              dialogue arguments (floor and ceiling adjacent), so a positional
+              `praat.call` is not portable across that boundary. `filtered` =
+              `To Pitch (filtered autocorrelation)...` (Praat's default since 6.4,
+              2023-11-15); `cc` = cross-correlation, only where a set explicitly
+              needs it. There is no default: state it.
 
               `filtered` is admitted by this enum but is NOT REACHABLE from any
               released praat-parselmouth: 0.4.0 through 0.4.7 all bundle Praat
@@ -345,7 +354,16 @@ properties:
             type: boolean
 
       formant:
-        description: Parameters of Praat's formant analysis. Burg order = 2*max_formants + 2.
+        description: >-
+          Parameters of Praat's formant analysis. Praat's Burg analysis fits
+          `2 x max_formants` poles — there is no `+2`. `Sound_to_Formant_burg()`
+          calls `Sound_to_Formant_any (me, dt, Melder_iround (2.0 * nFormants), ...)`
+          in `fon/Sound_to_Formant.cpp`, identically at tag `v6.1.38` (the Praat
+          parselmouth bundles) and at `v6.4.27`; the manual page `Sound: To Formant
+          (burg)...` states it in prose ("the number of 'poles' ... is twice the
+          Maximum number of formants"). So `max_formants: 5` is LPC order 10, not 12
+          — a device-side LPC built at 12 would silently invalidate the F1/F2 row of
+          the tolerance table.
         type: object
         additionalProperties: false
         required: [method, time_step, max_formants, ceiling_hz, window_length, preemphasis_from_hz]
@@ -357,7 +375,12 @@ properties:
             type: number
             minimum: 0
           max_formants:
-            description: Praat's "maximum number of formants" (often 5).
+            description: >-
+              Praat's "maximum number of formants" (often 5). The device-side LPC
+              order that matches it is `2 x max_formants` (10 for 5); see the block
+              description above. May be a multiple of 0.5, which is why it is a
+              number and not an integer — Praat rounds `2 x max_formants` to the
+              nearest whole pole count.
             type: number
             exclusiveMinimum: 0
           ceiling_hz:
@@ -647,7 +670,7 @@ $defs:
 # generation time, following the convention of docs/validation/golden-files.md:
 # a real manifest never contains one. The Praat settings shown are the
 # provisional ones from that file; `praat_reference: null` is shown because
-# roadmap threshold T7 (bundled Praat vs praat.org 7.0.01) is still open.
+# roadmap threshold T7b (bundled Praat vs praat.org 7.0.01) is still open.
 #
 #   # SPDX-FileCopyrightText: 2026 Alexander Gomez
 #   # SPDX-License-Identifier: GPL-3.0-or-later
@@ -664,7 +687,7 @@ $defs:
 #     scipy: <scipy.__version__>
 #     parselmouth: <parselmouth.__version__>
 #     praat_bundled: <parselmouth.PRAAT_VERSION>
-#     praat_reference: null          # T7 open; no external "vs Praat" claim yet
+#     praat_reference: null          # T7b open; no external "vs Praat" claim yet
 #     platform: <uname -srm>
 #     blas: <numpy.show_config() vendor + version>
 #
@@ -728,7 +751,11 @@ $defs:
 #       analysis: pitch
 #       input: datasets/tier0/sine_440_0dBFS_32k.wav
 #       dtype: float64
-#       shape: [298, 2]
+#       shape: [296, 2]            # measured: parselmouth 0.4.7 / Praat 6.1.38 on
+#                                  #   this exact input gives 296 frames
+#                                  #   (t1 = 0.025, dt = 0.01); the count follows
+#                                  #   Praat's frame grid, so it moves with
+#                                  #   duration, time_step and pitch_floor
 #       units: "s, Hz"
 #       columns: [time, f0]
 #       unvoiced_sentinel: 0

@@ -142,8 +142,9 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
 - **The golden-file pitch method was corrected in the wrong direction overnight**
   and is now right. No released `praat-parselmouth` (0.4.0–0.4.7) can run
   `To Pitch (filtered autocorrelation)` — all of them bundle **Praat 6.1.38**,
-  which predates the method by two years. Golden sets pin `method: raw`;
-  `verify.py` invariant 6 gates `filtered` on `praat_bundled ≥ 6.4.0`.
+  which predates the method by two years. Golden sets pin `method: raw`, and
+  `host/golden/verify.py` — **planned for D6, not yet written** — carries the
+  rule as invariant 6: `filtered` requires `praat_bundled ≥ 6.4.0`.
 - **The window oracle must build from coefficients, not names.** Preset
   `nuttall` (esp-dsp's set) has no SciPy equivalent — it is 0.0163 from SciPy's
   `nuttall`, which is in fact the Blackman–Nuttall set.

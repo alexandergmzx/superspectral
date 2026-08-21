@@ -1,11 +1,11 @@
 # Datasets
 
-Audio material and ground truth for the validation plan. **Raw audio is git-ignored** (`datasets/corpora/`, `datasets/raw/`, `datasets/**/*.wav` — see [`.gitignore`](../.gitignore)): corpora carry their own licences and Tier-0 signals are regenerated. What is tracked is the **manifest** that describes each dataset, the generators, and the licence ledger.
+Audio material and ground truth for the validation plan. **Corpus payload is git-ignored, manifests are tracked** (`datasets/corpora/**` with `*.yaml` / `*.yml` / `*.md` / `LICENCE*` re-included, plus `datasets/raw/` and `datasets/**/*.wav` — see [`.gitignore`](../.gitignore)): corpora carry their own licences and Tier-0 signals are regenerated. (Corrected 2026-08-21: the ignore rule used to name the *directory* `datasets/corpora/`, which silently ignored the manifest inside it too; it now ignores the payload only, and this sentence and the table row below were brought into line.) What is tracked is the **manifest** that describes each dataset, the generators, and the licence ledger.
 
 | Subdirectory | Tier | Description |
 |--------------|------|-------------|
 | `tier0-synthetic/` *(planned)* | 0 | Generated in-repo by [`../python-scripts/`](../python-scripts/) `synth_signals/`; ground truth exact by construction |
-| `corpora/` *(gitignored)* | 1–3 | Fetched by manifest (mirdata where available): singing corpora with f0 ground truth, technique/timbre corpora, voice-quality corpora, noise and RIR corpora |
+| `corpora/` *(payload gitignored, manifest tracked)* | 1–3, N | Fetched by manifest (mirdata where available): singing corpora with f0 ground truth, technique/timbre corpora, voice-quality corpora, noise and RIR corpora |
 | `takes/` *(planned)* | — | Takes recorded by the watch and imported through the take-transfer procedure ([`../protocols/specs/`](../protocols/specs/)); raw audio gitignored, manifests tracked |
 | `reference/` *(planned)* | — | Reference-mic captures aligned with takes on the acoustic path; calibrator recordings |
 
@@ -17,7 +17,9 @@ and a manifest whose `files:` list is empty is honest about that.
 
 ## `manifest.yaml` — the contract
 
-Every dataset directory carries a `manifest.yaml`; any analysis reads configuration from it and never hardcodes. Required fields:
+Every dataset carries a `manifest.yaml`; any analysis reads configuration from it and never hardcodes.
+
+**Shape is unsettled `(prov.)`, 2026-08-21.** Three places describe it and they do not agree. What is on disk is *one aggregate* manifest — [`corpora/manifest.yaml`](corpora/manifest.yaml), holding all seven pre-registered corpora as entries of a `datasets:` list. The D6 output line of the [roadmap](../docs/roadmap/documentation-roadmap.md) names the *per-corpus* form, `datasets/<corpus>/manifest.yaml`, and so does the layout block at the end of this file. No per-dataset directory exists. Picking one shape — and editing all three places in the same commit — is a D6 item; **owner: Alexander**. Nothing depends on the choice yet because nothing is downloaded. Required fields, either shape:
 
 | Field | Meaning |
 |---|---|
@@ -63,9 +65,13 @@ Kept as `LICENCES.md` in this directory (planned) — one row per dataset, separ
 | `restriction` | NC ⇒ quarantined from any commercial framing; request-only ⇒ no derived number in an application until confirmed; unstated ⇒ bench-only |
 | `clinical_claim` | always `no` — pathology corpora (Tier 3) are acoustic material only (ADR 0005, no clinical claim) |
 
-Candidate corpora and their licences are catalogued in [`../docs/bibliography/10-datasets-and-ground-truth.md`](../docs/bibliography/10-datasets-and-ground-truth.md) (Tier 1 CC BY 4.0: vocadito, Dagstuhl ChoirSet, VocalSet, Annotated-VocalSet, PVQD; Tier 2 restricted: PTDB-TUG, MDB-stem-synth (NC), MIR-1K (unstated), …; noise: DEMAND, MUSAN; RIR: OpenAIR, BUT ReverbDB, ACE). Nothing is downloaded in Phase 0.
+Candidate corpora and their licences are catalogued in [`../docs/bibliography/10-datasets-and-ground-truth.md`](../docs/bibliography/10-datasets-and-ground-truth.md) (Tier 1 CC BY 4.0: vocadito, Dagstuhl ChoirSet, VocalSet, Annotated-VocalSet; Tier 2 restricted: PTDB-TUG, MDB-stem-synth (NC), MIR-1K (unstated), …; Tier 3 CC BY 4.0, acoustic material only: PVQD, the Saarbrücken Voice Database; noise: DEMAND, MUSAN; RIR: OpenAIR, BUT ReverbDB, ACE). Nothing is downloaded in Phase 0.
+
+*PVQD moved from the Tier-1 clause to Tier 3 on 2026-08-21.* It is entry #18 under "Tier 3 — voice-quality and pathology corpora (acoustic material only)" in that bibliography file, and `tier: 3` in [`corpora/manifest.yaml`](corpora/manifest.yaml); listing it as Tier 1 here put a pathology corpus in the tier that feeds headline metrics. The same correction is still owed in [`../docs/validation/README.md`](../docs/validation/README.md), whose corpora table lists PVQD in **both** its Tier-1 row and its Tier-3 row — owner: Alexander (that file is not edited from here).
 
 ## Layout convention per dataset
+
+*(Planned, not current — see the shape note above: today all seven corpora share the single aggregate [`corpora/manifest.yaml`](corpora/manifest.yaml).)*
 
 ```
 <tier-or-kind>/<dataset-id>/

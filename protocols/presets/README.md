@@ -6,7 +6,7 @@ These files are **data, in canonical form** — UTF-8, LF, one trailing newline,
 
 | File | Targets | N | Window | Hop | Refresh | ENBW |
 |---|---|---:|---|---:|---:|---:|
-| [`live_singing.json`](live_singing.json) | watch, host | 4096 | blackman_harris | 20 ms | 50 Hz | 15.659007 Hz |
+| [`live_singing.json`](live_singing.json) | watch, host | 4096 | blackman_harris | 20 ms | 50 Hz | 15.659008 Hz |
 | [`vowel_formant_study.json`](vowel_formant_study.json) | watch, host | 8192 | hann | 40 ms | 25 Hz | 5.859375 Hz |
 | [`sustained_pitch_lab.json`](sustained_pitch_lab.json) | watch, host | 8192 | blackman_harris | 40 ms | 25 Hz | 7.829504 Hz |
 | [`diction_consonants.json`](diction_consonants.json) | watch, host | 1024 | hann | 10 ms | 50 Hz | 46.875 Hz |

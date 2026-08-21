@@ -68,12 +68,33 @@ import sys
 #
 # Transformation applied to the upstream tables, so that this file is
 # reproducible from them: every 4th entry of the 256-entry table plus the last
-# (65 control points), each channel rounded to 8 bits as round(255*v). Piecewise
-# linear reconstruction from these control points was measured against the full
-# 256-entry float table on 2026-08-21: max |delta| = 2.50 / 0.41 / 0.46 of 255
-# and max CIE76 dE = 0.375 / 0.072 / 0.152 for cividis / viridis / magma. One
-# RGB565 blue step is ~8/255, so the control-point compression is well inside
-# the quantisation this script exists to manage.
+# (65 control points), each channel rounded to 8 bits as round(255*v). Verified
+# 2026-08-21 by parsing `_cm_listed.py` with `ast`: 65 points at indices
+# 0, 4, ..., 252, 255, and 0 of 195 channels differ from round(255*v).
+#
+# Cost of the compression, RE-MEASURED 2026-08-21 for the reconstruction this
+# file actually performs -- `ramp8()`, i.e. linear interpolation between the
+# *8-bit* control points above, rounded to 8 bits -- against the full 256-entry
+# float table, for cividis / viridis / magma:
+#
+#   max |delta| = 3.08 / 1.23 / 1.01 of 255      max CIE76 dE = 1.14 / 1.12 / 0.93
+#
+# An earlier version of this comment quoted 2.50 / 0.41 / 0.46 and dE 0.375 /
+# 0.072 / 0.152. Those figures are real but describe a different computation:
+# float control points interpolated in float, i.e. the compression alone with
+# the 8-bit rounding of the control points removed. They understate the shipped
+# error by up to 15x (viridis). ADR 0011 quotes the 0.375 figure and needs the
+# same correction.
+#
+# Read the true figure against the LUT's own worst fidelity error (dE 2.91 for
+# cividis, 2.56 viridis, 3.56 magma, self-test 2026-08-21): the control-point
+# compression is roughly a third of the RGB565 quantisation error, not an order
+# below it. It is still the smaller term, and the alternative -- vendoring three
+# 256-entry tables -- is 4x the table for a third of the error. Reproduce with:
+# parse `_cividis_data` / `_viridis_data` / `_magma_data` out of
+# `/usr/lib/python3/dist-packages/matplotlib/_cm_listed.py` with `ast`, compare
+# `ramp8(name)` against `[tuple(255*c) for c in table]` channel-wise and in
+# CIE76.
 #
 # LICENCE ITEM (ADR 0011, open): the numeric tables travel with matplotlib's
 # licence here; the cividis table originates in a CC BY 4.0 paper and the
@@ -253,9 +274,25 @@ def quantise_round(rgb: tuple[int, int, int], fmt: tuple[int, int, int]) -> int:
 def candidates(rgb: tuple[int, int, int], fmt: tuple[int, int, int],
                radius: int = 1) -> list[int]:
     """Representable words near `rgb`: the rounded codes +/- `radius` steps per
-    channel. radius=1 gives 27 words, which brackets the target on every side;
-    radius=2 was measured (2026-08-21) to return the same LUT for all three
-    vendored maps, so the neighbourhood is not the binding constraint."""
+    channel.
+
+    radius=1 gives **up to** 27 words -- fewer where a channel code clamps at
+    the ends of the gamut: across the three vendored ramps the set sizes are 27
+    (657 of the 768 indices), 18 (102), 12 (8) and 8 (1), measured 2026-08-21.
+
+    The neighbourhood IS binding, if marginally. Re-measured 2026-08-21 with the
+    radius forced (radius=1 reproduces `build_lut` bit for bit, so the harness is
+    faithful): radius=2 moves exactly one index in each of the three maps, at a
+    strictly lower objective -- cividis 463.103 -> 462.856, magma 441.879 ->
+    441.626, viridis 407.817 -> 407.745; radius=3 moves three indices in viridis
+    (407.621). An earlier version of this docstring claimed radius=2 "returns the
+    same LUT", which is wrong.
+
+    The default stays 1: 0.25 of ~450 total dE units, spread over 256 entries,
+    is not a visible improvement, and widening it would change the shipped LUT
+    and every number ADR 0011 quotes for it. `build_lut` already widens to 2 and
+    3 on its own when no L*-monotone path exists at radius 1.
+    """
     base = [round(c * ((1 << bits) - 1) / 255) for c, bits in zip(rgb, fmt)]
     tops = [(1 << bits) - 1 for bits in fmt]
     out = set()
@@ -510,10 +547,20 @@ def emit_header(name: str, lut: list[int], mode: str, dither: bool,
             a("    " + " ".join("%2d," % r for r in runs[i:i + 16]))
         a("};")
         a("")
+        # The matrix is the same for every map, so it is the one symbol here that
+        # is NOT namespaced -- and two dithered headers in one translation unit
+        # therefore failed to compile ("redefinition of 'spectral_cmap_bayer4x4'",
+        # gcc -std=c99, measured 2026-08-21). ADR 0011 decision 2 ships viridis
+        # and magma selectable alongside cividis, so that is a configuration the
+        # firmware is meant to have. Its own include guard keeps one definition
+        # and lets any number of headers carry it.
+        a("#ifndef SPECTRAL_CMAP_BAYER4X4_H_")
+        a("#define SPECTRAL_CMAP_BAYER4X4_H_")
         a("static const uint8_t spectral_cmap_bayer4x4[4][4] = {")
         for yy in range(4):
             a("    { %2d, %2d, %2d, %2d }," % BAYER_4X4[yy])
         a("};")
+        a("#endif /* SPECTRAL_CMAP_BAYER4X4_H_ */")
         a("")
         a("/* idx: LUT index 0..%d. x, y: pixel position in PANEL coordinates. */"
           % (len(lut) - 1))
@@ -644,12 +691,39 @@ def self_test() -> int:
         text = emit_header(name, lut, "optimal", True, False, ["--self-test"])
         got = [int(w, 16) for w in re.findall(r"0x([0-9A-F]{4}),", text)]
         check(got == lut, "%s: the emitted header does not round trip to the LUT" % name)
-        check(text.count("#ifndef") == 1 and "#endif" in text,
+        check(text.count("#ifndef") == text.count("#endif") == 2
+              and text.count("#ifndef %s" % ("SPECTRAL_CMAP_%s_H_"
+                                             % re.sub(r"[^a-z0-9]", "_",
+                                                      name.lower()).upper())) == 1,
               "%s: the emitted header is malformed" % name)
         swapped = emit_header(name, lut, "optimal", False, True, ["--self-test"])
         got = [int(w, 16) for w in re.findall(r"0x([0-9A-F]{4}),", swapped)]
         check(all(((s & 0xFF) << 8) | (s >> 8) == w for s, w in zip(got, lut)),
               "%s: --swap-bytes did not byte-swap the words" % name)
+
+    # 8. Two maps must be able to coexist in one translation unit: ADR 0011
+    #    decision 2 ships viridis and magma selectable alongside cividis, and
+    #    with --dither every header used to define spectral_cmap_bayer4x4
+    #    unguarded, so including two of them did not compile.
+    names = sorted(CONTROL_POINTS)
+    if len(names) >= 2:
+        decls: dict[str, list[str]] = {}
+        guards: list[str] = []
+        for name in names[:2]:
+            text = emit_header(name, build_lut(name, "optimal"), "optimal", True,
+                               False, ["--self-test"])
+            guards += re.findall(r"#ifndef\s+(\w+)", text)
+            body = re.sub(r"#ifndef\s+SPECTRAL_CMAP_BAYER4X4_H_.*?#endif[^\n]*\n",
+                          "", text, flags=re.S)
+            for sym in re.findall(r"^static (?:const |inline )+\w+ (\w+)",
+                                  body, flags=re.M):
+                decls.setdefault(sym, []).append(name)
+        clashes = {k: v for k, v in decls.items() if len(v) > 1}
+        check(not clashes,
+              "these symbols are defined by more than one map's header and are "
+              "not inside a shared guard: %s" % ", ".join(sorted(clashes)))
+        check(guards.count("SPECTRAL_CMAP_BAYER4X4_H_") == 2,
+              "the shared Bayer matrix is not wrapped in its own include guard")
 
     for name, why in MISSING_MAPS.items():
         check(name not in CONTROL_POINTS,
