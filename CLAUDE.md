@@ -37,7 +37,7 @@ The phase goal is a **complete, citable documentation base and a reproducible ES
 
 *(State synced with [the roadmap's D6 list](docs/roadmap/documentation-roadmap.md) on 2026-08-21; that file is where the evidence for each tick lives. **O** = yours, **A** = mine.)*
 
-- [ ] **O/A** Every ★★★ document filed + 📥 stamped, or ledgered with a reason tag
+- [x] **O/A** Every ★★★ document filed + 📥 stamped, or ledgered with a reason tag *(closed 2026-08-21: a scripted recount over the eleven bibliography files finds zero unresolved ★★★ rows; the free items were fetched/cloned, the rest carry reason tags in `acquisition-status.md`)*
 - [ ] **O** `doc_ocr` manifest covers 100 % of filed PDFs *(46/46, `doc_ocr verify` clean)*; the gating docs `checked` — the `checked` flag records a **human** read, so this one cannot be ticked by an assistant: Knowles SPM1423, ST7789V3, ESP32-S3 datasheet + TRM, HW Design Guidelines, both schematics
 - [ ] **O** Proposal RQ frozen; CLAUDE.md and research-statement quote it verbatim *(the prose is drafted and cited; the voice and the freeze are the author's)*. The refresh-bound contradiction is resolved (2026-08-21, owner's decision — [proposal §1](docs/proposal/01-super-spectral-proposal.md)); the freeze itself is still open.
 - [x] ADRs 0001 (toolchain+env, accepted after the gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim), 0006 (FFT conventions) all **accepted** — 0006 accepted 2026-08-21 by Alexander
