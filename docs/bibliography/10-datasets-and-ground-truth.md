@@ -30,7 +30,7 @@ Grounds the injection path of the §4 two-path rule (the only path where a "≤ 
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|
-| P1 | **In-repo generator** (to be written; `python-scripts/`, Apache-2.0): pure sines on/off bin centres · linear and log sweeps · two-tone at Δf = 0.5/1/2/4 bins · white and pink noise (assert flat / −3 dB per octave) · AM/FM tones at 5–7 Hz, ±1 semitone · clipping test tones for the AOP flag | ★★★ | Exact ground truth by construction; every §4 DSP row is first validated here. NumPy/SciPy only; no corpus licence involved. |
+| P1 | **In-repo generator** — **written 2026-08-22** as [`python-scripts/synth_signals/`](../../python-scripts/synth_signals/) (Apache-2.0; 21 files at 32/48 kHz, tracked manifest `datasets/tier0-synthetic/manifest.yaml`, `check` regenerates and compares sha256): pure sines on/off bin centres · linear and exponential sweeps · two-tone at Δf = 0.5/1/2/4 bins · white and pink noise (−3 dB/oct asserted) · **FM** vibrato at 6 Hz ±100 cents (no AM tone in the catalogue — add one when a band-energy row needs it) · a Rosenberg→Klatt vowel with known f0/F1–F3 · 0 dBFS sine and square as clipping-flag vectors, −1 dBFS as the must-not-trip twin | ★★★ | Exact ground truth by construction; every §4 DSP row is first validated here. NumPy/SciPy only; no corpus licence involved. |
 | P2 | **`pyworld`** (WORLD vocoder wrapper, MIT; [06](06-reference-projects.md) #35) | ★★ | Glottal source + known spectral envelope → synthetic vowels with exact f0 and F1–F3 for the formant row. Alternative: **Praat `Create KlattGrid`** through Parselmouth ([06](06-reference-projects.md) #31; GPL, host-side only) — a KlattGrid is the more "textbook" source-filter model (Rosenberg / Liljencrants–Fant pulse + formant filters). Grounds the §4 F1/F2 row's Tier-0 material and the formant golden files of ADR 0009. |
 | [05 #88](05-papers.md) | **Farina (2000)** — exponential swept sine | ★★★ | The method citation for the sweep: the same signal measures the in-situ transfer function in experiment 0001 and separates distortion from the linear response. |
 | S1 | **ITU-T P.501** test signals for telecommunication terminals — free — home: [03](03-standards.md) | ★ | Citable definitions of standard artificial and composite test signals; the CSS/artificial-voice signals are a neutral level-setting stimulus for the §4 acoustic path (level matching between paths; 08 section C). |
@@ -139,7 +139,7 @@ Bottom line: the MIR community supplies the metrics and the corpora; the project
 
 ## Minimum set to make the ground truth defensible (~8 hours, mostly scripting)
 
-1. **Write P1** (the synthetic generator) and run every §4 DSP row against it — before touching a corpus.
+1. ~~**Write P1** (the synthetic generator)~~ *(written 2026-08-22)* and run every §4 DSP row against it — before touching a corpus.
 2. **Download #1 vocadito and #2 Dagstuhl ChoirSet via `mirdata`**, validate checksums, write the manifest.
 3. **Read [05 #58](05-papers.md) (vocadito) and [05 #60](05-papers.md) (Dagstuhl)** for the annotation protocols — they set the floor on the cents claim.
 4. **Read [05 #55](05-papers.md) (Parselmouth)** and design the golden-file manifest (H) before generating a single golden file.
@@ -161,7 +161,7 @@ Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `free, 
 
 | # | Access | Link |
 |---|--------|------|
-| P1 | n/a | written in-repo (`python-scripts/`) |
+| P1 | n/a | written in-repo: [`python-scripts/synth_signals/`](../../python-scripts/synth_signals/) (2026-08-22) |
 | P2 | REPO | [github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder](https://github.com/JeremyCCHsu/Python-Wrapper-for-World-Vocoder) · Praat KlattGrid via [Parselmouth](https://github.com/YannickJadoul/Parselmouth) |
 | S1 | free | [itu.int/rec/T-REC-P.501](https://www.itu.int/rec/T-REC-P.501) |
 | S2 | paid (CDN-BLOCK) | [iso.org — ISO 16:1975](https://www.iso.org/standard/3601.html) |

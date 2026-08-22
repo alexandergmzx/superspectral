@@ -4,7 +4,7 @@ Audio material and ground truth for the validation plan. **Corpus payload is git
 
 | Subdirectory | Tier | Description |
 |--------------|------|-------------|
-| `tier0-synthetic/` *(planned)* | 0 | Generated in-repo by [`../python-scripts/`](../python-scripts/) `synth_signals/`; ground truth exact by construction |
+| [`tier0-synthetic/`](tier0-synthetic/) *(manifest tracked, WAVs regenerated)* | 0 | Generated in-repo by [`../python-scripts/synth_signals/`](../python-scripts/synth_signals/) — 21 files, 3.0 s, 32 kHz plus two 48 kHz host-only twins; ground truth exact by construction, recorded per file in [`tier0-synthetic/manifest.yaml`](tier0-synthetic/manifest.yaml) with the sha256 of each WAV. `python -m synth_signals check` regenerates and fails on drift |
 | `corpora/` *(payload gitignored, manifest tracked)* | 1–3, N | Fetched by manifest (mirdata where available): singing corpora with f0 ground truth, technique/timbre corpora, voice-quality corpora, noise and RIR corpora |
 | `takes/` *(planned)* | — | Takes recorded by the watch and imported through the take-transfer procedure ([`../protocols/specs/`](../protocols/specs/)); raw audio gitignored, manifests tracked |
 | `reference/` *(planned)* | — | Reference-mic captures aligned with takes on the acoustic path; calibrator recordings |
@@ -37,18 +37,18 @@ A take's manifest additionally records the preset id + sha256, firmware `app_elf
 
 ## Tier 0 — synthetic (must exist before any corpus is touched)
 
-Generated, deterministic, checked into `tier0-synthetic/manifest.yaml` with parameters and sha256; the audio is regenerated, not stored.
+Generated, deterministic, checked into [`tier0-synthetic/manifest.yaml`](tier0-synthetic/manifest.yaml) with parameters and sha256; the audio is regenerated, not stored. *(Written 2026-08-21 as unit B-U2; the manifest is the first per-dataset `manifest.yaml` on disk — `datasets/<dataset-id>/manifest.yaml`, the per-dataset shape — while the corpora still share the aggregate file, so the shape note above stays open.)* What exists versus this table: every row below has at least one file; the vowel rows use the in-repo Rosenberg → Klatt cascade rather than `pyworld` or a KlattGrid, and the manifest records **two** formant truths per file — the resonator poles (what Burg/LPC estimates: exactly F) and the |H| peak of each resonator alone (what a peak picker finds: 3.0 Hz below F1 for the catalogue's bandwidths, closed form in `signals.klatt_resonator_peak_hz`) — and notes that the cascade's envelope shifts further under the neighbouring skirts (its F3 peak reads 14 Hz, 3.6 bins at N = 8192, below the pole), because a row that compares a peak picker against the poles fails for the wrong reason. The 0 dBFS sine and square reach the int16 rails through `rint(x·32768)` by design: they are the clipping-flag vectors, and the −1 dBFS sine is the one that must not trip it.
 
 | Signal | Asserts |
 |---|---|
-| Pure sines on bin centres and between bins (80 Hz – 8 kHz) | peak bin, interpolated peak within the tolerance table (≤ 3 cents injection); leakage shape per window |
+| Pure sines on bin centres and between bins (catalogue today: 437.5 Hz on-bin, 1000 Hz on-bin, 440 Hz off-bin at 0 / −1 / −20 / −60 dBFS; the 80 Hz – 8 kHz span is still owed) | peak bin, interpolated peak within the tolerance table (≤ 3 cents injection); leakage shape per window |
 | Linear and exponential (Farina) sweeps | tracked peak follows; the exponential sweep is also the in-situ transfer-function instrument for the mic-EQ fit |
 | Two-tone at Δf = 0.5 / 1 / 2 / 4 bins | resolution vs window (Hann vs Blackman-Harris per Harris 1978) |
 | White and pink noise | flat / −3 dB per octave under the stated normalization (PS vs PSD — the classic trap) |
 | Synthetic glottal-source vowels (Rosenberg / Liljencrants-Fant source + known F1–F3 vocal tract; `pyworld` or Praat `Create KlattGrid` as reference implementation) | f0 and formant estimators against exact ground truth |
 | AM/FM tones at 5–7 Hz, ±1 semitone | vibrato rate/extent readout |
 | Silence and DC offset | software DC removal (the S3 has no hardware PDM high-pass); noise floor in dBFS |
-| Full-scale sine vs full-scale square | dBFS reference sanity (3 dB apart by definition) |
+| Full-scale sine vs full-scale square | dBFS reference sanity — **per bin** the square's fundamental reads +2.10 dB over the sine (4/π; the sampled P = 32 square in the catalogue reads +2.11, recorded in the manifest), **broadband** (Σ PS / NENBW) +3.01 dB; the two are not interchangeable (ADR 0006 D3). *(This row read "3 dB apart by definition" until 2026-08-21 — the per-bin/broadband conflation ADR 0006 D3 names.)* |
 
 ## Licence ledger
 
