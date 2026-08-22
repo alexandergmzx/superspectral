@@ -29,4 +29,6 @@ Rules that make these files worth reading later:
 
 | Date | Purpose | Outcome |
 |---|---|---|
-| [2026-08-21](2026-08-21-overnight-phase0.md) | Overnight Phase-0 documentation session (docs only, branch `overnight-2026-08-21`) | in progress |
+| [2026-08-21](2026-08-21-overnight-phase0.md) | Overnight Phase-0 documentation session (docs only, branch `overnight-2026-08-21`) | merged `7e8a1cc` after the daytime re-audit and a history rewrite (one non-redistributable PDF) |
+| [2026-08-21](2026-08-21-daytime-remediation.md) | Daytime re-audit of the overnight claims (1 943 checked), six blockers, ADR 0006 accepted, RQ restated | merged in `7e8a1cc`; first push |
+| [2026-08-22](2026-08-22-dod-closure-and-host-h0.md) | DoD closure D′ (★★★ filing) and host H0 (golden-file lane, Tier-0 corpus, schema 1.1, CI host job) | merged `86f0db6` + `61a2358`, CI 8/8 and 9/9 |
