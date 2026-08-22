@@ -1,8 +1,12 @@
 /* SPDX-FileCopyrightText: 2026 Alexander Gomez
  * SPDX-License-Identifier: Apache-2.0
  *
- * spectral_core - public API sketch (ADR 0006: FFT normalisation and window
+ * spectral_core - public API (ADR 0006: FFT normalisation and window
  * conventions, single-source spec shared by the watch and the host).
+ * ADR 0006 is WRITTEN as of 2026-08-21 and ratifies the conventions in
+ * this header verbatim; where it goes further than the header (own
+ * cplx2real, fft2r-only, DC-blocker form, smoothing domain) the record
+ * is the authority.
  *
  * STATUS: declarations only. Bodies land in src/ during roadmap E1; the
  * contract below is what host-tests/ and the golden-file manifest
@@ -73,7 +77,11 @@ typedef enum {
  * sqrt(ENBW)). Mixing them is the classic "my floor is 2 dB off" bug.
  *
  * dB reference: 0 dBFS = a full-scale SINE (amplitude 1.0 -> RMS^2 = 0.5),
- * i.e. dBFS = 10*log10(PS / 0.5). A full-scale square reads +3.01 dBFS.
+ * i.e. dBFS = 10*log10(PS / 0.5). Mind the square: PS is PER BIN, so a
+ * full-scale square's FUNDAMENTAL bin reads +2.10 dBFS (20*log10(4/pi));
+ * +3.01 dBFS is its TOTAL power over all harmonics. Both are asserted in
+ * host-tests -- a test written from the broadband figure against a per-bin
+ * PS fails by 0.92 dB (ADR 0006 D3).
  * The PDM path delivers int16; the backend scales by 1/32768 before the
  * window so "FS" is the 16-bit code range, not the mic's acoustic overload.
  * Absolute dB SPL is a separate, optional calibration offset (validation
@@ -96,13 +104,16 @@ typedef enum {
  *             (no 1/N, no 1/sqrt(N)); spectral_core applies S1/S2 scaling.
  *   n       : power of two, 256 <= n <= 8192
  * Returns 0 on success. Implementations: fft_ref.c (host, radix-2, float),
- * spectral_fft_backend (esp-dsp dsps_fft2r_fc32 / fft4real). The two must
+ * spectral_fft_backend (esp-dsp dsps_fft2r_fc32 + bit_rev + cplx2real; there
+ * is no fft4real API -- see the backend README). The two must
  * agree to the tolerance in docs/validation/golden-files.md, compared in dB. */
 typedef int (*spectral_rfft_fn)(void *user, const float *in, float *out, size_t n);
 
 typedef struct {
     uint32_t fft_size;    /* N: power of two, 256..8192            */
-    uint32_t hop;         /* samples between frames (N/2 = 50 %)  */
+    uint32_t hop;         /* samples between frames. NOT N/2: every
+                           * shipped preset overlaps 69-94 % (hop is
+                           * interval_ms * fs / 1000, ADR 0010 V7). */
     float sample_rate_hz; /* 16000 / 32000 / 48000 (ADR 0003)      */
     spectral_window_t window;
     spectral_scale_t scale;

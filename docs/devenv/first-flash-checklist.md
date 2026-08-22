@@ -70,6 +70,8 @@ GPIO45 is simultaneously the display backlight and the VDD_SPI strapping pin (MT
 | `1` | VDD_SPI fixed by `VDD_SPI_TIEH`/`VDD_SPI_XPD`; GPIO45 ignored at reset | GPIO45 is free — LEDC backlight PWM without constraints. Record `TIEH`/`XPD` too |
 | `0` | GPIO45 level at reset selects VDD_SPI: low/floating → **3.3 V**, high → 1.8 V | **Hardware-destruction risk.** Before any backlight code: confirm the external pull-up on the schematic; mandate LEDC idle-**high** and an explicit release-to-input of GPIO45 inside a single `spectral_reboot()` wrapper that is the only permitted path to `esp_restart()`/deep sleep; add a `_Static_assert`-style review gate in `twatch_bsp`. Never drive GPIO45 low across a reset boundary |
 
+> **Result on the first unit (MAC `48:27:e2:e9:b0:8c`, 2026-08-20): `VDD_SPI_FORCE = 1`, `XPD = 1`, `TIEH = "VDD_SPI connects to VDD3P3_RTC_IO"` — the top row.** GPIO45 is free and the backlight is ordinary LEDC PWM ([ADR 0016](../adr/0016-backlight-gpio45-vdd-spi-strap.md)). The flash read `ef 4018` = JV-class, 3.3 V, so the 1.8 V premise above did not even apply to this unit — which is exactly why the read is a step and not an assumption. **Every new unit repeats it**; a unit that reads `0` is the bottom row and re-opens ADR 0016.
+
 Also settle on paper, from the ESP32-S3 datasheet pin table + schematic, before debugging audio: GPIO47 (PDM DATA) and GPIO48 (I²S BCLK) are in the VDD_SPI domain on R8V parts — see [`../hw/twatch-s3-pins.md`](../hw/twatch-s3-pins.md).
 
 ## Step 4 — Vendor partition table, decoded and committed

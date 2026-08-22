@@ -23,7 +23,7 @@ The watch and the host never share a process; they share **definitions**. Every 
 | Block | Cost | Consequence |
 |---|---|---|
 | Real FFT N = 4096 at 50 Hz | ≈ 6 % of one core with pipeline overhead | The FFT is not the bottleneck; SRAM and display bandwidth are |
-| Real FFT N = 8192 | 112 KB internal SRAM (workspace + twiddles + window + input ring) | Comfortable ceiling; N = 16384 (224 KB) is the hard ceiling; N ≥ 32768 infeasible |
+| Real FFT N = 8192 | ≈ 112–144 KB internal SRAM `(prov.)` — the radix-4 kernel's twiddle table alone is 64 KB, which is what separates the estimates ([03-dsp-pipeline §4.1](../docs/architecture/03-dsp-pipeline.md)) | Comfortable ceiling; N = 16384 (≈ 192–224 KB) is the hard ceiling; N ≥ 32768 infeasible |
 | `dsps_fft2r_sc16` (fixed-point, PIE SIMD) | 6.3× faster than `fc32` but loses one bit per stage | Not usable for a 60–90 dB display without a block-floating-point layer — use `fc32` |
 | `log10f` on every bin | 6–8 % of a core at 2048 bins × 50 Hz | Use a float-exponent fast log, or convert only rendered columns |
 | Time-domain f0 (YIN/MPM, 1024 lags) | ≈ 6 % | MPM needs ~2 periods and fits the 20 ms `live_singing` hop where YIN does not |

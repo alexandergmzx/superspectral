@@ -23,8 +23,12 @@ and XPowersLib's MIT `REG/AXP2101Constants.h` — **not** from arduino-esp32's L
 ## Bring-up facts it established (feed `twatch_bsp`)
 
 - The AXP2101 answers at `0x34` with `IC_TYPE = 0x4A`; `LDO_ONOFF_CTRL0` read `0x2F` on arrival
-  (ALDO1–4 + BLDO2 already on — the vendor firmware's state survives an ESP reset because the PMU
-  is not reset with the SoC). Do not rely on that: set voltages and enable explicitly.
+  (ALDO1–4 + BLDO2 already on). **What that value is** was settled by the
+  [study notes](../../docs/reference-projects/notes/lilygolib-axp2101_notes.md): the datasheet marks
+  every `0x90` enable bit *Default: EFUSE*, `0x2F` matches Zephyr's boot-on set exactly, and it
+  matches **no** vendor firmware sequence (LilyGoLib leaves `0x3E`, TTGO's branch `0xBF`) — so it is
+  the PMU's own eFuse power-up state, not surviving firmware writes as this README first guessed.
+  Either way the operational rule is unchanged: set voltages and enable explicitly, never inherit.
 - ST7789 works with `rgb_ele_order = RGB`, `invert_color = true`, `set_gap(0, 0)`, 20 MHz SPI,
   `esp_lvgl_port` `swap_bytes = true`, 2 × 240×30 RGB565 DMA buffers in internal SRAM.
 - The **registry tarball** `lewisxhe/sensorlib 0.4.1` contains **no AXP2101 code** (the `src/pmic/`

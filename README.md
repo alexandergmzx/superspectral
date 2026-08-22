@@ -2,7 +2,7 @@
 
 A wrist-worn singing-voice spectral analyzer on the LilyGO T-Watch S3 (ESP32-S3), **documented before it is built**. The watch is the live-capture and real-time-display front end of a preset-driven analyzer; a Linux companion does the offline science on recorded takes. It carries the six Spectroid-style presets of the founding research document — [`docs/research/00-linux-analyzer-architecture-and-build-guide.md`](docs/research/00-linux-analyzer-architecture-and-build-guide.md) — onto a device you can wear in a rehearsal room.
 
-> **Research question (provisional).** Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a ≥30 Hz spectrogram (50 Hz for the live-singing preset) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
+> **Research question (provisional).** Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
 
 Full proposal: [`docs/proposal/01-super-spectral-proposal.md`](docs/proposal/01-super-spectral-proposal.md) · Project guide for Claude Code sessions: [`CLAUDE.md`](CLAUDE.md)
 
@@ -29,7 +29,7 @@ Full proposal: [`docs/proposal/01-super-spectral-proposal.md`](docs/proposal/01-
 │                            core 0 — UI task               ▼                                                  │
 │                            ┌──────────────────────────────────────────────────────────────┐                  │
 │                            │ analyzer canvas: raw esp_lcd + ST7789 vertical scroll        │  SPI CS12 MOSI13 │
-│                            │   (50 Hz live_singing, ≥30 Hz others — scroll axis to verify) │  SCK18 DC38     │
+│                            │   (50/50/25/25/25 Hz per preset — scroll axis TBD)            │  SCK18 DC38     │
 │                            │ LVGL 9.5 chrome: preset picker, readouts, status            │ ───────────────►  │
 │                            │ spectrogram history → PSRAM (≈10 min of 256-bin columns)     │  ST7789V3 240×240│
 │                            └──────────────────────────────────────────────────────────────┘  BL = GPIO45 (!) │
@@ -97,7 +97,7 @@ The repo is in Phase 0: documentation first, firmware as configuration stubs onl
 
 ## License
 
-**Split licensing, on purpose** (ADR 0004, pre-registered in [`docs/adr/README.md`](docs/adr/README.md); stated in [`NOTICE`](NOTICE)):
+**Split licensing, on purpose** ([ADR 0004](docs/adr/0004-split-licensing.md), accepted; stated in [`NOTICE`](NOTICE)):
 
 - **Apache-2.0** — the repository default: firmware, DSP core, protocols, documentation, tooling, host tests. See [`LICENSE`](LICENSE). Permissive so the firmware stays upstreamable to ESP-IDF/Zephyr and reusable by other permissive projects; the firmware link line admits only MIT/BSD/Apache components, with copyright lines carried in `NOTICE` and SPDX headers on every file.
 - **GPL-3.0-or-later** — [`host/`](host/) only, under its own [`host/LICENSE`](host/LICENSE). The Linux companion imports parselmouth/Praat (GPLv3) in-process, which a permissive licence cannot do. No code crosses the `host/` boundary in either direction: firmware never depends on `host/`, and `host/` is never linked into firmware.

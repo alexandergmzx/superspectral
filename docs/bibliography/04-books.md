@@ -54,10 +54,10 @@ Priority key: ★★★ must-have/blocking · ★★ strongly recommended · ★
 | 3 | paid | [Pearson](https://www.pearson.com/) — search ISBN 9780131988422 |
 | 4 | free (sample) / paid | Free sample chapter: <https://www.arm.com/-/media/global/resources/education/textbooks/dsp%20sample%20chapter_01_09_19.pdf> · full book: [Arm Education Media](https://www.arm.com/resources/education/books) |
 | 5 | paid | [Northern Illinois University Press / Cornell University Press](https://www.cornellpress.cornell.edu/) — search "Science of the Singing Voice"; widely available used |
-| 6 | paid | [National Center for Voice and Speech](https://ncvs.org/) — publications; ISBN 9780874141221 |
+| 6 | paid (CDN-BLOCK) | [National Center for Voice and Speech](https://ncvs.org/) — publications; ISBN 9780874141221 |
 | 7 | paid | Out of print at the original publisher; search ISBN 9780769301129 at [bookfinder.com](https://www.bookfinder.com) |
 | 8 | paid | <https://doi.org/10.1007/978-3-642-66286-7> (SpringerLink; often in institutional subscriptions) |
-| 9 | paid (used or library copy) | Out of print; Dover reprint via used sellers; library lookup by OCLC 665086 at [worldcat.org](https://www.worldcat.org/oclc/665086) |
+| 9 | paid (used or library copy; CDN-BLOCK) | Out of print; Dover reprint via used sellers; library lookup by OCLC 665086 at [search.worldcat.org](https://search.worldcat.org/title/665086) *(link updated 2026-08-21: `worldcat.org/oclc/…` now redirects to `search.worldcat.org/title/…`)* |
 | 10 | paid | <https://doi.org/10.1007/978-3-540-68888-4> (SpringerLink) |
 
 Institutional SpringerLink access usually covers #8 and #10; check before buying.
@@ -65,3 +65,5 @@ Institutional SpringerLink access usually covers #8 and #10; check before buying
 ## Disclosure
 
 Titles, authors and the ISBNs of #1–#3 and #5–#8 come from the 2026-08-20 research session's domain map (which recorded them from publisher pages and the CCRMA site); #4's full-title/ISBN, #9's OCLC and #10's ISBN/DOI are model-recalled and marked "(verify)" where the number itself matters. Editions and prices reflect the session date and **must be verified before purchase**. Nothing is filed yet (roadmap D3); [`../books/`](../books/README.md) is empty.
+
+**Link layer re-checked live on 2026-08-21** (HTTP status only — no book, sample chapter or PDF was downloaded; no ISBN, OCLC, edition or price was changed). Resolving normally: #1 (ccrma.stanford.edu SASP site and the W3K store), #2/#3 (pearson.com, bookfinder.com), #4 (the Arm sample-chapter PDF URL and the Arm Education Media page), #5 (cornellpress.cornell.edu), #7 (bookfinder.com), #8 and #10 (doi.org). Answering 403 to a scripted fetch, so the Access cell now carries **(CDN-BLOCK)** and the URL was left as-is: #6 (ncvs.org). #9's `worldcat.org/oclc/665086` redirects to `search.worldcat.org/title/665086`; the row now carries the redirect target, which itself answers 403 to scripts (browser only) — the OCLC number was **not** changed and is still model-recalled. DOI landing checks: #8 `10.1007/978-3-642-66286-7` resolves to "Linear Prediction of Speech" (Markel, Springer 1976) — matches; #10 `10.1007/978-3-540-68888-4` resolves to a record titled simply "Psychoacoustics" (Fastl, Springer 2007) — the subtitle "Facts and Models" is not in the DOI record, which is normal for Springer and not treated as a mismatch. Still **model-recalled**: everything the HTTP status cannot speak to — #4's full title/ISBN, #9's OCLC, #10's ISBN, and every edition year and price.

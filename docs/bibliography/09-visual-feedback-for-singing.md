@@ -10,7 +10,7 @@
 
 This is a **thematic list** (see the numbering note in [08](08-voice-metrology-on-the-wrist.md): `05 #n` rows are cross-references to the by-type index and carry no acquisition link here; local `S`/`R`/`P`/`D` rows are new and get their home address when the parallel indexes freeze). Cite as `09 R1`. Every document has exactly one row; where a second section also rests on it, that section says so in prose under its table rather than repeating the row.
 
-**Downstream of this list:** §1 and §5 get rewritten with inline citations; [ADR 0011](../adr/README.md) (colormap/RGB565 LUT), [ADR 0012](../adr/README.md) (hands-free interaction) and the §4 latency rows cite sections B–D; the six presets are compared against the WinSingad/Sing&See display set in the §5 novelty statement.
+**Downstream of this list:** §1 and §5 get rewritten with inline citations; [ADR 0011](../adr/0011-spectrogram-colormap.md) (colormap/RGB565 LUT), [ADR 0012](../adr/0012-hands-free-interaction.md) (hands-free interaction) and the §4 latency rows cite sections B–D; the six presets are compared against the WinSingad/Sing&See display set in the §5 novelty statement.
 
 ## Priority key (same scale as the rest of the bibliography)
 
@@ -43,7 +43,7 @@ The speech-training-aid branch of the same lineage — **Öster (2006)**, [05 #7
 
 ## B. Latency — what "real-time" has to mean on a wrist
 
-Grounds the §4 rows *acoustic-to-photon ≤ 80 ms mean / ≤ 120 ms p99*, *analysis-to-GPIO*, and *sustained refresh ≥ 30 Hz (50 Hz `live_singing`)*, and the §7 statement of what the user can perceive.
+Grounds the §4 rows *acoustic-to-photon ≤ 80 ms mean / ≤ 120 ms p99*, *analysis-to-GPIO*, and *sustained refresh* — per-preset since 2026-08-21, 50 Hz `live_singing`/`diction_consonants`, 25 Hz the other three — and the §7 statement of what the user can perceive.
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|
@@ -55,7 +55,7 @@ Grounds the §4 rows *acoustic-to-photon ≤ 80 ms mean / ≤ 120 ms p99*, *anal
 
 ## C. Legibility — colormaps, RGB565 and daylight
 
-Grounds [ADR 0011](../adr/README.md) (cividis/batlow-class, pre-quantised 256-entry RGB565 LUT with ordered dithering, or ST7789 18-bit mode at SPI-bandwidth cost) and the `display_backend` component.
+Grounds [ADR 0011](../adr/0011-spectrogram-colormap.md) (cividis/batlow-class, pre-quantised 256-entry RGB565 LUT with ordered dithering, or ST7789 18-bit mode at SPI-bandwidth cost) and the `display_backend` component.
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|
@@ -67,18 +67,18 @@ Grounds [ADR 0011](../adr/README.md) (cividis/batlow-class, pre-quantised 256-en
 | [05 #81](05-papers.md) | **Liu & Heer (2018)** — empirical assessment of quantitative colormaps, CHI 2018 | ★★ | The task-dependent caveat (peak reading vs texture judgement): ADR 0011 must name the task each preset optimises for, and the O3 sessions include a peak-reading task. |
 | [05 #82](05-papers.md) | **Ware (1988)** — color sequences for univariate maps, IEEE CG&A 8(5) | ★ | The founding theory of sequential colour maps — background for ADR 0011's luminance-monotonic requirement. |
 | D1 | **Sitronix ST7789V3 datasheet — `COLMOD (3Ah)` and `RAMCTRL` sections** — home: [01](01-datasheets.md) | ★★★ | 16-bit (RGB565) vs 18-bit (RGB666) pixel formats and the SPI-bandwidth cost of the latter; the vertical-scroll registers (`VSCRDEF`/`VSCSAD`) that ADR 0007 depends on. The datasheet decides whether dithering or 18-bit mode is the cheaper fix. |
-| P2 | **Scientific Colour Maps** tables + matplotlib `cividis` — home: [06](06-reference-projects.md) #37 | ★★ | The source tables the LUT generator (a script under `python-scripts/`) reads — grounds [ADR 0011](../adr/README.md) (the pre-quantised RGB565 LUT is derived from these tables, not hand-tuned) and [ADR 0004](../adr/README.md) (MIT / BSD-style upstream, so the generated LUT compiled into Apache-2.0 firmware is licence-clean; record the upstream version in the LUT header). |
+| P2 | **Scientific Colour Maps** tables + matplotlib `cividis` — home: [06](06-reference-projects.md) #37 | ★★ | The source tables the LUT generator (a script under `python-scripts/`) reads — grounds [ADR 0011](../adr/0011-spectrogram-colormap.md) (the pre-quantised RGB565 LUT is derived from these tables, not hand-tuned) and [ADR 0004](../adr/0004-split-licensing.md) (MIT / BSD-style upstream, so the generated LUT compiled into Apache-2.0 firmware is licence-clean; record the upstream version in the LUT header). |
 | — | **Sunlight legibility at the panel's ≈ 450 cd/m²** — no source yet | ★ | Vendor brightness figures are claims; the O3 sessions should include one outdoor condition. Route to §7. |
 
 ## D. Glanceable, hands-free interaction
 
-Grounds [ADR 0012](../adr/README.md) (wrist-raise arm via BMA423, haptic confirm via DRV2605L, auto-arm on voice onset) and the `ui` component.
+Grounds [ADR 0012](../adr/0012-hands-free-interaction.md) (wrist-raise arm via BMA423, haptic confirm via DRV2605L, auto-arm on voice onset) and the `ui` component.
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|
 | R3 | **Apple — Human Interface Guidelines: Designing for watchOS** (snapshot) — home: [07](07-technical-reports.md) | ★★ | Glance duration, minimum touch targets, "interactions should take seconds", complications vs full apps — the vocabulary for a display meant to be read mid-phrase, not operated — grounds ADR 0012's glance-time and target-size rules and the `ui` component's screen budget. |
 | R4 | **Google — Wear OS app quality guidelines + design principles** (snapshot) — home: [07](07-technical-reports.md) | ★★ | The Android-side equivalent; its "one-handed / no-handed" guidance is the closest published rule for a singing context — the second source under ADR 0012's auto-arm rule. |
-| S2 | **ISO 9241-210:2019** human-centred design · **ISO 9241-112:2017** presentation of information — home: [03](03-standards.md) | ★ | The citable anchor for the UI claims of ADR 0012 and for the §4 O3 session protocol being a *usability evaluation*, not an opinion poll. Paid. |
+| S2 | **ISO 9241-210** human-centred design · **ISO 9241-112** presentation of information — **the edition of each is owned by [03 #22](03-standards.md)**, which corrected 9241-112 on 2026-08-21; do not restate a year here, and read it there before buying (the edition this row used to name has been replaced) | ★ | The citable anchor for the UI claims of ADR 0012 and for the §4 O3 session protocol being a *usability evaluation*, not an opinion poll. Paid. |
 | — | **Hands-busy / eyes-busy interaction literature** — no specific source yet | ★ | Gap: the singing context is hands-busy (score, instrument), breath-busy (no voice commands) and partially eyes-busy. Route to a search task in D3; until then ADR 0012 rests on R3/R4. |
 
 ## E. Accessibility as a feature, not a checkbox
@@ -132,18 +132,18 @@ When a file lands, add `📥 Filed locally: <relative path>` to the entry in its
 > **📥 Filed locally (D3 pass, 2026-08-20)** — by home file: D1 ST7789V3 preliminary V0.0 → [01](01-datasheets.md#acquisition-links) (#13); Howard et al. 2004, Wilson et al. 2007, McPherson et al. 2016, Liu & Heer 2018 → [05](05-papers.md#acquisition-links) (#68, #71, #84, #81). No R/S snapshots were taken. Paper links are in [05 — Acquisition links](05-papers.md#acquisition-links); the table below covers the local S/R/P/D entries only.
 > **Browser-only:** R1–R4 and S3 are living web pages (print-to-PDF with the capture date in the filename).
 
-Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` · `mirror` · `free, reg.` · `REPO` · `PORTAL`; qualifiers live in the Link cell.
+Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` · `mirror` · `free, reg.` · `REPO` · `PORTAL`; qualifiers live in the Link cell, except **(CDN-BLOCK)**, which sits in the Access cell and means the host answered a scripted fetch with 403 or a sign-in challenge on 2026-08-21 and must be opened in a browser (legend in [`acquisition-status.md`](acquisition-status.md)).
 
 | # | Access | Link |
 |---|--------|------|
 | S1 | free | [itu.int/rec/R-REC-BT.1359](https://www.itu.int/rec/R-REC-BT.1359) |
-| S2 | paid | [iso.org — ISO 9241-210:2019](https://www.iso.org/standard/77520.html) · [ISO 9241-112:2017](https://www.iso.org/standard/64840.html) (verify record numbers) |
-| S3 | free | [w3.org/TR/WCAG22](https://www.w3.org/TR/WCAG22/) (HTML; print-to-PDF) |
+| S2 | paid (CDN-BLOCK) | **Buy from the record [03 #22](03-standards.md) names** — that file owns the editions and their ISO catalogue numbers. The link previously carried here, `iso.org/standard/64840.html`, is the **2017** edition of ISO 9241-112, which 03 #22 records as replaced; following it buys the wrong text. |
+| S3 | free (CDN-BLOCK) | [w3.org/TR/WCAG22](https://www.w3.org/TR/WCAG22/) (HTML; print-to-PDF) |
 | S4 | free (GET) | [etsi.org — EN 301 549](https://www.etsi.org/deliver/etsi_en/301500_301599/301549/) (pick the latest version directory) |
 | R1 | free | [singandsee.com/research-visual-feedback](https://www.singandsee.com/research-visual-feedback) (living page — print-to-PDF) |
 | R2 | free | [vocevista.com](https://www.vocevista.com/) — product and "method" pages (living page — print-to-PDF; verify current URL) |
 | R3 | free | [developer.apple.com — Designing for watchOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-watchos) (living page — print-to-PDF) |
-| R4 | free | [developer.android.com — Wear OS quality guidelines](https://developer.android.com/docs/quality-guidelines/wear-app-quality) · [Wear OS design principles](https://developer.android.com/design/ui/wear) (living pages — print-to-PDF) |
+| R4 | free (CDN-BLOCK) | [developer.android.com — Wear OS quality guidelines](https://developer.android.com/docs/quality-guidelines/wear-app-quality) · [Wear OS design principles](https://developer.android.com/design/ui/wear) (living pages — print-to-PDF) |
 | P1 | free | KTH TMH software pages (search "Madde Granqvist"; hosting has moved — verify) |
 | P2 | REPO | see [06](06-reference-projects.md) #37 |
 | D1 | mirror | see [01](01-datasheets.md) (ST7789V3) |
@@ -151,3 +151,5 @@ Access vocabulary (as in [README](README.md)): `free` · `free (GET)` · `paid` 
 ## Disclosure
 
 Written 2026-08-20. **Live-verified that day:** the WinSingad PDF (imerc.org), the Sing&See research index, Hoppe et al. 2006 (DOI and venue), Wilson et al. 2008 (venue, pages, author PDF), the 2022 Applied Sciences review (DOI), the 2026 arXiv survey, Jack et al. 2018, Nuñez et al. 2018, Crameri et al. 2020, Liu & Heer 2018. **Model-recalled:** the ITU-R BT.1359 tolerance figures quoted in S1 (check the current edition), the ISO record numbers for S2, the VoceVista and Madde URLs, the Öster thesis (existence and year flagged "verify" in 05 #75), the Apple/Google page URLs (they move with each OS release). The gaps marked "—" (refresh-vs-perception on a small screen, sunlight legibility, hands-busy interaction) are genuine: no source was found in this session and none is being invented; they are routed to the O3/O4 studies and to a D3 search task. Nothing in this file has been filed or OCR'd yet.
+
+**Link layer re-checked live on 2026-08-21** (HTTP status only — no PDF was downloaded; no figure, tolerance, record number or priority was changed). Resolving normally: S1 (itu.int BT.1359 listing), S4 (etsi.org EN 301 549 directory), R1 (singandsee.com research page), R2 (vocevista.com), R3 (developer.apple.com watchOS HIG). Marked **(CDN-BLOCK)**, URL left unchanged: S2 (both iso.org record pages answer 403 to scripts), S3 (w3.org/TR/WCAG22 answers 403 to scripts), R4 (both developer.android.com pages bounce a scripted fetch into a `accounts.google.com` sign-in probe and never return the page). No URL in this file was dead, so nothing was replaced. The paper DOIs cited by this file were checked at `doi.org` from [05](05-papers.md) — Hoppe et al. 2006 (`10.1111/j.1365-2729.2006.00178.x`), Welch et al. 2005 (`10.1080/14613800500169779`), Howard et al. 2004 (`10.1080/14015430410000728`), Leong & Cheng 2014 (`10.1111/jcal.12046`), the 2022 *Applied Sciences* review (`10.3390/app122110781`), Jack et al. 2018 (`10.1525/mp.2018.36.1.109`), Nuñez et al. 2018 (`10.1371/journal.pone.0199239`), Crameri et al. 2020 (`10.1038/s41467-020-19160-7`), Liu & Heer 2018 (`10.1145/3173574.3174172`) — all resolve and all landing titles match. Still **model-recalled**: the BT.1359 tolerance figures (the ITU listing page resolves; the numbers inside it were not read), the S2 ISO record numbers (a 403 store page cannot confirm them), P1's Madde/KTH hosting, and the Öster thesis.

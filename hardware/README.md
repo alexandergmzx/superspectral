@@ -16,7 +16,7 @@ LilyGO T-Watch S3, SX1262 variant — schematic `T_WATCH_S3.pdf` V1.4 and the 20
 | Block | Part | Facts that bind the design |
 |---|---|---|
 | SoC | ESP32-S3-R8, chip-down QFN56 | Not a module ⇒ **no inherited FCC/RED certification** (stated, not assumed — ADR 0005/0017 territory); 512 KB SRAM, 8 MB octal PSRAM; single-precision FPU |
-| Flash | Winbond W25Q128JW, 16 MB, **1.8 V only** | Forces the R8-vs-R8V / VDD_SPI question; backlight GPIO45 is the VDD_SPI strapping pin — resolve from the eFuse read (roadmap E2) **before any backlight code** |
+| Flash | 16 MB. The schematic names the **1.8 V W25Q128JW**; the shipped die on this unit reads JEDEC `ef 4018` — a **3.3 V JV-class part** (read 2026-08-20, [`docs/hw/`](../docs/hw/README.md)) | The R8-vs-R8V / VDD_SPI question is **closed**: `VDD_SPI_FORCE = 1` (TIEH, 3.3 V), so GPIO45 is free for backlight PWM. [ADR 0016](../docs/adr/0016-backlight-gpio45-vdd-spi-strap.md), accepted |
 | Microphone | Knowles SPM1423HM4H-B, PDM, top port, on GPIO44 (CLK) / GPIO47 (DATA) | −22 dBFS sensitivity, 61.5 dB(A) SNR, PDM clock 1.0–3.25 MHz, AOP 110 dB SPL (Rev A, page-verified; Rev D says 115 — pin one revision); **obsolete** at distributors; its rail is not documented — read it from the schematic |
 | Amplifier / speaker | MAX98357A on I2S1 (BCLK 48 / LRCLK 15 / DIN 46); transducer **undocumented** | Calibration-tone source only; needs the speaker spec from LilyGO before gain is set |
 | Display | 240×240 IPS, ST7789V3, SPI (CS 12 / MOSI 13 / SCK 18 / DC 38), BL GPIO45, MISO and RESET not connected | T_SCYCW differs 4× between ST7789 revisions (66 ns vs 16 ns) — pixel-clock ceiling is empirical; start at 20 MHz |

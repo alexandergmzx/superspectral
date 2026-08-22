@@ -1,6 +1,6 @@
 # Environment lock — what exactly is installed
 
-**Status: template — to be filled in roadmap phase E1** (the first `tools/env-lock.sh` run after the gate build). Until then every field inside the markers reads `TBD`.
+**Status: filled 2026-08-21** by `tools/env-lock.sh`, after the roadmap E1 gate build. Every field inside the markers below is generated — regenerate it, never hand-edit it, per §*How to regenerate*.
 
 [`../../.envrc`](../../.envrc) pins the ESP-IDF *path* (`~/esp/idf/v6.0.2`, `~/esp/tools/v6.0.2`). It does not pin the *contents*: the commit the tag resolved to, which toolchain build IDs `install.sh` downloaded, which Python the venv was built on, which container digest CI used. This file does (critic B4). It is the companion of `firmware/twatch-s3/dependencies.lock` (which pins registry components) and of the digest-pinned container in [`../../.github/workflows/ci.yml`](../../.github/workflows/ci.yml).
 

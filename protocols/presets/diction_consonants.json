@@ -1,0 +1,61 @@
+{
+  "analysis": {
+    "averaging": "none",
+    "db_reference": "dbfs_sine",
+    "dc_blocker_hz": 20,
+    "decimations": 0,
+    "fft_size": 1024,
+    "hold": "none",
+    "interval_ms": 10,
+    "resolution": {
+      "bin_width_hz": 31.25,
+      "enbw_hz": 46.875,
+      "hop_samples": 320,
+      "window_duration_ms": 32.0
+    },
+    "sample_rate_hz": 32000,
+    "smoothing": 0.0,
+    "spectrum_type": "power_spectrum",
+    "weighting": "Z",
+    "window": {
+      "coefficients": [
+        0.5,
+        0.5
+      ],
+      "coherent_gain": 0.5,
+      "coherent_gain_db": -6.0206,
+      "enbw_bins": 1.5,
+      "form": "periodic",
+      "name": "hann"
+    }
+  },
+  "description": "Short window and a 10 ms hop for transient work - plosive bursts and fricative noise bands. Two spectrogram columns per rendered frame.",
+  "display": {
+    "db_ceiling_dbfs": 0,
+    "db_floor_dbfs": -90,
+    "freq_max_hz": 12800,
+    "freq_min_hz": 100,
+    "freq_scale": "log",
+    "overlays": [
+      "peak_markers",
+      "clipping"
+    ],
+    "refresh_hz_target": 50
+  },
+  "guidance": "Speak or sing text at performance loudness; plosives at close range clip easily, so watch the clipping flag rather than the level meter.",
+  "id": "diction_consonants",
+  "mic_eq": {
+    "mode": "none"
+  },
+  "name": "Diction and consonants",
+  "provisional": [
+    "/analysis/dc_blocker_hz",
+    "/display/db_floor_dbfs",
+    "/display/freq_max_hz"
+  ],
+  "schema_version": "1.0.0",
+  "targets": [
+    "watch",
+    "host"
+  ]
+}

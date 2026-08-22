@@ -35,11 +35,15 @@
 #define TWATCH_PIN_LCD_MOSI 13
 #define TWATCH_PIN_LCD_SCK  18
 #define TWATCH_PIN_LCD_DC   38
-/* GPIO45 is ALSO the VDD_SPI strapping pin. With a 1.8 V W25Q128JW flash,
- * driving it low across a reset may select 3.3 V for VDD_SPI if the eFuse
- * VDD_SPI_FORCE is 0. No code may touch this pin until ADR 0016 resolves
- * VDD_SPI_FORCE from the E2 eFuse read (docs/hw/efuse-baseline.json). */
-#define TWATCH_PIN_LCD_BL   45 /* backlight PWM, HAZARD: see above */
+/* GPIO45 is ALSO the VDD_SPI strapping pin (MTDI). The hazard was: if the
+ * flash were the 1.8 V W25Q128JW the schematic names AND the eFuse
+ * VDD_SPI_FORCE were 0, then driving this pin across a reset would select the
+ * wrong VDD_SPI rail. RESOLVED on this unit, 2026-08-20 (ADR 0016, accepted):
+ * VDD_SPI_FORCE = 1 (TIEH, 3.3 V), so the strap is inert, and the shipped die
+ * reads JEDEC ef 4018 - a 3.3 V JV-class part, not the JW. Backlight PWM on
+ * GPIO45 is therefore allowed. Re-read docs/hw/efuse-baseline.json before
+ * assuming this holds on a DIFFERENT unit; the eFuse is per-device. */
+#define TWATCH_PIN_LCD_BL   45 /* backlight PWM; see the VDD_SPI note above */
 TWATCH_ASSERT_NOT_USJ(TWATCH_PIN_LCD_CS);
 TWATCH_ASSERT_NOT_USJ(TWATCH_PIN_LCD_MOSI);
 TWATCH_ASSERT_NOT_USJ(TWATCH_PIN_LCD_SCK);

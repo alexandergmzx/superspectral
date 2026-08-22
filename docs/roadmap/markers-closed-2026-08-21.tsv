@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Regression guard for python-scripts/check_markers.py --closed.
+# THREE tab-separated fields:  <path>\t<regex that must NOT match any line>\t<what closed it>
+#
+# Every row is a claim that was wrong and has been corrected. If any of these
+# patterns matches again, a correction has been undone or reintroduced -- which
+# is exactly what happened on 2026-08-20, when the 1.8 V flash correction was
+# written into ADR 0016 and eleven other files kept the old claim for a day.
+#
+# Keep the patterns NARROW. A pattern broad enough to match the explanation of
+# a correction will fire on the fix itself.
+datasets/corpora/manifest.yaml	flags: \[[^]]*unstated-terms	Saarbruecken licence located 2026-08-21: CC BY 4.0 via Zenodo 16874898
+datasets/corpora/manifest.yaml	spdx: NOASSERTION	same
+docs/bibliography/10-datasets-and-ground-truth.md	> 2 000 speakers \(687 healthy	counts recomputed from the site index CSV 2026-08-21 (2 225 sessions / 1 853 speakers)
+docs/bibliography/05-papers.md	DOI 10\.1121/1\.4949534 \(\[author PDF	dead DOI replaced 2026-08-21 with 10.1121/1.4944474, JASA 139(3) 1404-1410
+docs/bibliography/05-papers.md	\*\*Müller, M\., et al\. \(2023\)	author order corrected 2026-08-21 from CrossRef: Wang, Mueller, Caffier, Caffier
+docs/bibliography/03-standards.md	#34 \(no September 2019 revision exists	retracted 2026-08-21: the FDA guidance cover page names the 2019-09-27 revision
+docs/validation/golden-files.md	^    method: filtered	no released parselmouth reaches Praat 6.4; golden sets pin raw-ac (ADR 0009 amendment)
+docs/validation/golden-files.md	window coefficients vs `scipy\.signal\.get_window	preset `nuttall` has no SciPy name (0.0163 apart); windows come from the coefficient table
+firmware/twatch-s3/sdkconfig.defaults.esp32s3	FFT scratch,\n?.*PSRAM	FFT scratch is internal SRAM (CLAUDE.md tenet 3); corrected 2026-08-20
+firmware/twatch-s3/components/twatch_bsp/include/twatch_pins.h	No code may touch this pin	ADR 0016 accepted: VDD_SPI_FORCE = 1, GPIO45 free for backlight PWM
+hardware/README.md	\*\*1\.8 V only\*\*	shipped die reads JEDEC ef 4018, a 3.3 V JV-class part (read 2026-08-20)
+docs/architecture/12-interaction-model.md	start-up time out of BLDO2 is unread	read 2026-08-21 from the filed SLOS854D: 0.7 ms typ / 1.5 ms typ / <= 7 uA standby
+docs/reference-projects/notes/lilygolib-axp2101_notes.md	GATECTRL.*\*\*unconfirmed\*\*	confirmed 2026-08-21 against ST7789V3 spec 9.2.28: NL 0x1D = 240 gate lines
+docs/hw/twatch-s3-pins.md	verify in the datasheet strapping table	read 2026-08-21: ESP32-S3 datasheet v2.2 Table 3-1

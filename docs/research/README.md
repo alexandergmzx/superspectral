@@ -6,7 +6,7 @@ The founding document of the project, preserved as it was written — before the
 
 ## How it relates to Super Spectral
 
-The document's central split — "by physics": a low-latency **live path** and a heavy **offline path** — is the origin of the companion architecture (ADR 0002, pre-registered in [`../adr/README.md`](../adr/README.md)). Super Spectral moves the live path from a browser tab onto the T-Watch S3 and keeps the offline path on the Linux host under [`../../host/`](../../host/):
+The document's central split — "by physics": a low-latency **live path** and a heavy **offline path** — is the origin of the companion architecture ([ADR 0002](../adr/0002-companion-architecture.md), accepted). Super Spectral moves the live path from a browser tab onto the T-Watch S3 and keeps the offline path on the Linux host under [`../../host/`](../../host/):
 
 | In the research document | In Super Spectral |
 |---|---|

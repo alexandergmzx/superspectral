@@ -1,7 +1,9 @@
 # SPDX-FileCopyrightText: 2026 Alexander Gomez
 # SPDX-License-Identifier: Apache-2.0
 #
-# LilyGO T-Watch S3: ESP32-S3-R8 chip-down, 16 MB Winbond W25Q128JW (1.8 V)
+# LilyGO T-Watch S3: ESP32-S3-R8 chip-down, 16 MB Winbond flash reading JEDEC
+# `ef 4018` = W25Q128JV-class, 3.3 V on this unit (the schematic says W25Q128JW,
+# a 1.8 V part; it does not describe this silicon - docs/hw/README.md, ADR 0016)
 # QUAD flash, 8 MB OCTAL in-package PSRAM - an "F4R8" combination
 # (Flash Quad + RAM Octal). Hardware facts: docs/hw/twatch-s3-pins.md.
 #
@@ -24,13 +26,17 @@ CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
 # writes the bootloader in dio and the bootloader upgrades itself to quad.
 # Do not "fix" it.
 
-# ---- VDD_SPI: 1.8 V flash, keep the DEFAULT 1.9 V boost ---------------------
-# W25Q128JW operates 1.7-1.95 V; 1.9 V is the programming-current headroom
-# against "flash writes corrupt under load". BOOTLOADER_VDDSDIO_BOOST_1_8V
-# `depends on !ESPTOOLPY_FLASHFREQ_80M`, so the wrong choice is unreachable
-# at 80 MHz anyway. Whether VDD_SPI is eFuse-forced (VDD_SPI_FORCE) or set by
-# the GPIO45 strap is unknown until the E2 eFuse read - see ADR 0016 and the
-# GPIO45/backlight rule in docs/hw/twatch-s3-pins.md.
+# ---- VDD_SPI: eFuse-forced to 3.3 V on this unit; the boost is inert -------
+# The eFuse read of 2026-08-20 gave VDD_SPI_FORCE=1, VDD_SPI_XPD=1 and
+# VDD_SPI_TIEH="VDD_SPI connects to VDD3P3_RTC_IO", i.e. VDD_SPI is tied to the
+# 3.3 V rail and the internal LDO is out of the path. ESP-IDF's own Kconfig help
+# says of this option, verbatim: "This option has no effect if VDDSDIO is set to
+# 3.3V, or if the internal VDDSDIO regulator is disabled via eFuse." So on THIS
+# unit the line below changes nothing. It is kept because it is also the IDF
+# default, because it is the right value for any unit that does read 1.8 V, and
+# because BOOTLOADER_VDDSDIO_BOOST_1_8V `depends on !ESPTOOLPY_FLASHFREQ_80M`
+# and is unreachable at 80 MHz anyway. Every new unit re-reads its own eFuses
+# (docs/devenv/first-flash-checklist.md) before this comment is trusted.
 CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V=y
 
 # ---- PSRAM: 8 MB octal @ 80 MHz ---------------------------------------------

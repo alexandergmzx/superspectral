@@ -23,4 +23,4 @@ HIL jobs never run on fork pull requests and never cancel mid-flash (a cancelled
 
 ## Background reading
 
-QEMU peripheral matrix, `pytest-embedded`, `idf-build-apps`, host-apps and unit-test guides, OTA/rollback and the USB-Serial-JTAG console guide are catalogued in [`../docs/bibliography/11-esp-idf-platform-and-toolchain.md`](../docs/bibliography/11-esp-idf-platform-and-toolchain.md); the anti-brick rules they enforce are ADR 0015 (backlog, [`../docs/adr/README.md`](../docs/adr/README.md)) and [`../docs/devenv/`](../docs/devenv/).
+QEMU peripheral matrix, `pytest-embedded`, `idf-build-apps`, host-apps and unit-test guides, OTA/rollback and the USB-Serial-JTAG console guide are catalogued in [`../docs/bibliography/11-esp-idf-platform-and-toolchain.md`](../docs/bibliography/11-esp-idf-platform-and-toolchain.md); the anti-brick rules they enforce are [ADR 0015](../docs/adr/0015-anti-brick-policy.md) (accepted) and [`../docs/devenv/`](../docs/devenv/).

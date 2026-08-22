@@ -82,7 +82,7 @@ The race is winnable because the ROM's download-mode window precedes the app ent
 LilyGO's documented recovery: *remove the battery, hold the BOOT button, press the crown briefly, then release BOOT; long-press the crown afterwards to exit.* With the back cover off and the battery lifted, BOOT (GPIO0) + power-on puts the ROM into download mode regardless of what the firmware did to GPIO19/20 — unless `DIS_USB_SERIAL_JTAG` was burned, which this project never does ([first-flash-checklist.md](first-flash-checklist.md)).
 
 - Have the correct drivers and **a spare back-cover gasket and screws** on hand *before* you need them; the flex cables to the display and touch panel are the parts that die in a hurried teardown.
-- While the cover is off, **do not touch GPIO45** with anything — it is the VDD_SPI strap on a 1.8 V-flash board (ADR 0016).
+- While the cover is off, **do not touch GPIO45** with anything. On *this* unit the strap is neutralised — VDD_SPI is eFuse-forced to 3.3 V, so GPIO45 is never sampled ([ADR 0016](../adr/0016-backlight-gpio45-vdd-spi-strap.md)) — but it is still the backlight driver, and on a unit whose eFuses have not been read it is the VDD_SPI strap and a hardware-destruction risk. Read the eFuses first; treat every unread unit as strapped.
 - In download mode, restore either the factory backup (`write-flash 0 twatch-s3-factory-backup-<date>.bin`, see the checklist) or a known-good build to ota_0 with `tools/flash.sh --recovery-image`.
 - Before closing the case: flash a build whose first log line is the boot guard, and verify `esptool flash-id` works through USJ with the case still open.
 

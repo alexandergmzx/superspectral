@@ -5,5 +5,18 @@
 skip = ./build,./build_*,./managed_components,./.git,./.direnv,./scratch,./docs/reference-projects/clones,*.bin,*.map,*.svg,*.f32,*.wav,*.pdf,*.ocr.md,*.lock,*.ipynb
 # ba = Bland–Altman · nd = "n.d." · te = Ternström/Titze citations · hel = Hz-label abbreviation
 # fo = f0-adjacent token · ser = serial abbreviation in esptool output · ocr = tool name
-ignore-words-list = ba,nd,te,hel,ser,ocr,ans,fo,crate,thirdparty
+#
+# Added 2026-08-21, on the first `pre-commit run -a` (the hooks had never been run
+# under pre-commit itself). All four are domain vocabulary or URL fragments that
+# codespell reads as English:
+#   afe    = Audio Front End (the ESP-SR AFE that CLAUDE.md Never-rule 8 forbids);
+#            codespell wants SAFE. 13 hits across the ADRs and the bibliography.
+#   dout   = Data Out, the I2S pin name on the MAX98357A side; codespell wants DOUBT.
+#   medias = a path segment inside DigiKey's CDN URLs (/Volume0/opasdata/.../medias/).
+#   commun = "Nature Commun." in an abbreviated journal citation.
+#   siz    = a fragment inside a percent-encoded URL.
+#   exten  = the AXP2101's EXTEN (external enable) pin, pin 32 on this package;
+#            codespell wants EXTEND/EXTENT. Added 2026-08-21 when the re-audit
+#            read the schematic and found T_RST reaching it through R41.
+ignore-words-list = ba,nd,te,hel,ser,ocr,ans,fo,crate,thirdparty,afe,dout,medias,commun,siz,exten
 quiet-level = 3

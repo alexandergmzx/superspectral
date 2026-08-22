@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Super Spectral - partition table for the LilyGO T-Watch S3.
-# Flash: Winbond W25Q128JW, 16 MB (0x1000000), 1.8 V part. Table at 0x8000
+# Flash: 16 MB (0x1000000) Winbond, JEDEC `ef 4018` = W25Q128JV-class, 3.3 V on
+# this unit (the schematic's W25Q128JW/1.8 V marking does not match). Table at 0x8000
 # (CONFIG_PARTITION_TABLE_OFFSET), one 4 KB sector. Data partitions are
 # 0x1000-aligned; app partitions are 0x10000-aligned (gen_esp32part.py rule).
 #

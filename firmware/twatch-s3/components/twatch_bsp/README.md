@@ -23,7 +23,7 @@ Rails: DC1 = SoC · ALDO2 = backlight (**last**, ramped) · ALDO3 = display + to
 
 | File | Owns | Gate |
 |---|---|---|
-| `twatch_pmu_axp2101.c` | ~300-line AXP2101 driver over `i2c_master_bus_handle_t`; SensorLib `PmicAXP2101` is the fallback | `docs/hw/efuse-baseline.json` committed (roadmap E2) |
+| `twatch_pmu_axp2101.c` | ~300-line AXP2101 driver over `i2c_master_bus_handle_t`. **No fallback:** `PmicAXP2101` is on SensorLib's GitHub master, not in the `~0.4.1` registry tarball we pin | `docs/hw/efuse-baseline.json` committed (roadmap E2) |
 | `twatch_display.c` | in-tree `esp_lcd_new_panel_st7789()` at 20 MHz first; `set_gap`/invert/mirror tuned on hardware | ALDO3 sequencing proven |
 | `twatch_touch.c` | `esp_lcd_touch_new_i2c_ft5x06()`, `max_point_num = 2` | same |
 | `twatch_audio.c` | `i2s_channel_init_pdm_rx_mode()` on I2S0; `i2s_channel_init_std_mode()` on I2S1; DMA in `MALLOC_CAP_INTERNAL \| MALLOC_CAP_DMA` | mic/amp rail question answered |

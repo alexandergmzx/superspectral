@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Super Spectral pre-commit configuration.
-# Install:  pip install pre-commit && pre-commit install && pre-commit install -t commit-msg
+# Install:  pipx install pre-commit && pre-commit install && pre-commit install -t commit-msg
+#           (pipx, not `pip install --user` and not `uvx`: `pre-commit install` writes the
+#            interpreter path into .git/hooks/pre-commit, so the tool must stay on PATH.)
 # Manual-stage hooks (need an activated ESP-IDF shell):  pre-commit run --hook-stage manual -a
 #
 # Every `rev:` below was current on 2026-08-20 unless marked VERIFY. Run
@@ -24,7 +26,14 @@ repos:
         exclude: *generated
       - id: check-merge-conflict
       - id: check-added-large-files
-        args: ["--maxkb=1024"]      # reference-library PDFs are added deliberately; bump per file if needed
+        args: ["--maxkb=1024"]
+        # The reference library is excluded from the SIZE check, not waived: its 12 tracked
+        # PDFs are bimodal (0.15-1.3 MB papers, 2.5-15 MB vendor docs), so any cap that lets
+        # the legitimate ones through lets everything through, and a cap people routinely
+        # SKIP= is not a guard. Size was never the rule that was broken for a PDF -- licence
+        # was -- and the `pdf-redistributable` local hook below is that rule. Outside the
+        # library (a factory-backup .bin, a WAV) 1 MB still bites.
+        exclude: '^docs/(papers|datasheets|standards|reports|app-notes|books)/.*\.pdf$'
       - id: check-yaml
         exclude: '^\.clangd$|^\.clang-format$'   # clangd/clang-format YAML is multi-document with a leading comment block
       - id: check-json
@@ -56,7 +65,7 @@ repos:
       - id: check-deprecated-kconfig-options
 
   - repo: https://github.com/koalaman/shellcheck-precommit
-    rev: v0.11.0                          # VERIFY before first use
+    rev: v0.11.0                          # verified 2026-08-21: first `pre-commit run -a`, 5 findings, all addressed
     hooks:
       - id: shellcheck
         args: ["-x", "-e", "SC1091"]
@@ -66,7 +75,7 @@ repos:
   # SPDX / REUSE compliance. Runs at the manual stage until a REUSE.toml exists that
   # covers the Markdown library (reuse lint otherwise fails on every un-annotated .md).
   - repo: https://github.com/fsfe/reuse-tool
-    rev: v5.0.2                           # VERIFY before first use
+    rev: v5.0.2                           # verified 2026-08-21: runs; still manual-stage until a REUSE.toml covers the .md library
     hooks:
       - id: reuse
         stages: [manual]
@@ -76,10 +85,35 @@ repos:
     hooks:
       - id: conventional-precommit-linter
         stages: [commit-msg]
-        args: ["--subject-min-length=8", "--summary-uppercase"]
+        # Types are the repo's own subject prefixes (CLAUDE.md "When to commit"), not the
+        # tool's default list, which rejected 54 of the 54 subjects on the first branch.
+        # ADR records use `ADR(0006): ...` -- the linter's type token cannot contain a space.
+        # --summary-uppercase dropped: with it absent the linter checks no case at all
+        # (read from hook.py), which is what a convention of `docs: lowercase subject` needs.
+        args: ["--types=ADR,adr,change,chore,ci,datasets,devenv,docs,feat,firmware,fix,golden,host,protocols,refactor,remove,revert,test",
+               "--subject-min-length=8", "--subject-max-length=100"]
 
   - repo: local
     hooks:
+      # 0. Only documents whose OCR-manifest row says redistributable=yes may be tracked
+      #    (docs/OCR/README.md; docs/bibliography/acquisition-status.md). On 2026-08-21 an
+      #    11 MB vendor manual filed as `unknown` -- "local only, not committed" in four of
+      #    the repo's own records -- was committed anyway, because nothing read column 11 of
+      #    the manifest. This does. A PDF with no manifest row fails too, so every tracked
+      #    PDF is also extracted and ledgered. It had to be removed from the branch's history
+      #    before the first push; this hook is why that cannot recur.
+      - id: pdf-redistributable
+        name: every tracked PDF has redistributable=yes in docs/OCR/manifest.tsv
+        language: system
+        entry: >-
+          bash -c 'm=docs/OCR/manifest.tsv; rc=0; for f in "$@"; do
+          v=$(awk -F"\t" -v s="$f" "NR>1 && \$1==s {print \$11; exit}" "$m");
+          case "$v" in yes) ;;
+          "") echo "$f: no row in $m -- run doc_ocr extract and set redistributable (docs/OCR/README.md)"; rc=1 ;;
+          *) echo "$f: redistributable=$v in $m -- only yes may be tracked (docs/OCR/README.md)"; rc=1 ;; esac;
+          done; exit $rc' --
+        files: '\.pdf$'
+
       # 1. Every code/config file carries an SPDX identifier (BRIEF rule 6; feeds esp-idf-sbom).
       #    python-scripts/doc_ocr/ is NOT excluded: it originates from the author's swarm repo
       #    (MIT, same author) and carries SPDX + `Origin:` header lines here -- see NOTICE.
@@ -95,7 +129,10 @@ repos:
       # 2. GPIO19/GPIO20 are the USB-Serial-JTAG D-/D+ pins — the ONLY recovery path on a
       #    sealed board with zero exposed GPIO. A literal 19/20 near any GPIO API or pin
       #    macro is a commit failure. Comment lines (`/*`, ` *`, `//`) are skipped so the
-      #    rule may be *explained* in code; twatch_pins.h is excluded because it is the file
+      #    rule may be *explained* in code. String literals are blanked before matching for
+      #    the same reason: `_Static_assert(PIN_LCD_BL != 20, "GPIO19/20 are USB-Serial-JTAG")`
+      #    is the rule being ENFORCED, and the hook must read code, not message text.
+      #    twatch_pins.h is excluded because it is the file
       #    that IMPLEMENTS the rule (TWATCH_ASSERT_NOT_USJ + the two reserved USB defines)
       #    and is policed by hook 2b instead. Complements the _Static_asserts (ADR 0015).
       - id: no-usb-pins
@@ -103,7 +140,8 @@ repos:
         language: system
         entry: >-
           bash -c 'rc=0; for f in "$@"; do
-          hits=$(grep -nE "GPIO_NUM_(19|20)\b|\bGPIO(19|20)\b|\b(gpio_config|gpio_reset_pin|gpio_set_direction|gpio_set_level|gpio_set_pull_mode|gpio_iomux_out|gpio_iomux_in|esp_rom_gpio_pad_select_gpio)\b[^;]*[^0-9.x](19|20)\b|^\s*#\s*define\s+\w*(PIN|GPIO|IO)\w*\s+\(?(19|20)\b" "$f"
+          hits=$(sed "s/\"[^\"]*\"/\"\"/g" "$f"
+          | grep -nE "GPIO_NUM_(19|20)\b|\bGPIO(19|20)\b|\b(gpio_config|gpio_reset_pin|gpio_set_direction|gpio_set_level|gpio_set_pull_mode|gpio_iomux_out|gpio_iomux_in|esp_rom_gpio_pad_select_gpio)\b[^;]*[^0-9.x](19|20)\b|^\s*#\s*define\s+\w*(PIN|GPIO|IO)\w*\s+\(?(19|20)\b" -
           | grep -vE "^[0-9]+:\s*(/\*|\*|//)");
           if [ -n "$hits" ]; then printf "%s\n" "$hits" | sed "s|^|$f:|"; rc=1; fi; done;
           [ $rc -eq 0 ] || echo "GPIO19/20 (USB-Serial-JTAG) referenced above — forbidden (ADR 0015)"; exit $rc' --
@@ -166,7 +204,38 @@ repos:
           print(*msgs,sep=chr(10)); sys.exit(bool(msgs))"
         files: '^firmware/twatch-s3/partitions\.csv$'
 
-      # 5. Needs an activated ESP-IDF shell: the lock must match the manifest.
+      # 5. The shipped presets are a protocol: the watch validates and rejects, it
+      #    never coerces. This runs the schema plus loader rules V0-V10 (canonical
+      #    form, id/filename, watch limits, window-coefficient and resolution
+      #    recomputation to 1e-6, provisional pointers) over every preset, and a
+      #    negative-case suite that must stay rejected. jsonschema is optional --
+      #    without it the rules still run and the schema pass is skipped loudly.
+      - id: presets-rules
+        name: presets satisfy the schema and loader rules V0-V10
+        language: system
+        entry: python3 python-scripts/check_presets.py
+        files: '^(protocols/presets/.*\.json|protocols/specs/presets\.schema\.json|python-scripts/check_presets\.py)$'
+        pass_filenames: false
+
+      # 5b. Every unresolved-value marker is either CLOSED (a correction that must not
+      #     come undone) or ALLOWED (it remains, and a named person owns it). On
+      #     2026-08-20 a correction written into ADR 0016 survived in eleven other
+      #     files for a day because nothing counted them; on 2026-08-21 four items
+      #     were handed back as "decisions" when three were lookups. This is the
+      #     arithmetic that makes both visible. Bare `TBD` is NOT scanned -- CLAUDE.md
+      #     sanctions it; the tagged `TBD (datasheet ...)` form is.
+      - id: markers-baseline
+        name: every (verify)/(prov.)/unread marker is closed or owned
+        language: system
+        entry: >-
+          python3 python-scripts/check_markers.py
+          --closed docs/roadmap/markers-closed-2026-08-21.tsv
+          --allow docs/roadmap/markers-allowlist.tsv
+        files: '\.(md|yaml|yml|csv|h|json|toml)$'
+        exclude: '(^|/)(managed_components|build|build_[^/]+|scratch)/|/clones/|\.ocr'
+        pass_filenames: false
+
+      # 6. Needs an activated ESP-IDF shell: the lock must match the manifest.
       - id: lockfile-matches-manifest
         name: dependencies.lock is up to date (manual stage; needs idf.py)
         language: system
@@ -176,7 +245,7 @@ repos:
         pass_filenames: false
         stages: [manual]
 
-      # 6. Needs an activated ESP-IDF shell: the authoritative partition-table check.
+      # 7. Needs an activated ESP-IDF shell: the authoritative partition-table check.
       - id: gen-esp32part
         name: gen_esp32part.py accepts partitions.csv for a 16MB flash (manual stage)
         language: system

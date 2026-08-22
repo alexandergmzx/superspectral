@@ -91,7 +91,22 @@ docs/**/*.ocr/
 # CC BY-NC or request-only. Tier-0 synthetic signals are regenerated from
 # their generator scripts. Only manifests, generators, and the licence
 # ledger are tracked.
-datasets/corpora/
+#
+# 2026-08-21: this used to read `datasets/corpora/`, which ignored the
+# DIRECTORY and therefore the manifest inside it -- contradicting the sentence
+# directly above, and silently. datasets/corpora/manifest.yaml was written,
+# edited by four commits and never actually committed by any of them; every
+# relative link to it resolved for whoever had it on disk and 404'd for anyone
+# who cloned. "The pair is the dataset" (datasets/README.md) is only true if
+# the manifest half is tracked. So: ignore the PAYLOAD, not the directory.
+datasets/corpora/**
+!datasets/corpora/
+!datasets/corpora/**/
+!datasets/corpora/**/*.yaml
+!datasets/corpora/**/*.yml
+!datasets/corpora/**/*.md
+!datasets/corpora/**/LICENCE*
+!datasets/corpora/**/LICENSE*
 datasets/raw/
 datasets/**/*.wav
 *.csv.gz

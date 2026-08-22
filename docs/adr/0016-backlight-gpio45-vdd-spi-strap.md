@@ -10,7 +10,7 @@
   - The **check stays mandatory for every new unit**: the [`docs/hw/README.md`](../hw/README.md) ledger row `VDD_SPI_FORCE / TIEH / XPD` must be filled from that unit's own eFuse read before its backlight code runs. A unit that reads `FORCE == 0` re-opens this ADR (the idle-high + single-reboot-wrapper branch is written in the pins doc's cautions table).
 - **Alternatives:**
   - *Assume the schematic (1.8 V JW) and write the defensive branch unconditionally.* Rejected: the defensive branch costs a wrapper around every reset path and a backlight that cannot be fully off at reset; the eFuse read is a 10-second, zero-risk operation that settles it per unit.
-  - *Burn `VDD_SPI_FORCE` ourselves on units where it is 0.* Rejected outright: [ADR 0015](README.md) — eFuses are read-only for the life of the project; a wrong burn on a 1.8 V part is permanent.
+  - *Burn `VDD_SPI_FORCE` ourselves on units where it is 0.* Rejected outright: [ADR 0015](0015-anti-brick-policy.md) — eFuses are read-only for the life of the project; a wrong burn on a 1.8 V part is permanent.
 - **Consequences:**
   - (+) Backlight code is ordinary LEDC; the PMU/backlight bring-up order in the gate becomes the `twatch_bsp` reference sequence.
   - (+) One more schematic claim is known to be wrong for shipped units (after the mic's obsolescence): treat LilyGO part markings as "verify per unit", which [bibliography 01](../bibliography/01-datasheets.md) now says.

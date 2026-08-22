@@ -14,7 +14,7 @@ This project deliberately follows the method of his earlier `swarm` repository: 
 
 The **research question** binds the project (proposal §1, *provisional until D2 freezes it*):
 
-> Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a ≥30 Hz spectrogram (50 Hz for the live-singing preset) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
+> Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
 
 Authoritative source: [`docs/proposal/01-super-spectral-proposal.md`](docs/proposal/01-super-spectral-proposal.md).
 
@@ -22,12 +22,12 @@ Authoritative source: [`docs/proposal/01-super-spectral-proposal.md`](docs/propo
 
 | Half | Role |
 |------|------|
-| **Watch — live path** (`firmware/twatch-s3/`, pure ESP-IDF v6.0.2) | PDM capture on I2S0 (CLK GPIO44 / DATA GPIO47, 16-bit, 32 kHz default *(prov.)*) → software DC removal → window → esp-dsp float FFT → magnitude spectrum, spectrogram waterfall, time-domain f0 (MPM/YIN), band-energy readouts → ST7789V3 over SPI. All real-time DSP on-device, DSP task on core 1, UI on core 0. Records **takes** to the FAT partition. No Wi-Fi, no BLE, no LoRa in v1 (ADR 0017, backlog). |
+| **Watch — live path** (`firmware/twatch-s3/`, pure ESP-IDF v6.0.2) | PDM capture on I2S0 (CLK GPIO44 / DATA GPIO47, 16-bit, 32 kHz default *(prov.)*) → software DC removal → window → esp-dsp float FFT → magnitude spectrum, spectrogram waterfall, time-domain f0 (MPM/YIN), band-energy readouts → ST7789V3 over SPI. All real-time DSP on-device, DSP task on core 1, UI on core 0. Records **takes** to the FAT partition. No Wi-Fi, no BLE, no LoRa in v1 (ADR 0017, accepted). |
 | **Host — offline path** (`host/`, Linux, Python, GPL-3.0-or-later) | Praat-grade formants (parselmouth), LTAS/SPR over whole takes, H1–H2, DTW alignment, Demucs stem separation, golden-file generation. Never real-time, never linked into firmware. |
 | **Record formats** ([`protocols/`](protocols/)) | The take/record format the watch writes and the host reads, and the preset JSON schema both halves load. The only contract between the halves. |
 | **Validation** ([`docs/validation/`](docs/validation/)) | Two-path rule: every metric is reported separately for the **digital-injection** path (corpus WAV into the PCM ring buffer, mic bypassed) and the **acoustic** path (reproduced sound → watch mic + reference mic). Only the injection path may carry a "vs Praat" claim. |
 
-Hardware facts that shape every decision (schematic `T_WATCH_S3.pdf` V1.4 + LilyGoLib hardware doc; see [`docs/hw/`](docs/hw/)): chip-down ESP32-S3-R8 (no inherited RF certification), 512 KB SRAM, 8 MB octal PSRAM, 16 MB **1.8 V** W25Q128JW flash, AXP2101 PMU on I²C0 (SDA 10 / SCL 11), FT6336U touch on I²C1 (SDA 39 / SCL 40), display backlight on **GPIO45 = the VDD_SPI strapping pin**, native USB-Serial-JTAG on GPIO19/20 as the **only** flash/debug path, **zero exposed GPIO, BOOT button inside the case**. FFT working buffers live in internal SRAM (PSRAM is too slow for them); PSRAM holds spectrogram history.
+Hardware facts that shape every decision (schematic `T_WATCH_S3.pdf` V1.4 + LilyGoLib hardware doc; see [`docs/hw/`](docs/hw/)): chip-down ESP32-S3-R8 (no inherited RF certification), 512 KB SRAM, 8 MB octal PSRAM, 16 MB flash reading JEDEC `ef 4018` (W25Q128JV-class, **3.3 V** — the schematic says the 1.8 V `W25Q128JW`; it does not describe this unit), AXP2101 PMU on I²C0 (SDA 10 / SCL 11), FT6336U touch on I²C1 (SDA 39 / SCL 40), display backlight on **GPIO45 = the VDD_SPI strapping pin**, native USB-Serial-JTAG on GPIO19/20 as the **only** flash/debug path, **zero exposed GPIO, BOOT button inside the case**. FFT working buffers live in internal SRAM (PSRAM is too slow for them); PSRAM holds spectrogram history.
 
 ## Current phase: Phase 0 — Documentation & environment
 
@@ -35,15 +35,17 @@ The phase goal is a **complete, citable documentation base and a reproducible ES
 
 ### Phase definition of done — documentation phase (gate to firmware M0)
 
-- [ ] Every ★★★ document filed + 📥 stamped, or ledgered with a reason tag
-- [ ] `doc_ocr` manifest covers 100 % of filed PDFs; the gating docs `checked`
-- [ ] Proposal RQ frozen; CLAUDE.md and research-statement quote it verbatim
-- [ ] ADRs 0001 (toolchain+env, accepted after gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim), 0006 (FFT conventions) accepted
-- [ ] E1 complete: `dependencies.lock` committed, `env.lock.md` filled, old installs removed, CI firmware job green
-- [ ] E2 complete: eFuse baseline + vendor partition table committed; rollback + boot guard tested
-- [ ] Validation metrics table: every target has an external anchor and a measurement method
-- [ ] First reference-project ADR written; first experiment recipe written
-- [ ] CI link-check green
+*(State synced with [the roadmap's D6 list](docs/roadmap/documentation-roadmap.md) on 2026-08-21; that file is where the evidence for each tick lives. **O** = yours, **A** = mine.)*
+
+- [ ] **O/A** Every ★★★ document filed + 📥 stamped, or ledgered with a reason tag
+- [ ] **O** `doc_ocr` manifest covers 100 % of filed PDFs *(46/46, `doc_ocr verify` clean)*; the gating docs `checked` — the `checked` flag records a **human** read, so this one cannot be ticked by an assistant: Knowles SPM1423, ST7789V3, ESP32-S3 datasheet + TRM, HW Design Guidelines, both schematics
+- [ ] **O** Proposal RQ frozen; CLAUDE.md and research-statement quote it verbatim *(the prose is drafted and cited; the voice and the freeze are the author's)*. The refresh-bound contradiction is resolved (2026-08-21, owner's decision — [proposal §1](docs/proposal/01-super-spectral-proposal.md)); the freeze itself is still open.
+- [x] ADRs 0001 (toolchain+env, accepted after the gate), 0002 (companion split), 0003 (mic path), 0004 (split licensing), 0005 (no-clinical-claim), 0006 (FFT conventions) all **accepted** — 0006 accepted 2026-08-21 by Alexander
+- [~] E1: `dependencies.lock` committed, `env.lock.md` filled, CI firmware job green, ADR 0001 accepted — done. **Old installs partially removed 2026-08-21** by Alexander: the v5.5.5 tools root and the `~/esp/esp-idf` master snapshot are gone. `~/esp/v5.4.1` is a deliberate keep (2026-08-20 decision), not in scope. `~/.espressif` (the EIM tree, including v6.0.1) is still present — [`docs/devenv/setup.md`](docs/devenv/setup.md) §9 step 3.
+- [x] E2 complete: eFuse baseline + vendor partition table committed; rollback + boot guard tested *(experiment 0002: rollback 4/4, race 10/10 + 5/5)*
+- [x] Validation metrics table: every target has an external anchor and a measurement method *(plus the GUM uncertainty budget)*
+- [x] First reference-project ADR written ([ADR 0018](docs/adr/0018-first-reference-project-study.md)); first experiment recipe written (0001, and 0002 executed)
+- [x] CI link-check green
 
 When a task is proposed, prefer work that closes an item on this list over polishing a single document in isolation. Firmware beyond configuration stubs and the 3 s boot guard is **out of scope** until the list is green.
 
@@ -94,7 +96,7 @@ A full layout summary lives in [`README.md`](README.md).
 
 ### Never — rules with no exceptions
 
-1. **Never reconfigure, drive, or `_Static_assert`-exempt GPIO19/GPIO20.** They are USB D−/D+ — the only flash and debug path on a sealed board. Every pin constant in `twatch_bsp` is statically asserted ≠ 19/20 and CI greps for the literals.
+1. **Never reconfigure, drive, or `_Static_assert`-exempt GPIO19/GPIO20.** They are USB D−/D+ — the only flash and debug path on a sealed board. Every pin constant in `twatch_bsp` is statically asserted ≠ 19/20 (28 `TWATCH_ASSERT_NOT_USJ` uses), the `no-usb-pins` pre-commit hook greps every firmware source with string literals blanked, and the CI job **`guard-hooks`** runs that hook plus an independent `grep` of its own — so the rule survives someone editing the hook definition. *(Until 2026-08-21 this sentence claimed CI enforcement that did not exist: the grep lived only in a local hook, and `pre-commit install` had never been run. The job was written to make the sentence true rather than the sentence weakened to match; both halves are negative-tested.)*
 2. **Never burn an eFuse.** No `espefuse burn-*`, no `set-flash-voltage`, no `DIS_USB_JTAG`, no secure boot, no flash encryption. `SECURE_BOOT=n` and `SECURE_FLASH_ENC_ENABLED=n` are asserted by pre-commit. The eFuse baseline (`docs/hw/efuse-baseline.json`) is read once in E2 and is thereafter a record, not a target.
 3. **Never flash `ota_0`.** It holds the golden recovery image. Development builds go to `ota_1`; OTA rollback (`esp_ota_mark_app_valid_cancel_rollback()` only after display + touch + PMU + USB are confirmed) is the safety net, and the 3 s unconditional boot guard at the top of `app_main` (`CONFIG_SPECTRAL_BOOT_GUARD_MS`, never reduced) is the last one.
 4. **Never enter light or deep sleep without the gate** ("awake ≥ N s AND no USB host present", NVS "armed" flag during development, timer wake configured). Early sleep is one of the five documented ways to lose the USB-Serial-JTAG port.
@@ -107,7 +109,7 @@ A full layout summary lives in [`README.md`](README.md).
 
 1. **All real-time DSP stays on the watch.** The host never sees live audio; it sees takes. Latency and refresh are therefore properties of the firmware alone.
 2. **The microphone decides everything.** One PDM mic on I2S0, 16-bit, software DC removal, no hardware high-pass on the S3. Its in-situ response through the case is measured, not assumed; every level or band-ratio readout is relative/within-session until a calibration chain says otherwise.
-3. **Internal SRAM is the binding resource.** FFT working buffers (≤ 112 KB for real-8192) are internal and 16-byte aligned; PSRAM is for history, fonts and LVGL assets only, never DMA.
+3. **Internal SRAM is the binding resource.** FFT working buffers (real-8192 costs ≈ 104 KB with our own `cplx2real` and ≈ 160 KB on esp-dsp's tables — the difference is the `16·N_c` radix-4 twiddle table `dsps_cplx2real_fc32` pulls in even on the radix-2 path; both `(prov.)` until the roadmap H13 measurement, and the older ≈ 112–144 KB estimate is superseded rather than reconciled. See [`docs/architecture/03-dsp-pipeline.md`](docs/architecture/03-dsp-pipeline.md) §4.1 and [ADR 0006](docs/adr/0006-fft-normalisation-and-window-conventions.md) D5, still `proposed`) are internal and 16-byte aligned; PSRAM is for history, fonts and LVGL assets only, never DMA.
 4. **The analyzer canvas may bypass LVGL** (raw `esp_lcd` + ST7789 hardware vertical scroll) to reach 50 Hz; LVGL renders chrome. Gated on verifying the scroll axis against `MADCTL` (ADR 0007).
 5. **Recovery before features.** Boot guard, USJ console, OTA rollback, partition offsets frozen (ADR 0014/0015) ship from the first firmware commit.
 6. **Validation is part of the design.** Every architectural choice maps to a measurable acceptance metric in [`docs/validation/`](docs/validation/), reported on both measurement paths, with an external anchor and a stated uncertainty.
@@ -130,8 +132,8 @@ A full layout summary lives in [`README.md`](README.md).
 
 ### When to commit and push
 
-- Make small, semantically meaningful, subsystem-prefixed commits (`docs: …`, `devenv: …`, `firmware: …`, `ADR 0003: …`). Avoid "WIP" commits to `main`.
-- **There is no remote yet.** Commits stay local on `main` until Alexander creates the GitHub repository and asks to push. Never add a remote or push on your own initiative.
+- Make small, semantically meaningful, subsystem-prefixed commits (`docs: …`, `devenv: …`, `firmware: …`, `ADR(0003): …`). The prefix is a *type* and ADR numbers are its *scope*, so the `conventional-precommit-linter` commit-msg hook (installed 2026-08-21, types listed in `.pre-commit-config.yaml`) can check it — `ADR 0003:` with a space cannot be a type token. Avoid "WIP" commits to `main`.
+- **The remote exists.** `origin` is `github.com/alexandergmzx/superspectral` (public, created 2026-08-21) and `origin/main` is at `4468334`. Never add a second remote, and never push — any branch, `main` included — unless Alexander asks for that specific push.
 - Never `git push --force` or `git reset --hard` on `main` without explicit authorization for the specific operation.
 - The orchestrating session commits; agents writing files do not run state-mutating git commands.
 
@@ -151,5 +153,5 @@ A full layout summary lives in [`README.md`](README.md).
 - **Environment:** [`.envrc`](.envrc) · [`docs/devenv/setup.md`](docs/devenv/setup.md) · [`docs/devenv/brick-runbook.md`](docs/devenv/brick-runbook.md) · [`docs/devenv/first-flash-checklist.md`](docs/devenv/first-flash-checklist.md)
 - **Board facts:** [`docs/hw/twatch-s3-pins.md`](docs/hw/twatch-s3-pins.md) · [`hardware/bom/bill-of-materials.csv`](hardware/bom/bill-of-materials.csv)
 - **Record formats:** [`protocols/specs/`](protocols/specs/)
-- **Architecture decisions:** [`docs/adr/`](docs/adr/) — toolchain: [0001](docs/adr/0001-toolchain-esp-idf-v6-pinned-environment.md); companion split 0002, mic path 0003, split licensing 0004, anti-brick 0015 are pre-registered in the index
+- **Architecture decisions:** [`docs/adr/`](docs/adr/) — toolchain [0001](docs/adr/0001-toolchain-esp-idf-v6-pinned-environment.md), companion split [0002](docs/adr/0002-companion-architecture.md), mic path [0003](docs/adr/0003-microphone-path.md), split licensing [0004](docs/adr/0004-split-licensing.md) and anti-brick [0015](docs/adr/0015-anti-brick-policy.md) are written and accepted; the [index](docs/adr/README.md) backlog is now 0007 (display path), 0008 (ring/twang metric) and 0020 (f0 estimator)
 - **Validation:** [`docs/validation/README.md`](docs/validation/README.md) · **Bibliography:** [`docs/bibliography/README.md`](docs/bibliography/README.md)

@@ -186,11 +186,35 @@ Launch VS Code from the direnv-activated shell (`code .`) so `${env:IDF_TOOLS_PA
 
 1. `~/.bashrc`: delete or repoint `alias get_idf` (→ master snapshot). Prefer deleting — direnv leaves no habitual command to get wrong.
 2. `~/.bashrc`: wrap `source /opt/ros/jazzy/setup.bash` in a function (`ros_on() { source /opt/ros/jazzy/setup.bash; }`) so ROS is opt-in per shell. `.envrc` already defends the IDF shell, but every *other* Python tool on the machine benefits.
-3. Remove the legacy trees (~19 GB): `rm -rf ~/.espressif ~/esp/esp-idf ~/esp/v5.4.1 ~/esp/ESP8266_RTOS_SDK ~/esp/xtensa-lx106-elf`. `~/.espressif` is a classic `install.sh` root *and* EIM's parent with `IDF_TOOLS_PATH=~/.espressif/tools` nested inside it, five metadata files across three schema generations — `idf_tools.py uninstall` cannot untangle two layouts in one directory ([A5](pitfalls.md#a-host-toolchain-shell)). Deleting it also removes the stale constraints file and the partial component mirror, so [backup-policy.md](backup-policy.md) explicitly forbids carrying them forward.
-4. `ccache --max-size=10G` only while a second IDF tree (upgrade candidate or the v5.5.5 fallback) is present; the fallback is **not** kept installed (owner's decision, 2026-08-20) — install it on demand with the same two lines as §2.2–2.3, substituting the tag and tools root.
+3. Remove the legacy trees: `rm -rf ~/.espressif ~/esp/esp-idf ~/esp/ESP8266_RTOS_SDK ~/esp/xtensa-lx106-elf`. `~/.espressif` is a classic `install.sh` root *and* EIM's parent with `IDF_TOOLS_PATH=~/.espressif/tools` nested inside it, five metadata files across three schema generations — `idf_tools.py uninstall` cannot untangle two layouts in one directory ([A5](pitfalls.md#a-host-toolchain-shell)). Deleting it also removes the stale constraints file and the partial component mirror, so [backup-policy.md](backup-policy.md) explicitly forbids carrying them forward. **`~/esp/v5.4.1` is excluded from this list on the owner's decision (2026-08-20): kept deliberately as a second reference environment, not superseded** — do not delete it as part of this step. **Done 2026-08-21:** `~/esp/esp-idf` (master snapshot) and the v5.5.5 tools root are gone; `~/.espressif` (the EIM tree, holding v6.0.1) and the ESP8266/xtensa-lx106 trees are still present and are the remaining scope of this step.
+4. `ccache --max-size=10G` only while a second IDF tree (an upgrade candidate, or `v5.4.1` kept as a reference environment) is present. The v5.5.5 fallback root, evaluated during the ADR 0001 gate, is **not** kept installed (owner's decision, 2026-08-20) and was removed 2026-08-21 — install it on demand with the same two lines as §2.2–2.3, substituting the tag and tools root.
 5. Re-run `tools/env-lock.sh` from a **fresh** shell and commit.
 
-**E1 definition of done:** `idf.py --version` = v6.0.2 from a fresh shell inside the repo; `env | grep -E 'IDF_COMPONENT|PYTHONPATH'` empty; skeleton builds twice with identical `.bin` hashes; `dependencies.lock` + `env.lock.md` committed; ADR 0001 accepted; CI firmware job enabled; old trees gone.
+**E1 definition of done:** `idf.py --version` = v6.0.2 from a fresh shell inside the repo; `env | grep -E 'IDF_COMPONENT|PYTHONPATH'` empty; skeleton builds twice with identical `.bin` hashes; `dependencies.lock` + `env.lock.md` committed; ADR 0001 accepted; CI firmware job enabled; old trees gone — meaning the master snapshot and the v5.5.5 fallback (both done 2026-08-21), **not** `~/esp/v5.4.1`, which is a deliberate keep and not in scope of this gate.
+
+## 10. Python environments that are not the IDF's
+
+Three interpreters live on this machine and none of them is the other. Keeping
+them apart is the same discipline `.envrc` applies to ESP-IDF.
+
+| Environment | Where | What it is for | Licence |
+|---|---|---|---|
+| ESP-IDF venv | `~/esp/tools/v6.0.2/python_env/` | `idf.py`, `esptool`, `otatool` — created and owned by `install.sh`. **Never** used for repo scripts. | — |
+| Host companion | `host/.venv`, from `host/pyproject.toml` + `host/uv.lock` | parselmouth, numpy, scipy — the offline analysis and golden-file generation | **GPL-3.0-or-later** |
+| Apache tooling | system `python3` (stdlib only) or a per-package `uv` project under `python-scripts/` | `doc_ocr`, `check_links.py`, `check_presets.py`, `gen_colormap_lut.py` | Apache-2.0 |
+
+```sh
+cd host && uv sync --extra dev              # GPL side; host/.venv, gitignored
+uv run --project host python -c "import parselmouth; print(parselmouth.PRAAT_VERSION)"   # 6.1.38
+pipx install pre-commit                     # not `pip install --user`, not `uvx`
+```
+
+`uv` (0.11.32 here) is used rather than bare `venv` because the lock file is the
+artefact ADR 0009 needs: `praat-parselmouth==0.4.7` pins Praat 6.1.38, and a
+resolver that silently moved to a 0.5.x would change the default pitch method
+underneath every golden file. `uvx pre-commit` would work for a one-shot run, but
+`pre-commit install` writes the interpreter path into `.git/hooks/pre-commit`, so
+the tool has to stay on PATH — hence pipx.
 
 ## Quick reference
 

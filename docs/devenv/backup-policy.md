@@ -18,7 +18,7 @@
 | `python_env/` virtualenvs | a venv is not self-contained — `pyvenv.cfg` records the base interpreter path; the existing ones point at `/usr/local/bin` ([pitfalls](pitfalls.md) A6). Recovery is `rm -rf … && ./install.sh esp32s3` |
 | `~/.espressif/tools/components/` (the EIM local component mirror) | carrying it forward **reintroduces the silent-resolution bug** (`IDF_COMPONENT_LOCAL_STORAGE_URL`, [pitfalls](pitfalls.md) B8) |
 | `~/.espressif/espidf.constraints.v6.0.txt` (2025-05-28) | pins esptool 4.9 / kconfig 2.x / component-manager 2.x — every runbook in this repo assumes esptool 5. Cite <https://dl.espressif.com/dl/esp-idf/espidf.constraints.v6.0.txt>, never a host copy ([pitfalls](pitfalls.md) A21) |
-| `~/esp/esp-idf` (master snapshot), `~/esp/v5.4.1`, `~/.espressif/v6.0.1` | superseded trees; a new clone at the tag is the backup |
+| `~/esp/esp-idf` (master snapshot, **removed 2026-08-21**), `~/.espressif/v6.0.1` (EIM tree, still present) | superseded trees; a new clone at the tag is the backup. *(`~/esp/v5.4.1` is intentionally excluded from this row — the owner keeps it as a second reference environment, 2026-08-20 decision. It still needs no backup: reconstructible from its own tag, same reasoning, different reason to have it on disk.)* |
 | `build/`, `build_*/`, `managed_components/`, `sdkconfig`, `sdkconfig.old`, `.direnv/`, `.cache/` | generated; `managed_components/` is regenerated from the lock; a restored `sdkconfig` shadows `sdkconfig.defaults` ([pitfalls](pitfalls.md) B2) |
 | `docs/**/*.ocr.md`, `docs/reference-projects/clones/` | regenerated in seconds; several sources are not redistributable |
 
