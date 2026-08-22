@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Files in this package that cannot carry a comment header: uv.lock is
+# generated (rewritten by `uv lock`, so a hand-added header would not survive)
+# and .python-version is a bare version string. Same mechanism as
+# synth_signals/REUSE.toml and host/REUSE.toml (the latter on the GPL side of
+# the ADR 0004 boundary).
+version = 1
+
+[[annotations]]
+path = ["uv.lock", ".python-version"]
+SPDX-FileCopyrightText = "2026 Alexander Gomez"
+SPDX-License-Identifier = "Apache-2.0"
