@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Citation File Format 1.2.0 — https://citation-file-format.github.io/
-# No release, no DOI and no remote exist yet (Phase 0). `repository-code`,
+# No release and no DOI exist yet (Phase 0). The public remote is
+# https://github.com/alexandergmzx/superspectral (created 2026-08-21).
 # `doi`, `version` and `date-released` are added at the first tagged release;
 # a Zenodo DOI is minted from that tag (roadmap: Phase 3 release deliverable).
 cff-version: 1.2.0
@@ -12,6 +13,7 @@ message: >-
   release exists, prefer the versioned DOI that will be listed here.
 type: software
 title: "Super Spectral"
+repository-code: "https://github.com/alexandergmzx/superspectral"
 abstract: >-
   A wrist-worn singing-voice spectral analyzer on the LilyGO T-Watch S3
   (ESP32-S3) with a single PDM MEMS microphone: the live-capture and

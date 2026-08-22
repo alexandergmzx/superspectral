@@ -87,10 +87,25 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
 [`docs/session-plans/2026-08-21-daytime-remediation.md`](docs/session-plans/2026-08-21-daytime-remediation.md)):*
 
 - **[ADR 0006](docs/adr/0006-fft-normalisation-and-window-conventions.md)
-  written** (`proposed`) — the last named ADR line of the Phase-0 definition of
-  done. Periodic cosine-sum windows built from the preset's own coefficients,
-  Heinzel S1/S2, 0 dBFS = full-scale sine, `fc32` only, `fft2r` for every size in
-  v1, and our own `cplx2real`. **ADR 0020** allocated for the f0 estimator.
+  written, then accepted** the same day by Alexander after an independent
+  re-audit corrected four of its claims — the last named ADR line of the Phase-0
+  definition of done, so **ADRs 0001–0006 are all accepted**. Periodic cosine-sum
+  windows built from the preset's own coefficients, Heinzel S1/S2, 0 dBFS =
+  full-scale sine, `fc32` only, `fft2r` for every size in v1, and our own
+  `cplx2real`. **ADR 0020** allocated for the f0 estimator.
+- **The research question's real-time bound restated** (owner's decision):
+  *"≥ 30 Hz for the presets whose hop supports it (50 Hz for `live_singing` and
+  `diction_consonants`)"* — the previous "≥ 30 Hz for every preset" was refuted
+  by three of the five accepted watch presets, whose 40 ms hop yields 25
+  analysis frames/s. Byte-identical in the proposal, `CLAUDE.md`, `README.md`
+  and `research-statement.md`; the freeze of the RQ itself is still open.
+- CI job **`guard-hooks`**: the eight repo-local hooks run `--all-files`, plus
+  an independent GPIO19/20 scan that **fails closed** — `CLAUDE.md` Never-rule 1
+  had promised CI enforcement that did not exist. New local hook
+  **`pdf-redistributable`**: a tracked PDF must carry `redistributable=yes` in
+  `docs/OCR/manifest.tsv`. Both `pre-commit` stages are now installed, and the
+  commit-msg linter's types match the repo's own subject convention
+  (`ADR(0006): …`).
 - **The GPL environment exists**: `host/pyproject.toml`, `host/uv.lock`,
   `host/REUSE.toml`, `host/.python-version`. `praat-parselmouth==0.4.7` pinned
   exactly, because the pin is the Praat version.
@@ -102,9 +117,11 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
 
 ### Changed
 
-- ADR 0004's `host/` boundary is now literally one `grep`: every file under
-  `host/` except `LICENSE` carries the GPL-3.0-or-later header, and no file
-  outside it does.
+- ADR 0004's `host/` boundary is one `grep` over *headers*: every file under
+  `host/` except `LICENSE` carries the GPL-3.0-or-later header (or is annotated
+  by `host/REUSE.toml`), and no file outside it does. The string also appears in
+  prose in ADR 0004 and ADR 0009 — the claim is about headers, as the record
+  itself says.
 - `check_links.py` reports `path:line`, validates `#anchors` against heading
   slugs, and scans `.yaml`/`.yml`/`.json` as well as `.md`.
 - The `no-usb-pins` pre-commit hook blanks string literals before matching, so
@@ -136,6 +153,15 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
 - `live_singing`'s `enbw_hz` was truncated rather than rounded.
 - SPDX headers added to `firmware/idf-gate/{CMakeLists.txt,
   main/CMakeLists.txt, main/idf_component.yml}`.
+- **A vendor manual was removed from the branch's history before its first
+  push.** `docs/reports/nti-audio/nti-audio_xl2-manual_fw4.93_2026.pdf`
+  (11 MB, `redistributable=unknown`, "local only" in four of the repo's own
+  records) had been tracked since the branch's second commit. The branch was
+  rewritten with `git-filter-repo` in a throwaway clone and verified
+  commit-by-commit before the switch; 53 hashes changed and the session records
+  quoting them were remapped from the commit-map. The file stays on disk,
+  excluded, and `doc_ocr verify` still matches it. The `pdf-redistributable`
+  hook exists so this cannot recur.
 
 *Session of 2026-08-21, daytime — corrections, several of them to the night's own work:*
 
