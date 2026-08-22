@@ -13,12 +13,12 @@
 
 | Unit | State | Notes |
 |---|---|---|
-| U0 session setup | **DONE** 02:20 | `06a4f74` — branch + this plan. **Correction:** workflow `w9e08cb66` did not survive the interrupt at 01:41:33 — three of its four study agents died mid-tool-call and the ADR phase never began. It was resumed as `wipguewn1` (the finished study replayed from cache). Absorbed: `22e425a` four D4 study notes (1,180 lines; the AXP2101 register table is the `twatch_bsp` driver specification) and `8015184` seven ADRs. The index now holds 12 records, backlog down to 0006–0012. Corrected one factual error in ADR 0004 while reviewing (it claimed the D3 history rewrite was cheap "because there is no remote yet"). |
-| U3 D5 engineering ADRs (0009, 0010, 0011, 0012) | **DONE** 02:47 | `163592a`, `+1` — schema negative-tested (6/6 invalid presets rejected), every preset's ENBW/coherent gain recomputed from its own coefficients to 6e-8, colormap self-test runs. 0011/0012 **proposed**. |
-| U4 D6 validation freeze (paper side) | **DONE** 01:58 | `d5f15e0` — GUM uncertainty budget (3 models; the sample-rate term is row 1 and the reference-mic term is what blocks an accuracy claim) + `datasets/corpora/manifest.yaml` pre-registering 6 corpora with quarantine consequences. Experiment 0001 was already at full recipe quality, so it needed no work. |
-| U5 D3 acquisition follow-ups | **DONE** 02:05 | `fc41e7d` — both quarantines resolved (mir_eval was the wrong paper, now correct and committed; XL2 re-fetched whole). YIN + Sundberg 1994: 5xx twice each, paths closed. Added `python-scripts/check_links.py` as the commit gate. |
-| U6 bibliography live-verification | **DONE** 02:21 | `3677960` — 430 URLs, 24 min of the 90-min box. 16 dead links replaced; **one cited DOI does not exist** (05 #23) and one author list is wrong (05 #44), both flagged without touching the numbers. Knowles and Bosch have delisted parts we depend on. |
-| U7 D2 proposal prose (DRAFT) | **DONE** 02:21 | `44cb4e8` — §1–§7 filled, 199→370 lines, 12 synthesis claims corrected against measured facts, 150 citations verified, RQ byte-identical in all three places (independently checked). Also fixed `architecture/README.md`, which said FFT scratch goes to PSRAM. |
+| U0 session setup | **DONE** 02:20 | `06a4f74` — branch + this plan. **Correction:** workflow `w9e08cb66` did not survive the interrupt at 01:41:33 — three of its four study agents died mid-tool-call and the ADR phase never began. It was resumed as `wipguewn1` (the finished study replayed from cache). Absorbed: `6ee7de3` four D4 study notes (1,180 lines; the AXP2101 register table is the `twatch_bsp` driver specification) and `aadce6a` seven ADRs. The index now holds 12 records, backlog down to 0006–0012. Corrected one factual error in ADR 0004 while reviewing (it claimed the D3 history rewrite was cheap "because there is no remote yet"). |
+| U3 D5 engineering ADRs (0009, 0010, 0011, 0012) | **DONE** 02:47 | `8323e20`, `+1` — schema negative-tested (6/6 invalid presets rejected), every preset's ENBW/coherent gain recomputed from its own coefficients to 6e-8, colormap self-test runs. 0011/0012 **proposed**. |
+| U4 D6 validation freeze (paper side) | **DONE** 01:58 | `5e58d2a` — GUM uncertainty budget (3 models; the sample-rate term is row 1 and the reference-mic term is what blocks an accuracy claim) + `datasets/corpora/manifest.yaml` pre-registering 6 corpora with quarantine consequences. Experiment 0001 was already at full recipe quality, so it needed no work. |
+| U5 D3 acquisition follow-ups | **DONE** 02:05 | `4f3ceb6` — both quarantines resolved (mir_eval was the wrong paper, now correct and committed; XL2 re-fetched whole). YIN + Sundberg 1994: 5xx twice each, paths closed. Added `python-scripts/check_links.py` as the commit gate. |
+| U6 bibliography live-verification | **DONE** 02:21 | `c835800` — 430 URLs, 24 min of the 90-min box. 16 dead links replaced; **one cited DOI does not exist** (05 #23) and one author list is wrong (05 #44), both flagged without touching the numbers. Knowles and Bosch have delisted parts we depend on. |
+| U7 D2 proposal prose (DRAFT) | **DONE** 02:21 | `f773718` — §1–§7 filled, 199→370 lines, 12 synthesis claims corrected against measured facts, 150 citations verified, RQ byte-identical in all three places (independently checked). Also fixed `architecture/README.md`, which said FFT scratch goes to PSRAM. |
 | U8 handback | **DONE** 03:55 | this file's final section. Written 3 h 35 m before the deadline because the queue emptied, not because it was rushed. |
 
 **Queue extended 02:50.** All seven approved units (U1 and U2 were ruled out of
@@ -30,8 +30,8 @@ work already committed — no new science, no new scope.
 
 | Unit | State | Notes |
 |---|---|---|
-| U9 architecture documents (01 overview, 02 audio capture, 03 DSP pipeline, 06 power budget) | **DONE** 03:07 | `dd9939b` — 773 lines. Pure synthesis of accepted ADRs and measured facts; every open question carries an `OQ` number and an owner. |
-| U10 self-review sweep | **DONE** 03:55 | `a75b0ca` … `bd3c5b1` (13 commits). An adversarial re-read of everything committed tonight produced **4 blockers, 12 majors, 14 minors and 5 nits**; every one is fixed, none deferred. The two worst were factual: the 1.8 V flash correction had survived in eleven files, and the real-8192 FFT figure was wrong because `dsps_cplx2real_fc32` drags in the radix-4 twiddle table. Two findings were repairs to the gates themselves — a pre-commit hook that could never pass, and a spec reporting results from a script that did not exist. |
+| U9 architecture documents (01 overview, 02 audio capture, 03 DSP pipeline, 06 power budget) | **DONE** 03:07 | `8b58535` — 773 lines. Pure synthesis of accepted ADRs and measured facts; every open question carries an `OQ` number and an owner. |
+| U10 self-review sweep | **DONE** 03:55 | `7ff4c43` … `074e302` (13 commits). An adversarial re-read of everything committed tonight produced **4 blockers, 12 majors, 14 minors and 5 nits**; every one is fixed, none deferred. The two worst were factual: the 1.8 V flash correction had survived in eleven files, and the real-8192 FFT figure was wrong because `dsps_cplx2real_fc32` drags in the radix-4 twiddle table. Two findings were repairs to the gates themselves — a pre-commit hook that could never pass, and a spec reporting results from a script that did not exist. |
 
 **Out of scope by the operator's decision (01:55):** U1 (promote the gate's bring-up
 into `twatch_bsp`) and U2 (`spectral_core` v0 + host golden tests). No firmware
@@ -136,8 +136,8 @@ untouched, `origin/main` is still `4468334`, and `git status` is clean.
 ## Headline
 
 **Phase 0's documentation is complete, and then it was audited.** Thirty-three
-commits on `overnight-2026-08-21` up to `bd3c5b1`: 99 files, +7,306 / −353 —
-the diffstat is measured at `bd3c5b1`, before this handback commit, which is the
+commits on `overnight-2026-08-21` up to `074e302`: 99 files, +7,306 / −353 —
+the diffstat is measured at `074e302`, before this handback commit, which is the
 thirty-fourth. Eleven ADRs written
 (nine accepted, two `proposed` because they are yours to decide), the preset
 protocol and the golden-file contract specified, four reference projects read at
@@ -185,7 +185,7 @@ Three things could not be done here and are yours:
    `host/.venv` was one command inside the licence boundary. Doing it showed the
    handback's own premise was wrong: parselmouth 0.4.7 bundles **Praat 6.1.38**, which
    has no filtered autocorrelation at all, so U10's "correction" of the golden example
-   to `method: filtered` (commit `e31df9a`) moved it *away* from what any generator can
+   to `method: filtered` (commit `fab6121`) moved it *away* from what any generator can
    produce. Reversed; ADR 0009 amended; T7 split into T7a (closed) and T7b (open, needs
    an out-of-process praat.org binary).
 2. ~~**`pre-commit` is not installed**~~ — **closed 2026-08-21** (`pipx install pre-commit`,
@@ -198,38 +198,38 @@ Three things could not be done here and are yours:
 | Unit | Commit | What |
 |---|---|---|
 | U0 | `06a4f74` | the session plan |
-| U0 | `22e425a` | D4 study notes ×4 (1,180 lines) |
-| U0 | `bd44ec3` | plan: notes absorbed |
-| U0 | `8015184` | ADRs 0002, 0003, 0004, 0005, 0013, 0018, 0019 accepted |
-| U0 | `36d0f0a` | three committed claims the study proved wrong |
-| U0 | `efd5127` | plan: U0/U6/U7 done |
-| U5 | `fc41e7d` | both quarantined acquisitions resolved; two 5xx paths closed |
-| U5 | `279fadd` | plan: the pre-session workflow died at the interrupt |
-| U4 | `d5f15e0` | GUM uncertainty budget + pre-registered corpus manifest |
-| U4 | `2656156` | plan: status after U4 |
-| U4 | `e271470` | the calibrator row cites the instrument certificate, not a recalled standard |
-| U4 | `9a2fd52` | roadmap ticked to what actually closed |
-| U7 | `44cb4e8` | proposal §1–§7 drafted (199 → 370 lines) |
-| U6 | `3677960` | 430 URLs verified live; 16 dead links replaced; one DOI found not to exist |
-| U3 | `3211ed6` | plan: U3 started |
-| U3 | `163592a` | ADRs 0009–0012 with their artefacts |
-| U3 | `28efd79` | LVGL screenshot harness needs the direct call |
-| U3 | `97b9e7f` | plan: queue extended with U9 and U10 |
-| U3 | `f7337c9` | `host/golden/README.md` aligned with the normative schema |
-| U9 | `dd9939b` | architecture 01, 02, 03, 06 (773 lines) |
-| U10 | `a75b0ca` | the 1.8 V correction swept into eleven files |
-| U10 | `96b3639` | FFT memory figures corrected from esp-dsp's allocation sites |
-| U10 | `f59c551` | seven findings: SRAM table, sc16 arithmetic, `fft4real`, `clinical_claim` |
-| U10 | `25edf38` | status hygiene: accepted ADRs stop being called "backlog" |
-| U10 | `701db47` | `check_presets.py` written, so the spec stops reporting a script that did not exist |
-| U10 | `e31df9a` | the golden example pinned *raw* thresholds under `method: filtered` |
-| U10 | `20f9669` | firmware comment corrections + two pre-commit hooks that could never pass |
-| U10 | `7e49a4c` | `enbw_hz` rounded not truncated; V2's 48 kHz ban moved into the schema |
-| U10 | `8f2b945` | six minors, including a licence boundary that was not quite one `grep` |
-| U10 | `8aed606` | 43 ADR links repointed; Saarbrücken corpus pre-registered |
-| U10 | `055779a` | five citation minors: every number under an address that carries it |
-| U10 | `82fddc5` | five nits, and a link checker that reports *where* |
-| U10 | `bd3c5b1` | the last three 1.8 V stragglers; OQ11 closed |
+| U0 | `6ee7de3` | D4 study notes ×4 (1,180 lines) |
+| U0 | `4deefbb` | plan: notes absorbed |
+| U0 | `aadce6a` | ADRs 0002, 0003, 0004, 0005, 0013, 0018, 0019 accepted |
+| U0 | `53a2860` | three committed claims the study proved wrong |
+| U0 | `7f4f541` | plan: U0/U6/U7 done |
+| U5 | `4f3ceb6` | both quarantined acquisitions resolved; two 5xx paths closed |
+| U5 | `3f6d4ff` | plan: the pre-session workflow died at the interrupt |
+| U4 | `5e58d2a` | GUM uncertainty budget + pre-registered corpus manifest |
+| U4 | `898ad4a` | plan: status after U4 |
+| U4 | `86c7625` | the calibrator row cites the instrument certificate, not a recalled standard |
+| U4 | `64c1b22` | roadmap ticked to what actually closed |
+| U7 | `f773718` | proposal §1–§7 drafted (199 → 370 lines) |
+| U6 | `c835800` | 430 URLs verified live; 16 dead links replaced; one DOI found not to exist |
+| U3 | `8bbaa65` | plan: U3 started |
+| U3 | `8323e20` | ADRs 0009–0012 with their artefacts |
+| U3 | `23f29ab` | LVGL screenshot harness needs the direct call |
+| U3 | `91bd066` | plan: queue extended with U9 and U10 |
+| U3 | `42dabec` | `host/golden/README.md` aligned with the normative schema |
+| U9 | `8b58535` | architecture 01, 02, 03, 06 (773 lines) |
+| U10 | `7ff4c43` | the 1.8 V correction swept into eleven files |
+| U10 | `3ab8243` | FFT memory figures corrected from esp-dsp's allocation sites |
+| U10 | `6e918c6` | seven findings: SRAM table, sc16 arithmetic, `fft4real`, `clinical_claim` |
+| U10 | `622b6b0` | status hygiene: accepted ADRs stop being called "backlog" |
+| U10 | `e83025f` | `check_presets.py` written, so the spec stops reporting a script that did not exist |
+| U10 | `fab6121` | the golden example pinned *raw* thresholds under `method: filtered` |
+| U10 | `060cf64` | firmware comment corrections + two pre-commit hooks that could never pass |
+| U10 | `cf42a34` | `enbw_hz` rounded not truncated; V2's 48 kHz ban moved into the schema |
+| U10 | `0e2d72b` | six minors, including a licence boundary that was not quite one `grep` |
+| U10 | `67b8a2b` | 43 ADR links repointed; Saarbrücken corpus pre-registered |
+| U10 | `d8d353b` | five citation minors: every number under an address that carries it |
+| U10 | `ef1ad0c` | five nits, and a link checker that reports *where* |
+| U10 | `074e302` | the last three 1.8 V stragglers; OQ11 closed |
 | U8 | *this commit* | CHANGELOG entry + handback |
 
 ## The five findings worth your attention

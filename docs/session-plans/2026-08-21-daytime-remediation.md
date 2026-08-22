@@ -52,16 +52,16 @@ its failures:
 
 | Unit | State | Notes |
 |---|---|---|
-| A0 GPL environment | **DONE** | `4cd9926` — `host/pyproject.toml` + `uv.lock` + `REUSE.toml`; `host/.venv` created. **parselmouth 0.4.7 → Praat 6.1.38**, measured. Also the first time `manifest.schema.yaml` was ever loaded by a validator (`check_schema` PASS, worked example 0 errors). |
-| A1 T7a + ADR 0009 | **DONE** | `13ab640` — **reverses** the overnight U10 commit `e31df9a`. No released parselmouth can run `To Pitch (filtered autocorrelation)`; the golden pin is `method: raw`. Invariant 6 added. Separately: preset `nuttall` has **no** SciPy name (0.0163 from SciPy's), so the window oracle must build from coefficients, not names. |
-| A2 bibliography 05 | **DONE** | `f25539a` — #23's companion is `10.1121/1.4944474`, *JASA* **139(3), 1404–1410** (wrong on DOI, issue *and* pages); #44 is Wang, Müller, Caffier, Caffier; #47 is CC BY-NC-ND 4.0; #6's pages confirmed as cited. |
-| A3 Saarbrücken | **DONE** | `e759115` — **CC BY 4.0** (Zenodo 16874898). Quarantine lifted. Counts recomputed from the site's index CSV: 2 225 sessions / 1 853 speakers / 71 labels in 186 combinations. ADR 0005's "1 356 patients" was **sessions**. |
-| A4 filed datasheets | **DONE** | `a0f205b` — DRV2605L timings and currents; ALDO3 (and the finding that the **ST7789V3 spec's own current table is `TBD` in every cell**); GATECTRL `E4h` confirmed; ESP32-S3 strapping Table 3-1. A third `TBD` class introduced: `TBD (acquisition)`, for the BMA423 figures Bosch has delisted. |
-| D ADR 0006 | **DONE** | `821fb33` — written, `proposed`. Closes the last named ADR line of the DoD. Own `cplx2real` decided on source evidence; OQ1/2/3/4/7/8/9/12/13 closed or routed; ADR 0020 allocated. |
-| A5 `(verify)` sweep | **DONE** | `20d14ab`, `0fdc9d0`, `2996ac2` — 4 files swept, then audited, then the audit findings re-verified and applied. **The audit caught a false denial** (FDA #34) and a link that would have sold the operator the withdrawn edition of ISO 9241-112. |
-| A7 marker gate | **DONE** | `26cdf93`, `ea2d76c` — `check_markers.py` + closed/allowed lists with **owners**. Mutation-tested both ways. |
-| A6 `pre-commit run -a` | **DONE** | `f1e963f` — first full run: 21 hooks, 5 with findings, all addressed. All five local guard hooks passed first try. |
-| R re-audit | **DONE** | 12 lots, **1 943 claims checked, 1 711 confirmed (88 %)**, 177 findings; 155 went to skeptics told to defend the repository — **86 confirmed, 50 partial, 19 refuted**. Applied in `2fa0930`, `da58c85`, `af57f35`, `7b97c2c` across 46 files. |
+| A0 GPL environment | **DONE** | `376727e` — `host/pyproject.toml` + `uv.lock` + `REUSE.toml`; `host/.venv` created. **parselmouth 0.4.7 → Praat 6.1.38**, measured. Also the first time `manifest.schema.yaml` was ever loaded by a validator (`check_schema` PASS, worked example 0 errors). |
+| A1 T7a + ADR 0009 | **DONE** | `69b7b41` — **reverses** the overnight U10 commit `fab6121`. No released parselmouth can run `To Pitch (filtered autocorrelation)`; the golden pin is `method: raw`. Invariant 6 added. Separately: preset `nuttall` has **no** SciPy name (0.0163 from SciPy's), so the window oracle must build from coefficients, not names. |
+| A2 bibliography 05 | **DONE** | `1784749` — #23's companion is `10.1121/1.4944474`, *JASA* **139(3), 1404–1410** (wrong on DOI, issue *and* pages); #44 is Wang, Müller, Caffier, Caffier; #47 is CC BY-NC-ND 4.0; #6's pages confirmed as cited. |
+| A3 Saarbrücken | **DONE** | `cffd679` — **CC BY 4.0** (Zenodo 16874898). Quarantine lifted. Counts recomputed from the site's index CSV: 2 225 sessions / 1 853 speakers / 71 labels in 186 combinations. ADR 0005's "1 356 patients" was **sessions**. |
+| A4 filed datasheets | **DONE** | `c53c120` — DRV2605L timings and currents; ALDO3 (and the finding that the **ST7789V3 spec's own current table is `TBD` in every cell**); GATECTRL `E4h` confirmed; ESP32-S3 strapping Table 3-1. A third `TBD` class introduced: `TBD (acquisition)`, for the BMA423 figures Bosch has delisted. |
+| D ADR 0006 | **DONE** | `15102dd` — written, `proposed`. Closes the last named ADR line of the DoD. Own `cplx2real` decided on source evidence; OQ1/2/3/4/7/8/9/12/13 closed or routed; ADR 0020 allocated. |
+| A5 `(verify)` sweep | **DONE** | `3cb2323`, `555f763`, `61695fc` — 4 files swept, then audited, then the audit findings re-verified and applied. **The audit caught a false denial** (FDA #34) and a link that would have sold the operator the withdrawn edition of ISO 9241-112. |
+| A7 marker gate | **DONE** | `f24023c`, `6f351a1` — `check_markers.py` + closed/allowed lists with **owners**. Mutation-tested both ways. |
+| A6 `pre-commit run -a` | **DONE** | `e7e6c2d` — first full run: 21 hooks, 5 with findings, all addressed. All five local guard hooks passed first try. |
+| R re-audit | **DONE** | 12 lots, **1 943 claims checked, 1 711 confirmed (88 %)**, 177 findings; 155 went to skeptics told to defend the repository — **86 confirmed, 50 partial, 19 refuted**. Applied in `69168ff`, `1e0cf71`, `3aeca46`, `c87bd26` across 46 files. |
 | Handback | **DONE** | final section of this file. |
 
 ## What the loop caught that nobody had flagged
@@ -69,7 +69,7 @@ its failures:
 Recorded because these are the ones that argue for the method, not for the
 diligence:
 
-1. **The overnight "fix" was backwards.** `e31df9a` changed the golden example's
+1. **The overnight "fix" was backwards.** `fab6121` changed the golden example's
    thresholds to Praat's *filtered* defaults. Correct against the manual; impossible
    against the library. Only installing parselmouth revealed it.
 2. **A false denial, caught by the adversary.** A sweep agent concluded from the
