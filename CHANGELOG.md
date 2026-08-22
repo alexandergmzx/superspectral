@@ -114,6 +114,14 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
   and [`markers-allowlist.tsv`](docs/roadmap/markers-allowlist.tsv): every
   unresolved-value marker is either a closed correction that must not regress or
   an allowed one with a **named owner**. Wired into pre-commit and CI.
+- **★★★ filing closed** (DoD item 1): idf-build-apps v3.0.2, pytest-embedded
+  v2.8.1 and praat/praat cloned and pinned by commit; ESP-IDF `SUPPORT_POLICY.md`
+  / `ROADMAP.md` (+ `_CN` twins) filed byte-verbatim from the v6.0.2 checkout
+  under `docs/reports/espressif-tools/esp-idf-v6.0.2/`; the case drawing (08 D5),
+  Hillenbrand 1995 (10 #7, no stated terms) and the tier-0 synthetic set (10 P1,
+  code) carry reason tags. `acquisition-status.md` header recomputed from
+  `manifest.tsv` (46 rows, 3 466 pages). The research-statement's RQ quotation
+  is now byte-identical to the proposal (emphasis removed).
 
 ### Changed
 
