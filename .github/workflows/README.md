@@ -19,7 +19,7 @@ It shipped behind `if: false` and was flipped on **2026-08-20** (commit `6160532
 3. `sdkconfig.ci.release`, `sdkconfig.ci.qemu` and `sdkconfig.ci.analyzer` exist next to `sdkconfig.defaults`.
 4. The 30-minute gate build described in [ADR 0001](../../docs/adr/0001-toolchain-esp-idf-v6-pinned-environment.md) passed locally.
 
-First fully green run: workflow run **#18** on `4468334` (2026-08-21) — all four firmware configs plus the docs, link and Python jobs. The `guard-hooks` job and the marker/preset steps were added after that commit and have not yet had a remote run.
+First fully green run: workflow run **#18** on `4468334` (2026-08-21) — all four firmware configs plus the docs, link and Python jobs. The `guard-hooks` job and the marker/preset steps had their **first remote run on `7e8a1cc`** (the Phase-0 merge, run [32541479272](https://github.com/alexandergmzx/superspectral/actions/runs/32541479272), 2026-08-21): all eight jobs green, including the eight-hook loop and the fail-closed GPIO19/20 scan. `markdown-lint` reported MD013/MD060 on this file — advisory, non-blocking, left as is.
 
 If a future gate fails and the project falls back to v5.5.5, change the tag, the digest and `.envrc` together, and record it in ADR 0001.
 
