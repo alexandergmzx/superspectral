@@ -20,6 +20,61 @@
   that Praat 7.0 added full-trust checking for scripts that write files, which the T7b recipe must
   handle before it is run. The research question's "≤ 5 cents vs Praat" therefore currently means
   *Praat 6.1.38 raw autocorrelation*, and the proposal must say so — **owner's decision on the wording**.
+- **Amended 2026-08-21 (schema `"1.1"` — [ADR 0006](0006-fft-normalisation-and-window-conventions.md) D1's window-table digest):**
+  the golden-manifest schema moves from `1` to `"1.1"`, the MINOR bump ADR 0006 D1 deferred to "when the
+  generator lands", taken now so that it lands **before** any set is generated and no set ever has to be
+  re-emitted for it. What changes: **(a)** the version is a **quoted `"MAJOR.MINOR"` string** and a reader
+  accepts exactly one value — MINOR means fields were added and every pin is untouched (a set keeps its
+  name; its manifest is re-emitted with a `regeneration.reason` that names the schema), MAJOR means a pin
+  moved or a field changed meaning and every set is regenerated under a new name (decision 4); the
+  integer `1` is rejected, never coerced, and the `filtered` bump promised in the amendment above becomes
+  `"1.2"`. **(b)** A new top-level **`windows[]`** of `{family, n, coefficients, sha256}`, required
+  whenever `analyses.spectrum` is present (root-level `if`/`then`), carrying per `(family, N)` the sha256
+  over the N **float32 little-endian** samples of the **periodic** window built from `coefficients` —
+  `general_cosine(N, a, sym=False)` on the host, `spectral_window_fill()` on the device, i.e.
+  `hashlib.sha256(np.asarray(w, dtype="<f4").tobytes()).hexdigest()`. Float32 is the hashed
+  representation deliberately: both halves store float32, and rounding the host's float64 `cos()` to
+  float32 discards the last-ULP libm differences between x86 hosts that would otherwise make the digest
+  platform-dependent; the tolerance row stays **exact**, and a sample that ever lands within one float64
+  ULP of a float32 rounding boundary is a red `verify` and a finding, not a widened tolerance (measured
+  2026-08-21 over the seven families at N = 512 … 16384: the closest approach is **1521 float64 ULP**,
+  `nuttall` at N = 2048, so no last-ULP libm difference can flip a digest). **(c)**
+  `verify.py` gains **invariant 7** — recompute every `windows[].sha256` from its coefficients, and the
+  coefficients equal [`preset-schema.md` §4.3](../../protocols/specs/preset-schema.md) for the named
+  family, term for term — and **invariant 8** — an entry exists for
+  `(analyses.spectrum.window, analyses.spectrum.window_length_samples)`. **(d)** A shared
+  `$defs/window_family` enum — the six §4.3 families plus **`rect`** (`a₀ = 1`, NENBW 1.000, S1 = S2 = N),
+  admitted in the golden manifest **only**, for calibration tones, never in a preset; this closes
+  ADR 0006 consequence (c) with no ADR 0010 action, and `SPECTRAL_WINDOW_RECT` stays in the header.
+  **(e)** `analyses.spectrum.window` no longer reads "as passed to `scipy.signal.get_window`" — that is
+  the name-based oracle ADR 0006 D1 rejects (SciPy's `nuttall` is this project's `blackman_nuttall`;
+  this project's `nuttall` has no SciPy name). Same commit, by this record's own convention:
+  [`golden-files.md`](../validation/golden-files.md) sketch and digest row (`windows[].sha256`),
+  [`host/golden/README.md`](../../host/golden/README.md) field table, ADR 0006 D1 and consequence (c),
+  the [ADR index](README.md). The schema's edges — the quoted version, the `windows[]` conditional, the
+  family enum against `presets.schema.json`, the digest recipe against the pinned `(hann, 4096)` and
+  `(rect, 4096)` values — are pinned by `host/tests/test_manifest_schema.py`; invariants 7 and 8 are
+  implemented in `verify.py` (H0 unit B-U5, 2026-08-22).
+- **Amended 2026-08-22 (H0 landed — the generator is a package, and its digest is scoped):** `generate.py`
+  and `verify.py` exist, under `host/src/spectral_host/golden/` (src layout; `host/golden/` holds the
+  schema and the data only). Two consequences for the manifest. **(a)** `generator.script` is the package
+  path `host/src/spectral_host`, the only value `verify.py` accepts — the pre-src-layout example
+  `host/golden/generate.py` is retired. **(b)** `generator.sha256` is the sorted tree hash
+  (`hashing.sha256_files`: sorted POSIX relative paths, per file `relpath + NUL + size + NUL + bytes`) of
+  the **numerics-bearing modules only**, enumerated in `spectral_host.env.GENERATOR_TREE` (`env.py`,
+  `hashing.py`, `praat.py`, `spectrum.py`, `wavio.py`, `golden/sets.py`, `golden/generate.py`). The first
+  H0 draft hashed the whole package and the final gate showed why that is wrong: every later unit's edit
+  to `cli.py`, `verify.py` or `presets.py` turned the freshly generated set red on invariant 4 although
+  not one vector could have moved (the re-emission was byte-identical in all 33 arrays). A module that
+  cannot alter a vector is outside the list; a module that can is inside it, and a change there is a
+  regeneration with a stated reason under decision 4 — never a patched digest. Changing
+  `GENERATOR_TREE` itself re-reds every set on I4, which is the intended reading (the recipe moved).
+  `generate` refuses a dirty `host/src` (whole package, stricter than the digest) so that `commit`
+  names a tree that contains what ran. The `golden-regen` pre-commit hook named under decision 3 now
+  exists (H0 unit B-U9) and runs in the CI `guard-hooks` job; it fails closed on a shallow `HEAD`.
+  Same commit: `manifest.schema.yaml` `generator.script`/`sha256` descriptions,
+  [`host/golden/README.md`](../../host/golden/README.md) layout + field table,
+  [`golden-files.md`](../validation/golden-files.md) sketch, the [ADR index](README.md).
 - **Context:** The strongest external anchor this project has is the research question's own bound — *median |Δcents| vs Praat ≤ 5 cents on the digital-injection path* ([proposal §1](../proposal/01-super-spectral-proposal.md), [validation README](../validation/README.md)). An anchor is worth exactly what its reference is worth, and three independent facts say an unpinned Praat reference is worth nothing.
   - **parselmouth bundles its own Praat.** praat.org is at 7.0.01 (Boersma, Weenink & Shchupak — read 2026-08-21); the Praat that parselmouth embeds predates it by five years (6.1.38; measured, see the amendment above) ([06](../bibliography/06-reference-projects.md) #31, [05](../bibliography/05-papers.md) #55). "Parselmouth is numerically identical to Praat" is true only *within a version*, and the version that matters is `parselmouth.PRAAT_VERSION`, not whatever praat.org serves today. Roadmap threshold **T7** exists to measure the gap and is still open.
   - **The settings are the algorithm.** Praat changed its default pitch method from raw to **filtered** autocorrelation in 2023; floor, ceiling, silence and voicing thresholds, the octave and octave-jump costs and the candidate count all move the answer, and their *defaults differ between the two methods*. A golden file that records "Praat defaults" records nothing. The two sets, read from the Praat manual on 2026-08-21 — **filtered**: floor 50 Hz, top 800 Hz, silence 0.09, voicing 0.50, octave cost 0.055; **raw**: floor 75 Hz, ceiling 600 Hz, silence 0.03, voicing 0.45, octave cost 0.01 (octave-jump 0.35, voiced/unvoiced 0.14, 15 candidates and *very accurate* off in both) — differ in every threshold that moves an f0 track, which is why the worked example in [`../../host/golden/manifest.schema.yaml`](../../host/golden/manifest.schema.yaml) carries `method: raw` with 6.1.38's own thresholds, and marks only the two fields deliberately widened for singing (floor 65 / ceiling 1100) as `(prov.)`. *(This sentence described the filtered set until 2026-08-21; the amendment above is why, and invariant 6 would reject a `filtered` example against the measured bundle anyway.)* (<https://www.fon.hum.uva.nl/praat/manual/pitch_analysis_by_filtered_autocorrelation.html>, <https://www.fon.hum.uva.nl/praat/manual/pitch_analysis_by_raw_autocorrelation.html>; still to be re-read out of `parselmouth.PRAAT_VERSION` once the GPL environment exists — threshold T7.)
@@ -52,6 +107,8 @@
               ├─ analyses.spectrum              window + fftbins + normalization
               │                                 + scaling + dbfs_reference
               │                                 + int16_scale + dtype
+              ├─ windows[]  family + n + coefficients + sha256   (schema "1.1":
+              │             N float32 LE samples of the periodic window, ADR 0006 D1)
               │
               ├─ inputs[]  path + sha256(bytes as used) + sample_rate + bit_depth
               │            + channels + source{kind,name,parameters,licence}
@@ -63,7 +120,7 @@
 
   2. **Comparison is a per-metric tolerance table; equality never appears.** The table is the one in [`../validation/golden-files.md`](../validation/golden-files.md) — one row per comparison, each with the unit it is expressed in and *the reason it is not tighter*. It lives on the Apache-2.0 validation side and is the only place a limit is defined; the manifest merely **points** at it (`tolerances.source`, fixed by the schema as a `const`, so a generator cannot redirect the limit to a file it controls) and records `tolerances.revision`, the commit of the table the set was accepted against. Comparison rules that follow from the gotcha list and bind every consumer: compare in the metric's own unit (cents for f0, dB for spectra, Hz or % for formants), mask spectrum bins below the stated floor instead of widening `atol`, and **resample the host track onto the device's frame times before comparing — never compare frame indices**. Agreement against a reference is reported as a Bland–Altman / ICC problem, not an RMSE or `r` problem ([05](../bibliography/05-papers.md) #86, #87), which is also how the [uncertainty budget](../validation/uncertainty-budget.md) consumes these numbers (its component B6 is bounded to ≈ 0 *by* this lane).
 
-  3. **The generator runs on the GPL side and emits data the Apache side consumes, and that is clean for five separate reasons.** `host/golden/generate.py` and `verify.py` import parselmouth in-process and are GPL-3.0-or-later, like everything under `host/`.
+  3. **The generator runs on the GPL side and emits data the Apache side consumes, and that is clean for five separate reasons.** `generate.py` and `verify.py` (under `host/src/spectral_host/golden/` since the 2026-08-22 amendment) import parselmouth in-process and are GPL-3.0-or-later, like everything under `host/`.
      - The boundary is a **directory**, and this ADR adds **no exception** to it: `manifest.schema.yaml` carries `SPDX-License-Identifier: GPL-3.0-or-later` like every other text file under `host/`, so [ADR 0004](0004-split-licensing.md) item 2's "one `grep` finds the boundary" invariant survives intact.
      - **Nothing links.** The contract is files on disk — the same mechanism [ADR 0002](0002-companion-architecture.md) already fixes for takes and presets. `host-tests/` reads the manifest and the arrays the way it reads a WAV; reading a data file is not linking, and it is why `host-tests/` is deliberately *outside* `host/` ([ADR 0004](0004-split-licensing.md) item 3).
      - The **numbers are measurements about our own inputs**. GPLv3 reaches the program and works derived from it ([03](../bibliography/03-standards.md) #37, §5); it does not reach the arithmetic results a user computes about their own data. The SPDX tag on emitted files is conservative directory hygiene, not an assertion that a float array of f0 values is a derivative work of Praat — and the Tier-0 vectors are in any case measurements of signals this project generated.
@@ -75,7 +132,7 @@
      - A change to any pin produces a **new set with a new name**, not an edit — `regenerate, do not patch` ([`host/golden/README.md`](../../host/golden/README.md)). The superseded set stays on disk until its last consumer retires, so a regression can be bisected against it.
      - Every manifest carries a `regeneration:` block on **every** generation, the first one included (`reason: initial generation`, previous fields `null`): `date`, `reason` in prose a reviewer can disagree with, `approved_by`, `previous_manifest_sha256`, `previous_set`. "The tests were failing" is not a reason; "parselmouth *x.y.z* bundles Praat *a.b.c*, whose filtered-autocorrelation default changes the f0 track at onsets" is.
      - **Review the manifest diff, not the arrays.** Arrays are `.npy`; a diff of them tells a reviewer nothing, which is exactly why the provenance is a separate, readable file.
-     - **A commit may not both regenerate vectors and change a tolerance.** Two changes, two commits, two reasons — otherwise a widened limit hides inside a refresh. Commit prefix `golden:`. Enforced by review today; a `golden-regen` pre-commit hook that refuses a commit touching both `host/golden/outputs/` and the tolerance table is a Phase-1 deliverable and does not exist yet.
+     - **A commit may not both regenerate vectors and change a tolerance.** Two changes, two commits, two reasons — otherwise a widened limit hides inside a refresh. Commit prefix `golden:`. Enforced by the `golden-regen` pre-commit hook, which refuses a commit touching both `host/golden/outputs/` and the tolerance table (written 2026-08-22, H0 unit B-U9; until then it was review only).
      - A tolerance is widened only with the reason recorded in the commit message **and** in the table row, and never on the day a test goes red.
 
   5. **Two consuming lanes, neither of which needs the watch to fail.** [`host-tests/`](../../host-tests/README.md) — plain CMake, pure-C99 `spectral_core`, ASan/UBSan, `ctest` — applies the tolerance table against the NumPy/SciPy references; the QEMU/target lane runs the same vectors through the `file_blob` audio source ([ADR 0013](0013-native-linux-simulator-target.md)) and compares esp-dsp's optimized `_aes3` path against its ANSI-C path ("backend agreement"), because esp-dsp cannot build on the ESP-IDF `linux` target ([11](../bibliography/11-esp-idf-platform-and-toolchain.md) #A36, #A33; [07](../bibliography/07-technical-reports.md) #17). Host-side numeric snapshots use `pytest-regressions` ([06](../bibliography/06-reference-projects.md) #36) and `numpy.testing.assert_allclose` with the explicit `rtol`/`atol` from the table; per-metric residuals are emitted as a CI artifact on every run.
@@ -94,14 +151,14 @@
   - (+) A parselmouth upgrade becomes a visible manifest diff with a name attached, instead of a mysterious change in a test that someone re-baselines at 2 a.m.
   - (+) Every acceptance limit sits in one Apache-licensed file that the uncertainty budget and the proposal can both cite, and cannot be widened without a review someone has to sign.
   - (+) The GPL boundary needs no new exception and no new argument: the schema and the manifest are files under `host/` that the Apache side *reads*, which is the mechanism [ADR 0002](0002-companion-architecture.md) and [ADR 0004](0004-split-licensing.md) already chose.
-  - (−) Nothing runs yet. `generate.py` and `verify.py` are planned for D6; this record and its schema are a contract written ahead of the implementation, and the schema will meet its first hand-written manifest before it meets a real generator.
+  - (−) ~~Nothing runs yet.~~ *(closed 2026-08-22: `generate.py` and `verify.py` run, and the first set `tier0-synthetic` is committed.)* This record and its schema were a contract written ahead of the implementation; the implementation cost two amendments (windows digest, generator scoping) before its first real manifest.
   - (−) Every tolerance in the table is `(prov.)` and stays that way until T7 has been run and Phase 1–2 have produced measurements. Until then the golden lane catches gross regressions and nothing finer, and saying otherwise would be the exact overclaim this ADR exists to prevent.
   - (−) `praat_reference: null` is legal while T7 is open, so the project can generate and consume golden sets that have never been compared with a current Praat. The hole is loud and dated, but it is a hole in the anchor.
   - (−) Sets accumulate. A pin change makes a new set instead of an edit, superseded sets are retained for bisection, and nothing expires them automatically — someone retires them by hand or the directory grows forever.
   - (−) The manifest is verbose to the point that a human cannot realistically author one: eleven pitch parameters recorded even where they are Praat defaults, a sha256 per input and per output. That is deliberate, and it makes the generator the only practical author — which in turn means a generator bug writes a *confidently wrong* manifest that validates.
   - (−) The schema is a necessary condition only. Three cross-field invariants and every digest check live in `verify.py`; a manifest can pass validation and still be a lie about what is on disk.
   - (−) Item 4 is procedural today. Between a red CI and someone running the generator "to make it pass" stands review and nothing else; the hook that would make it structural is unwritten, and this is the same class of gap [ADR 0004](0004-split-licensing.md) records for its item 8.
-  - (−) `analyses.spectrum` duplicates conventions that [ADR 0006](README.md) owns (window, normalisation, dBFS reference). Two places can drift — the manifest records what was *used*, ADR 0006 what is *required* — and only a test that compares the two catches a divergence. That test is not written either.
+  - (−) `analyses.spectrum` duplicates conventions that [ADR 0006](README.md) owns (window, normalisation, dBFS reference). Two places can drift — the manifest records what was *used*, ADR 0006 what is *required* — and only a test that compares the two catches a divergence. That test is not written either. *(Since the schema `"1.1"` amendment, invariant 7 is the coefficient half of it: `windows[].coefficients` must equal the §4.3 table for the named family. The normalisation and dBFS halves remain unwritten.)*
   - (−) The schema reconciles two prose descriptions that were written earlier and disagree: [`golden-files.md`](../validation/golden-files.md) says `praat_bundled` and floor/ceiling 65 / 1100 Hz, [`host/golden/README.md`](../../host/golden/README.md) says `praat_version` and 60 / 1200 Hz `(prov.)`. The schema's names are normative and its example follows `golden-files.md`. **Closed 2026-08-21, same day:** [`host/golden/README.md`](../../host/golden/README.md) now reads `praat_bundled` and 65 / 1100 Hz `(prov.)`, each with a dated note naming what it previously said; `golden-files.md` already carried both. The debt this record created lasted hours, not sprints — but the shape of it (a schema written after two prose descriptions) is the standing cost, and the next schema field will do it again.
   - (−) The whole strategy inherits [ADR 0004](0004-split-licensing.md)'s standing tax: anything needed on both sides exists twice, and the tolerance table is what has to catch the divergence between the two implementations. A tolerance that is too generous hides a real bug, and nothing in this ADR tells anyone which rows are too generous.
   - Flagged as a validation item: this ADR adds **no new row** to the [metrics table](../validation/README.md) — "Median |Δcents| vs Praat golden file", the formant F1/F2, LTAS, SPR/FHE, two-tone and reproducibility rows already carry it. What it adds is their **precondition**: a manifest that validates, verifies and names its pins, and the tolerance table those rows are measured against. Re-run condition: `verify.py` on every PR; a full regeneration whenever parselmouth, its bundled Praat, numpy or scipy moves; and the **T7** comparison recorded into `generator.praat_reference` before any "vs Praat" figure leaves the project.

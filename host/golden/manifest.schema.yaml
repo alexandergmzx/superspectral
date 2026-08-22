@@ -44,10 +44,21 @@
 #   4. Every recorded sha256 matches the bytes actually on disk.
 #   5. `generator.parselmouth` / `generator.praat_bundled` match the *installed*
 #      environment at verification time (drift here means regenerate, not patch).
-#   A manifest that passes this schema and fails any of 1–5 is not a golden set.
+#   6. `analyses.pitch.method: filtered` requires `generator.praat_bundled`
+#      >= 6.4.0, compared as a version tuple (ADR 0009 amendment, 2026-08-21).
+#   7. Every `windows[].sha256` is RECOMPUTED from `windows[].coefficients`
+#      (periodic window, N float32 little-endian samples, see `windows`) and
+#      must match; and `windows[].coefficients` equal, term for term, the
+#      preset-schema §4.3 table for the named family (`rect` = [1.0]). A digest
+#      that validates but does not recompute is exactly the window drift
+#      ADR 0006 D1 exists to catch. (schema "1.1")
+#   8. An entry of `windows[]` exists for the pair
+#      (`analyses.spectrum.window`, `analyses.spectrum.window_length_samples`)
+#      whenever `analyses.spectrum` is present. (schema "1.1")
+#   A manifest that passes this schema and fails any of 1–8 is not a golden set.
 
 $schema: "https://json-schema.org/draft/2020-12/schema"
-$id: "urn:super-spectral:schema:golden-manifest:1"
+$id: "urn:super-spectral:schema:golden-manifest:1.1"
 title: Super Spectral golden-file manifest
 description: >-
   One manifest per golden set (`tier0-synthetic`, `vocadito-subset`, …). Describes
@@ -73,9 +84,22 @@ properties:
 
   schema:
     description: >-
-      Manifest schema version. Bumped only by an ADR amendment; a reader that
-      does not recognise the value must refuse the manifest rather than guess.
-    const: 1
+      Manifest schema version, a QUOTED "MAJOR.MINOR" string, bumped only by an
+      ADR amendment. MINOR (1 -> "1.1") means fields were ADDED and every
+      existing pin is untouched: a set keeps its name, and its manifest is
+      re-emitted with a `regeneration.reason` that names the schema (e.g.
+      "re-emitted for golden-manifest schema 1.1; no pin changed"). MAJOR means
+      a pin moved or a field changed meaning: every set is regenerated under a
+      NEW name (ADR 0009 decision 4). A reader accepts exactly ONE value, this
+      `const`, and refuses everything else rather than guessing — no range, no
+      "at least", and no integer form: the schema-1 integer `1` is rejected by
+      design, because a manifest written before `windows[]` existed cannot
+      carry the digest this version requires. "1.1" adds `windows[]` (the
+      ADR 0006 D1 window-table digest; ADR 0009 amendment of 2026-08-21). The
+      `filtered` pitch-method bump ADR 0009 promises (a pitch TOP plus an
+      `attenuation at top` in place of `pitch_ceiling`) becomes "1.2".
+    type: string
+    const: "1.1"
 
   set:
     description: >-
@@ -112,14 +136,28 @@ properties:
       - blas
     properties:
       script:
-        description: Repository-relative path of the generator (e.g. `host/golden/generate.py`).
+        description: >-
+          Repository-relative path of the generator PACKAGE: `host/src/spectral_host`
+          (the only value verify.py accepts, since 2026-08-22). The generator
+          is a package — the spectrum oracle, the Praat wrappers, the decoder,
+          the set definitions and the driver — not one script; the pre-src-
+          layout example `host/golden/generate.py` is retired.
         type: string
         minLength: 1
       sha256:
         description: >-
-          sha256 of the generator script's bytes, so that a change to the
-          generator is visible in the manifest diff even when the outputs happen
-          not to move.
+          The sorted tree hash of the NUMERICS-BEARING modules of the package,
+          so that a change to anything that can alter a vector is visible in
+          the manifest diff even when the outputs happen not to move. The module
+          list is `spectral_host.env.GENERATOR_TREE` (env.py, hashing.py,
+          praat.py, spectrum.py, wavio.py, golden/sets.py, golden/generate.py);
+          the recipe is `spectral_host.hashing.sha256_files`: sort the POSIX
+          relative paths and feed ONE sha256, per file, `relpath + NUL + str(size)
+          + NUL + bytes`. Modules that cannot change a vector (cli.py, verify.py,
+          manifest.py, presets.py) are deliberately outside the list, so editing
+          them never turns a committed set red; editing a listed module always
+          does — verify.py invariant I4 — and the answer is a regeneration with a
+          stated reason, never a patched digest (ADR 0009 decision 4).
         $ref: "#/$defs/sha256"
       commit:
         description: Full 40-hex repository commit the generator ran from.
@@ -459,11 +497,19 @@ properties:
         properties:
           window:
             description: >-
-              Window name as passed to `scipy.signal.get_window`. Must be one the
-              watch also has (esp-dsp `dsps_wind_*`); Blackman-Harris coefficient
-              sets differ between sources, so the SciPy set is the reference.
-            type: string
-            minLength: 1
+              The window FAMILY the reference was built with — a preset-schema
+              §4.3 name (or `rect`, calibration tones only; see
+              `$defs/window_family`), never a SciPy name. The window is built
+              from the family's COEFFICIENTS with
+              `scipy.signal.windows.general_cosine(N, a, sym=False)`, not from
+              `scipy.signal.get_window(<name>, N)`: the name-based oracle is
+              wrong for one of the six families — SciPy's `nuttall` IS this
+              list's `blackman_nuttall`, and this list's `nuttall` has no SciPy
+              name at all (max |Δ| 0.0163; ADR 0006 D1, measured 2026-08-21).
+              The `windows[]` entry for (this, `window_length_samples`) carries
+              the coefficients and the digest — invariant 8 of verify.py. Schema 1
+              said "as passed to scipy.signal.get_window"; "1.1" corrects it.
+            $ref: "#/$defs/window_family"
           window_length_samples:
             type: integer
             minimum: 2
@@ -514,6 +560,76 @@ properties:
               is what the tolerance table exists to bound.
             type: string
             enum: ["float32", "float64"]
+
+  windows:
+    description: >-
+      The window-table digests of ADR 0006 D1 (schema "1.1"): one entry per
+      (family, N) the set's spectrum references were built with, so that a
+      window that quietly changes shape fails `verify` instead of shifting every
+      level by a fraction of a dB. Each entry records the coefficients the
+      window was BUILT FROM — never a library's name for it, which is the 0.0163
+      trap ADR 0006 D1 measured — and the sha256 over the N float32
+      LITTLE-ENDIAN samples of the PERIODIC window, i.e.
+      `hashlib.sha256(np.asarray(w, dtype="<f4").tobytes()).hexdigest()` where
+      `w = scipy.signal.windows.general_cosine(N, a, sym=False)` on the host and
+      the float32 table `spectral_window_fill()` leaves in memory on the
+      device (dumped raw and hashed off-device; the C side carries no sha256).
+      Float32 is the hashed representation on purpose: the device stores
+      float32, and rounding the host's float64 `cos()` to float32 discards the
+      last-ULP libm differences between x86 hosts that would otherwise make the
+      digest platform-dependent. The residual — a sample that lands within one
+      float64 ULP of a float32 rounding boundary — has not been observed:
+      measured 2026-08-21 over all seven families at N = 512 … 16384, the
+      closest approach is 1521 float64 ULP (`nuttall`, N = 2048), so a
+      last-ULP libm difference cannot flip a digest. If it ever is observed on
+      a new (family, N), it is a red `verify` and
+      a finding, never a widened tolerance, because the tolerance row for this
+      digest (docs/validation/golden-files.md) is "exact". REQUIRED whenever
+      `analyses.spectrum` is present (root-level `if`/`then` below, the same
+      construction protocols/specs/presets.schema.json uses); permitted
+      otherwise, so a set may carry the digests of every family at the sizes it
+      generates. What the schema cannot check, `verify.py` does: invariant 7 —
+      every `sha256` is recomputed from `coefficients` and must match, and
+      `coefficients` equal the preset-schema §4.3 table for `family`, term for
+      term (`rect` = [1.0]); invariant 8 — an entry exists for the pair
+      (`analyses.spectrum.window`, `analyses.spectrum.window_length_samples`).
+    type: array
+    minItems: 1
+    items:
+      type: object
+      additionalProperties: false
+      required: [family, n, coefficients, sha256]
+      properties:
+        family:
+          description: >-
+            Window family this table was built for. `rect` is admitted here and
+            nowhere else — see `$defs/window_family`.
+          $ref: "#/$defs/window_family"
+        n:
+          description: >-
+            Window length N in samples — the period of the periodic cosine sum
+            and the number of float32 samples hashed. Matches
+            `analyses.spectrum.window_length_samples` for the entry invariant 8
+            looks up.
+          type: integer
+          minimum: 2
+        coefficients:
+          description: >-
+            The cosine-sum a_k, a_0 first, exactly as in preset-schema §4.3:
+            `w[j] = Σ_k (−1)^k · a_k · cos(2πkj/N)`, j = 0 … N−1. One term for
+            `rect` ([1.0]), two for `hann`, up to five for `flat_top`. Recorded
+            so the digest can be recomputed without consulting any table, and
+            checked against that table by invariant 7 so the two cannot drift.
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: number
+        sha256:
+          description: >-
+            sha256 of the N float32 little-endian samples of the periodic window
+            built from `coefficients`, as defined in the `windows` description.
+          $ref: "#/$defs/sha256"
 
   outputs:
     description: >-
@@ -634,6 +750,18 @@ properties:
     description: Free-form notes for the reviewer. Never load-bearing.
     type: string
 
+# `windows[]` is mandatory exactly when the set carries a spectrum reference:
+# the digest is what makes the window and magnitude rows of the tolerance table
+# mean anything (ADR 0006 D1). Root-level `if`/`then`, the construction
+# protocols/specs/presets.schema.json uses for its conditional rules.
+if:
+  required: [analyses]
+  properties:
+    analyses:
+      required: [spectrum]
+then:
+  required: [windows]
+
 $defs:
 
   sha256:
@@ -655,6 +783,24 @@ $defs:
     type: string
     pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
 
+  window_family:
+    description: >-
+      A window family name — the six cosine-sum families of preset-schema §4.3
+      that esp-dsp ships and the firmware builds PERIODIC from their
+      coefficients (ADR 0006 D1) — plus `rect`. `rect` (a_0 = 1: NENBW 1.000
+      bins, S1 = S2 = N, coherent gain 0 dB) is admitted HERE ONLY, for
+      calibration tones whose level must read back with no window in the way.
+      It is NEVER a preset family: preset-schema §4.3 and presets.schema.json do
+      not list it, a preset loader that meets its wire value
+      (`SPECTRAL_WINDOW_RECT` = 0) must reject the preset, and admitting it in
+      the golden manifest is what closes ADR 0006 consequence (c) with no
+      ADR 0010 action. These are NOT SciPy names: SciPy's `nuttall` IS this
+      list's `blackman_nuttall`, and this list's `nuttall` has no SciPy name at
+      all (ADR 0006 D1, measured 2026-08-21) — build from coefficients, always.
+      Shared by `windows[].family` and `analyses.spectrum.window`.
+    type: string
+    enum: [rect, hann, blackman, blackman_harris, blackman_nuttall, nuttall, flat_top]
+
   version:
     description: >-
       A version string exactly as the tool reports it. Deliberately not
@@ -674,7 +820,7 @@ $defs:
 #
 #   # SPDX-FileCopyrightText: 2026 Alexander Gomez
 #   # SPDX-License-Identifier: GPL-3.0-or-later
-#   schema: 1
+#   schema: "1.1"
 #   set: tier0-synthetic
 #   generated: "2026-08-21"
 #
@@ -735,15 +881,31 @@ $defs:
 #       max_candidates: 15
 #       very_accurate: false
 #     spectrum:
-#       window: hann
+#       window: hann               # a preset-schema §4.3 family, never a SciPy name
 #       window_length_samples: 4096
-#       fftbins: true              # periodic, per scipy.signal.get_window
+#       fftbins: true              # periodic: general_cosine(N, a, sym=False), ADR 0006 D1
 #       fft_size: 4096
 #       normalization: "S1"        # per ADR 0006
 #       scaling: power_spectrum
 #       dbfs_reference: sine       # a full-scale sine is 0 dBFS
 #       int16_scale: 32768
 #       dtype: float64
+#
+#   windows:
+#     # ADR 0006 D1, schema "1.1": one digest per (family, N) the set uses.
+#     # Each is the sha256 of the N float32 little-endian samples of the
+#     # PERIODIC window built from `coefficients`. The hann entry is the one
+#     # invariant 8 looks up for `analyses.spectrum` above; `rect` is here for
+#     # the calibration tone only and can never name a preset window
+#     # (ADR 0006 consequence (c)).
+#     - family: hann
+#       n: 4096
+#       coefficients: [0.5, 0.5]
+#       sha256: 3ce6c7c870b60fc2425689b96f2ccf1cecff9b071766a48ae3d25a0ca8f3d304   # recomputed, 2026-08-21
+#     - family: rect
+#       n: 4096
+#       coefficients: [1.0]
+#       sha256: 3035aac5fb87474c303702f9030301b4e6bb7aee93be3710b8ab8dcea201db70   # = sha256(b'\x00\x00\x80\x3f' * 4096)
 #
 #   outputs:
 #     - path: host/golden/outputs/tier0-synthetic/pitch_sine_440.npy

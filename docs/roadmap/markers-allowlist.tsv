@@ -55,7 +55,7 @@ docs/session-plans/2026-08-21-overnight-phase0.md	2	dated session record — his
 docs/standards/README.md	1	follows the documents it indexes
 docs/validation/README.md	10	Phase 1 measured — every target has a method, not yet a number
 docs/validation/experiments/0001-pdm-mic-in-situ-characterization.md	2	Phase 1 measured — every target has a method, not yet a number
-docs/validation/golden-files.md	5	Phase 1 measured — every target has a method, not yet a number
+docs/validation/golden-files.md	6	Phase 1 measured — every target has a method, not yet a number; the formant-settings (prov.) is owned by experiment 0005 / the H1 vowel set
 dsp/README.md	1	follows the documents it indexes
 firmware/twatch-s3/README.md	1	follows the ADRs it implements
 firmware/twatch-s3/components/spectral_fft_backend/README.md	1	follows the ADRs it implements
@@ -72,3 +72,4 @@ protocols/specs/README.md	1	provisional preset values — freeze with experiment
 protocols/specs/preset-schema.md	8	provisional preset values — freeze with experiment 0001
 protocols/specs/presets.schema.json	4	provisional preset values — freeze with experiment 0001
 python-scripts/README.md	5	prose describing check_markers.py and the marker class
+docs/validation/experiments/README.md	1	experiment 0004 (M0 bring-up) — its latency/refresh numbers are (prov.) until experiment 0001 characterises the mic; owner Alexander + hardware
