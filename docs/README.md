@@ -7,10 +7,10 @@ Human-facing documents for Super Spectral. `docs/` holds only **cross-cutting ma
 | Subdirectory | Contents |
 |--------------|----------|
 | [proposal/](proposal/) | Binding research proposal (§1 research question … §7 limitations, References) and the one-page research statement |
-| [roadmap/](roadmap/) | The documentation roadmap: tracks D0–D6 (documentation/acquisition) and E0–E2 (environment), each with a definition of done; routing table for the open questions |
+| [roadmap/](roadmap/) | The documentation roadmap: tracks D0–D6 (documentation/acquisition), E0–E2 (environment) and W0–W4 (the host web application, [ADR 0021](adr/0021-host-web-application.md)), each with a definition of done; routing table for the open questions |
 | [research/](research/) | The founding Linux-analyzer research document, moved here byte-identical |
-| [architecture/](architecture/) | Companion architecture tenets and the planned design documents (audio capture path, DSP pipeline, display render path, host link, power budget, preset schema, memory/task topology) |
-| [adr/](adr/) | Architecture Decision Records — one file per non-trivial decision; template, records, and the pre-registered backlog (0001–0019) |
+| [architecture/](architecture/) | Companion architecture tenets and the planned design documents (audio capture path, DSP pipeline, display render path, host link, power budget, preset schema, memory/task topology, host web application) |
+| [adr/](adr/) | Architecture Decision Records — one file per non-trivial decision; template, records, and the pre-registered backlog (0001–0021) |
 | [validation/](validation/) | Two-path rule, acceptance metrics with external anchors, equipment with tolerances, golden-file strategy, experiment recipes |
 | [devenv/](devenv/) | Reproducible ESP-IDF v6.0.2 environment: setup, `env.lock.md`, upgrade procedure, first-flash checklist, brick runbook, backup policy, coredump runbook, pitfall catalogue |
 | [hw/](hw/) | Derived board facts: pin map (with attribution), eFuse baseline (read in E2), decoded vendor partition table |
@@ -40,7 +40,7 @@ Thematic files [08](bibliography/08-voice-metrology-on-the-wrist.md) (voice metr
 | DSP (FFT normalization, decimation cascade, pitch, band energy, mic EQ) | [`../dsp/design/`](../dsp/design/) |
 | Record format and preset schema | [`../protocols/specs/`](../protocols/specs/) |
 | ESP32-S3 firmware (build, components, configuration files) | [`../firmware/twatch-s3/README.md`](../firmware/twatch-s3/README.md) |
-| Linux companion and golden-file generator (GPL-3.0-or-later) | [`../host/README.md`](../host/README.md) · [`../host/golden/README.md`](../host/golden/README.md) |
+| Linux companion — offline analysis, golden-file generator **and the host web application** (browser-native live analyzer of the host's own microphone + the offline-compare UI, [ADR 0021](adr/0021-host-web-application.md)); GPL-3.0-or-later | [`../host/README.md`](../host/README.md) · [`../host/golden/README.md`](../host/golden/README.md) |
 | Host tests for the pure-C DSP core | [`../host-tests/README.md`](../host-tests/README.md) |
 | Hardware (BOM, acoustic port, teardown measurements) | [`../hardware/README.md`](../hardware/README.md) |
 | Datasets, analysis, tools, tests | [`../datasets/`](../datasets/) · [`../analysis/`](../analysis/) · [`../tools/`](../tools/) · [`../tests/`](../tests/) |

@@ -90,7 +90,10 @@ repos:
         # ADR records use `ADR(0006): ...` -- the linter's type token cannot contain a space.
         # --summary-uppercase dropped: with it absent the linter checks no case at all
         # (read from hook.py), which is what a convention of `docs: lowercase subject` needs.
-        args: ["--types=ADR,adr,change,chore,ci,datasets,devenv,docs,feat,firmware,fix,golden,host,protocols,refactor,remove,revert,test",
+        # `web` (added 2026-08-22, ADR 0021): the host web application -- front end
+        # `host/web/` and backend `host/src/spectral_host/web/`. It is the prefix for
+        # roadmap track W's milestone commits, which is what ticks a W-track DoD box.
+        args: ["--types=ADR,adr,change,chore,ci,datasets,devenv,docs,feat,firmware,fix,golden,host,protocols,refactor,remove,revert,test,web",
                "--subject-min-length=8", "--subject-max-length=100"]
 
   - repo: local

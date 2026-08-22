@@ -2,7 +2,7 @@
 
 **Compiled 2026-08-20** from the research session that produced [`../bibliography/`](../bibliography/README.md) (26 agents, two workflows; syntheses kept in the gitignored `scratch/research/`). Provisional values carry `(prov.)`; unsettled values carry `TBD`. Owner of the whole roadmap: Alexander Gomez; Claude acts as scientific assistant and executes the passes marked *this pass*.
 
-The roadmap answers one question for every artefact in this repo: **in what order, and what does "done" look like?** It has two tracks — **D** (documentation and acquisition) and **E** (development environment) — because the user's stated risk ("the environment may cause a lot of troubles later if not done correctly") is real on this host and has its own irreversible steps (a 19 GB cleanup, a first custom flash, a first backlight write). The two tracks interleave: **D0 D1 E0** are this pass; **E1 E2 D2 D3 D4 D5 D6** are follow-up sessions, each a named phase with its own DoD.
+The roadmap answers one question for every artefact in this repo: **in what order, and what does "done" look like?** It has three tracks — **D** (documentation and acquisition), **E** (development environment) and **W** (the host web application, added 2026-08-22 by [ADR 0021](../adr/0021-host-web-application.md)). D and E exist because the user's stated risk ("the environment may cause a lot of troubles later if not done correctly") is real on this host and has its own irreversible steps (a 19 GB cleanup, a first custom flash, a first backlight write); they interleave: **D0 D1 E0** were the first pass, **E1 E2 D2 D3 D4 D5 D6** are follow-up sessions, each a named phase with its own DoD. W exists because the founding document's browser analyzer is built in full under `host/` — it needs no hardware, no ESP-IDF environment and no watch, and by the owner's ordering decision of 2026-08-22 it **runs first**, in parallel with his own remaining Phase-0 items; its five phases are the last five of §2.
 
 ---
 
@@ -36,7 +36,7 @@ Super Spectral is a **companion** to the Linux analyzer in [`../research/00-linu
 
 ---
 
-## 1. The two tracks
+## 1. The three tracks
 
 ```
    Track D — documentation & acquisition          Track E — environment
@@ -52,9 +52,18 @@ Super Spectral is a **companion** to the Linux analyzer in [`../research/00-linu
    D5  ADRs 0002–0019 (ripple commits)      ◄──── ADR 0001 flips to accepted at E1;
    D6  Validation plan frozen                      0014/0015/0016 need E2 data
        = gate to firmware milestone M0
+
+   Track W — host web application (ADR 0021)
+   ─────────────────────────────────────────
+   W0  Peak CLI + both skeletons + /presets      no hardware, no ESP-IDF, no watch.
+   W1  Live spectrum vs the goldens              Runs FIRST by the owner's 2026-08-22
+   W2  Waterfall + presets + injection mode      ordering decision, in parallel with
+       + phone-on-LAN (mkcert — a W2 gate)       his own Phase-0 items (D2's RQ freeze,
+   W3  f0 / ring / F1–F2 overlays                D3's `checked` reads). Firmware stays
+   W4  Offline compare (/analyze, DTW, /separate)  parked until both are green.
 ```
 
-The E-track is short and front-loaded on purpose: everything irreversible on the host (cleanup) and on the device (first custom flash, first backlight write) is sequenced *after* the check that makes it safe.
+The E-track is short and front-loaded on purpose: everything irreversible on the host (cleanup) and on the device (first custom flash, first backlight write) is sequenced *after* the check that makes it safe. The W-track is the opposite shape: nothing in it is irreversible and nothing in it touches the device, which is why it can run while the D-track items that need the owner's own voice and eyes (the RQ freeze, the human `checked` reads) proceed beside it.
 
 ---
 
@@ -215,13 +224,78 @@ Each phase lists **Owner** (who must be present), **Inputs** (what must exist fi
   - [x] First reference-project ADR written ([ADR 0018](../adr/0018-first-reference-project-study.md), accepted 2026-08-21, on four `_notes.md` studies); first experiment recipe written ([0001](../validation/experiments/0001-pdm-mic-in-situ-characterization.md), and [0002](../validation/experiments/0002-rollback-and-boot-guard-race.md) executed and `validated 2026-08-21`).
   - [x] CI link-check green *(and reproducible locally without an install: `python3 python-scripts/check_links.py`)*.
 
+### W0 — Web application skeletons + the peak CLI
+
+*(Track W, [ADR 0021](../adr/0021-host-web-application.md) decision 9. The founding document's M0.)*
+
+- **Owner:** Claude builds; **Alexander approves the npm allowlist** — the licence list of [ADR 0021](../adr/0021-host-web-application.md) decision 4 is a policy, not a lockfile, and it is his to sign.
+- **Inputs:** ADR 0021 accepted; the six presets under [`../../protocols/presets/`](../../protocols/presets/README.md) ([ADR 0010](../adr/0010-preset-schema.md)) and their loader rules V0–V10; the `tier0-synthetic` golden set and a green `spectral-golden verify` ([ADR 0009](../adr/0009-golden-file-strategy.md)); a Node LTS on the host.
+- **Outputs:** `host/web/` scaffold — Vite + TypeScript, vitest, the **fail-closed npm licence gate** over `package-lock.json`, `SPDX-License-Identifier: GPL-3.0-or-later` on every `.ts` / `.css` / `.html`, `host/REUSE.toml` rows for `package.json`, `package-lock.json`, `tsconfig.json` and the static assets, and a committed `.nvmrc`; `host/src/spectral_host/web/` — the FastAPI application with `GET /api/presets`, `GET /api/presets/{id}` and the static mount that serves the built front end; the founding document's M0 peak-frequency printer as **`spectral-web peak`**; a CI **`web`** job (`npm ci --ignore-scripts` against the committed lockfile → licence gate → type-check → vitest) and the extended **`host`** job; the pre-commit hook and REUSE changes the new directory needs; [`../devenv/setup.md`](../devenv/setup.md) §10 extended with the Node/npm environment beside the Python ones.
+- **Definition of done**
+  - [ ] The `host` job green **including `spectral-golden verify`** — the golden pins do not move because a web application appeared.
+  - [ ] The `web` job green: `npm ci` against the committed lockfile, licence gate, `tsc --noEmit`, vitest.
+  - [ ] `GET /api/presets/{id}` returns bytes **identical** to `protocols/presets/<id>.json` for all six presets (sha256 compared in the test and displayed beside the preset name), and a deliberately tampered preset **fails loudly with rule V0** of the loader rather than being served.
+  - [ ] `spectral-web peak` reports the Tier-0 1 kHz file's peak within **≤ 3 cents** (the peak-frequency row of [`../validation/README.md`](../validation/README.md)).
+  - [ ] A deliberately added **AGPL-3.0** package **fails** the licence gate; the negative test and its exact output are recorded (ADR 0021 decision 4 names audioMotion-analyzer as the do-not-use).
+  - [ ] The licence-boundary greps still clean: every file under `host/` carries the GPL-3.0-or-later header or a `host/REUSE.toml` row, and no file outside it does ([ADR 0004](../adr/0004-split-licensing.md)).
+
+### W1 — Live spectrum, held to the Python oracle
+
+- **Owner:** Claude builds; Alexander runs the two browsers (starting capture is a user gesture and cannot be automated headlessly on his machine).
+- **Inputs:** W0; the `tier0-synthetic` golden set with its `windows[]` float32 digests; the [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) conventions; the tolerance rows [ADR 0021](../adr/0021-host-web-application.md) adds to [`../validation/golden-files.md`](../validation/golden-files.md).
+- **Outputs:** the **TypeScript DSP module** — periodic cosine-sum window built from the preset's own `coefficients` (never a library window by name), the float64 table rounded once to float32 so the digest is the device's; the FFT kernel; Heinzel S1/S2 with the factor 2 on bins `1 … N/2−1` only; dBFS against a full-scale sine with `Math.log10` in double; the DC blocker — the **AudioWorklet** ring buffer and the **Worker** that runs the transform off the audio thread; the Canvas2D spectrum line with peak markers, hold and smoothing (`analysis.smoothing` = weight of the **previous** frame, ADR 0021 decision 7(d)); the **golden vitest suite** that reads the committed `.npy` arrays and applies the tolerance table; `GET /api/golden` serving the set to the browser; the recipe for [experiment 0006](../validation/experiments/0006-web-capture-chain-linearity.md).
+- **Definition of done**
+  - [ ] Window table digests **exact** per `(family, N)` against the manifest's `windows[].sha256`.
+  - [ ] Every Tier-0 spectrum within **0.01 dB** `(prov.)` of the Python oracle on bins ≥ −80 dBFS; bins below are masked.
+  - [ ] The FFT kernel verified against a **naive DFT** in double (O(N²), N = 64 … 4096) — a second witness that does not share the kernel's structure.
+  - [ ] The DC blocker's **two numbers** stated and tested: pole radius and −3 dB corner at each preset's rate.
+  - [ ] Live capture runs in **Chromium and Firefox** with `echoCancellation`, `noiseSuppression` and `autoGainControl` read back **false** from `track.getSettings()`, and `AudioContext.sampleRate == 32000` — a mismatch **refuses to start** and names both rates (ADR 0021 decision 7(c)).
+  - [ ] The **measured** TypeScript residual (max and median dB, per Tier-0 file) recorded in [`../validation/golden-files.md`](../validation/golden-files.md).
+  - [ ] Experiment 0006 written.
+
+### W2 — Waterfall, preset switching, injection mode, phone-on-LAN
+
+- **Owner:** Claude builds; **Alexander runs the phone gate** — it is his phone, his LAN and his certificate.
+- **Inputs:** W1; the committed RGB565 colormap LUT ([ADR 0011](../adr/0011-spectrogram-colormap.md)); mkcert on the host; the six presets.
+- **Outputs:** the **WebGL scrolling waterfall**; preset switching against the served presets; **injection mode** — a TypeScript WAV reader that parses int16 PCM itself and feeds the same DSP module in a Worker with no audio graph, so `decodeAudioData` (which resamples and converts by an unstated convention) never touches a golden input; the in-app **golden-agreement readout**; the capture-chain panel showing what `track.getSettings()` actually returned; uvicorn behind `--ssl-certfile` / `--ssl-keyfile` with a mkcert certificate for the laptop's LAN address; the recipe for [experiment 0007](../validation/experiments/0007-web-latency-and-refresh.md).
+- **Definition of done**
+  - [ ] WebGL waterfall renders the history ring; the colormap is the watch's committed LUT expanded to 888 in the shader, so a screenshot compares with the panel (routing-table Q52).
+  - [ ] All six presets switch **without restarting capture** (the `stem_analysis` preset switches the offline pane, not the live one).
+  - [ ] Injection mode reproduces the oracle **end to end through the in-browser DSP path** on the Tier-0 set — the same files, the same goldens, the same tolerance rows as W1, and the same module the AudioWorklet feeds live, reached here through the TypeScript WAV reader in a Worker with no audio graph and never through `decodeAudioData` ([ADR 0021](../adr/0021-host-web-application.md) decision 7(c)).
+  - [ ] The in-app golden-agreement readout shows the live residual against the served set, so a regression is visible without a test run.
+  - [ ] Sustained refresh recorded as **measured, no claim** — per browser, per OS, per preset; it is never quoted against the watch's per-preset targets ([ADR 0021](../adr/0021-host-web-application.md) decision 3).
+  - [ ] Experiment 0007 written.
+  - [ ] **The waterfall is opened from the owner's phone over the LAN through a mkcert certificate.** A requirement, not a nicety (owner, 2026-08-22): Chrome's insecure-origin flag is a development fallback and does not close this box.
+
+### W3 — f0, ring and F1–F2 overlays
+
+- **Owner:** Claude builds; Alexander decides anything that is taste or perception.
+- **Inputs:** W2; the Praat pitch goldens; the ring/twang constant of [ADR 0021](../adr/0021-host-web-application.md) decision 7(e); [03 #23](../bibliography/03-standards.md) (WCAG 2.2) via [09 S3](../bibliography/09-visual-feedback-for-singing.md).
+- **Outputs:** the time-domain f0 estimator in TypeScript with note name and cents deviation; the ring / twang band-energy overlay; `L_Aeq` with A- and C-weighting; the F1–F2 overlay fed by the offline pane; the accessibility pass over every readout.
+- **Definition of done**
+  - [ ] Browser f0 vs the Praat goldens on the injection path: median **≤ 5 cents** `(prov.)`, **VR ≥ 90 %**, **VFA ≤ 10 %** — its own row in the validation block, never merged with the device row.
+  - [ ] A- and C-weighting within **±0.1 dB** of the standard's tabulated values at the tabulated frequencies.
+  - [ ] **No state is encoded by colour alone**, and every readout meets WCAG 2.2 contrast — checked, not asserted.
+  - [ ] The estimator's parameters are **displayed** with their `(prov.)` tag until [ADR 0020](../adr/README.md) fixes the estimator, and the band edges likewise until [ADR 0008](../adr/README.md) fixes them (routing-table Q48, Q51).
+
+### W4 — Offline compare
+
+- **Owner:** Claude builds; Alexander runs the one real separation (it is his CPU and his hours).
+- **Inputs:** W3; parselmouth, librosa, demucs and torch admitted to `host/pyproject.toml` and `host/uv.lock` under the [ADR 0004](../adr/0004-split-licensing.md) discipline; the golden pitch / formant / LTAS arrays.
+- **Outputs:** `POST /api/analyze` (parselmouth f0 contour, Burg formants, LTAS), `POST /api/separate` (Demucs `htdemucs`, vocals two-stem, 501 when the extra is not installed), DTW alignment of a take against the separated stem (`librosa.sequence.dtw`), the aligned overlays (f0, LTAS, SPR / ring ratio, H1–H2 over stable voiced regions), per-phrase segmentation, and the licence-ledger rows the three new dependencies need.
+- **Definition of done**
+  - [ ] `/api/analyze` reproduces the golden **pitch, formant and LTAS arrays byte-for-byte** in CI — it is the oracle behind an HTTP verb, and any drift is the oracle drifting.
+  - [ ] DTW compare runs on **two synthetic takes** with a known offset and recovers it.
+  - [ ] `/api/separate`'s **501 path** is exercised in CI, and **one real `htdemucs` run** is recorded on the owner's machine (input sha256, wall time, model version, weights URL and read date).
+  - [ ] Licence-ledger rows exist for **librosa** ([06 #34](../bibliography/06-reference-projects.md), ISC), **demucs** ([06 #59](../bibliography/06-reference-projects.md), MIT) and **torch** (BSD-3-Clause (verify) — it has no bibliography row of its own, arriving as demucs's dependency; the row is written here at W4 from the `LICENSE` at the pinned version); the pretrained weights' terms are **quoted** in the ledger or the figures computed on a separated stem are **quarantined** ([proposal §4.5](../proposal/01-super-spectral-proposal.md)).
+
 ---
 
 ## 3. Routing table — every open question has a home
 
-The research left 47 domain questions (domainMap §7, **Q1–Q47**) and 18 hardware questions (devenv_synth §10, **H1–H18**) as flat lists. swarm's discipline converts each into one of four homes: an **ADR** number (a decision to write), a **validation row** (a number to measure), an **acquisition line** (a document to obtain), or the **E2 checklist** (a fact to read off the device). Nothing stays unowned. Route abbreviations: `ADR NNNN` → [`../adr/README.md`](../adr/README.md); `metric:` → a row of [`../validation/README.md`](../validation/README.md); `exp 000N` → [`../validation/experiments/`](../validation/experiments/README.md); `acq NN` → a bibliography file; `E2 #n` → the checklist step above; `D4` → hardware-fact closure.
+The research left 47 domain questions (domainMap §7, **Q1–Q47**) and 18 hardware questions (devenv_synth §10, **H1–H18**) as flat lists; later decisions add rows under the same rule — **Q48–Q53** come from [ADR 0021](../adr/0021-host-web-application.md) and are the web application's open questions. swarm's discipline converts each into one of four homes: an **ADR** number (a decision to write), a **validation row** (a number to measure), an **acquisition line** (a document to obtain), or the **E2 checklist** (a fact to read off the device). Nothing stays unowned. Route abbreviations: `ADR NNNN` → [`../adr/README.md`](../adr/README.md); `metric:` → a row of [`../validation/README.md`](../validation/README.md); `exp 000N` → [`../validation/experiments/`](../validation/experiments/README.md); `acq NN` → a bibliography file; `E2 #n` → the checklist step above; `D4` → hardware-fact closure.
 
-### 3.1 Domain questions Q1–Q47
+### 3.1 Domain questions Q1–Q53
 
 | ID | Question (short) | Route | Lands in | Closes when |
 |---|---|---|---|---|
@@ -272,6 +346,12 @@ The research left 47 domain questions (domainMap §7, **Q1–Q47**) and 18 hardw
 | Q45 | Shared upstream work with swarm (`lilygo_tbeam_s3_supreme` board, `dmic_esp32.c`)? | ADR 0001 Consequences — **deferred**, off the critical path of both projects | `adr/0001` | revisit only if a Zephyr end-state is reopened |
 | Q46 | Trivia: VocalSet gender split; Koenig 1946 page range; pYIN DOI and PDF liveness | acq 05 / acq 10 rows flagged "(verify)" | `05-papers.md`; `10-datasets-and-ground-truth.md` | D3 verification on acquisition |
 | Q47 | Highest-yield acquisition action: crawl the KTH STL-QPSR archive for Sundberg's open PDFs | acq 05 (D3 work item) | `05-papers.md` Acquisition links; `acquisition-status.md` Quick wins | D3 |
+| Q48 | Must the web application's f0 estimator be the watch's family (MPM/YIN), or may it differ? | **ADR 0020** (f0 estimator) + metric: browser f0 vs Praat golden (its own row) | `adr/README.md` backlog 0020; `validation/README.md` host-web block | ADR 0020 accepted. **Default until then:** they *may* differ — every implementation is compared to Praat and never to another implementation, so the agreement matrix stays a star ([ADR 0021](../adr/0021-host-web-application.md) decision 2) |
+| Q49 | What happens when a target browser cannot honour `new AudioContext({sampleRate: 32000})`? | **ADR 0021** decision 7(c) + **exp 0006** (the settings the browser actually returns) | `adr/0021-host-web-application.md`; the W2 phone-on-LAN gate | The first browser that refuses, measured rather than predicted. **Default, in force now:** refuse to start and name both rates; adding a resampler is a new decision, and it would be declared in the capture-chain panel and in every report ([ADR 0003](../adr/0003-microphone-path.md) d.7: linear and declared) |
+| Q50 | Where does the web application's data directory live (uploads, separated stems, model weights, ingested takes)? | **ADR 0021** decision 8 | `adr/0021-host-web-application.md`; `host/README.md` | W4, when Demucs weights first need a home. **Default, in force now:** `$XDG_DATA_HOME/superspectral/`, overridable, and **never inside the repository** — the server refuses a path that is |
+| Q51 | Which ring / twang band edges does the web application display before ADR 0008 decides? | **ADR 0008** (FHE over any fixed band) + ADR 0021 decision 7(e) | `adr/README.md` backlog 0008; the one shared band-edge constant | ADR 0008 accepted. **Default until then:** the founding document's 2.5–3.5 kHz and 3.5–5 kHz `(prov.)`, read from one shared constant and never from a preset — the schema refuses band edges on purpose |
+| Q52 | Does the browser waterfall use the watch's committed RGB565 LUT, or a map of its own? | **ADR 0011** (cividis, designed *in* RGB565) + W2 | `adr/0011-spectrogram-colormap.md`; `python-scripts/gen_colormap_lut.py` | W2 DoD. **Default:** the same 256-entry table, expanded 565 → 888 in the shader, so a browser screenshot and a photograph of the panel are comparable; a different map is a new ADR |
+| Q53 | Does `host/pyproject.toml` bump `requires-python` from `>=3.11,<3.14` to `>=3.12`? | W4 dependency review (librosa, demucs, torch) + ADR 0021 decision 4 | `host/pyproject.toml`; `host/uv.lock` | W4, at whichever floor the three packages' own metadata forces — recorded with the resolution that forced it, never with a guess. **Default until then:** the current pin stands |
 
 ### 3.2 Hardware questions H1–H18
 
@@ -296,7 +376,7 @@ The research left 47 domain questions (domainMap §7, **Q1–Q47**) and 18 hardw
 | H17 | Is `IDF_COMPONENT_LOCAL_STORAGE_URL` leaking into the build (local mirror resolves lvgl 9.4.0 instead of 9.5.0)? | **E1 step 2/4** + ADR 0001 (`.envrc` unsets it; CI, which has no mirror, is the arbiter of `dependencies.lock`) | `.envrc`; `adr/0001` | E1 DoD |
 | H18 | Does AXP2101 bring-up order matter as predicted (`esp_lcd_panel_init()` returns `ESP_OK` into a dead panel if ALDO3 is off)? | **E2** deliberate negative test + rail-status assertion in `twatch_bsp` | `twatch_bsp/README.md`; `06-power-budget.md` | E2 |
 
-**Count check:** 47 + 18 = 65 rows; every row names a route from the four-home set. When a row closes, keep it and change its "Closes when" cell to `closed — <ADR/experiment/commit>`.
+**Count check:** 53 + 18 = 71 rows; every row names a route from the four-home set. When a row closes, keep it and change its "Closes when" cell to `closed — <ADR/experiment/commit>`.
 
 ---
 
@@ -342,6 +422,12 @@ TRACK E │                                │             │             │
   E0    ██ env spec ─────────────┤ this pass; ADR 0001 accepted      │
   E1    │  ░░ install + 30-min gate ┤ ADR 0001 accepted · lock · cleanup
   E2    │      ░░░ first contact ───┤ eFuse JSON · vendor table · exp 0002
+TRACK W │                                │             │             │
+  W0    │ ▒▒ skeletons + peak CLI ─┤ npm allowlist     │             │
+  W1    │  ▒▒ live spectrum ─┤ 0.01 dB vs the oracle   │             │
+  W2    │   ▒▒ waterfall + injection + phone-on-LAN ═╣ mkcert gate
+  W3    │      ▒▒ f0 / ring / F1–F2 overlays ─┤ WCAG 2.2 contrast
+  W4    │         ▒▒ offline compare ─┤ /analyze · DTW · /separate
 FIRMWARE (gated on the D6 gate)          │ M0 PDM→FFT  │ M1 canvas   │ M2 presets
                                          │   →USJ dump │   30/50 Hz  │   + takes
 VALIDATION                               │ exp 0001    │ 108-trial   │ singers on
@@ -351,9 +437,10 @@ VALIDATION                               │ exp 0001    │ 108-trial   │ sin
                                          │             │             │ release guide
 
 legend  ██ done in this pass   ░░ scheduled   ┤ DoD ticked   ═╣ gate
+        ▒▒ track W (ADR 0021) — no hardware; runs first (owner, 2026-08-22)
 ```
 
-Dependencies worth stating once: **E1 before E2** (no flashing from an unpinned environment); **E2 before any backlight or audio-rail code** (T5, H2); **D6 before firmware M0** (the validation plan is what M0 is measured against); **exp 0002 before feature code** (an untested safety net is not a safety net); **exp 0001 before the preset schema freezes** (ADR 0010 needs the EQ slot's answer).
+Dependencies worth stating once: **E1 before E2** (no flashing from an unpinned environment); **E2 before any backlight or audio-rail code** (T5, H2); **D6 before firmware M0** (the validation plan is what M0 is measured against); **exp 0002 before feature code** (an untested safety net is not a safety net); **exp 0001 before the preset schema freezes** (ADR 0010 needs the EQ slot's answer); and — the owner's ordering decision of 2026-08-22 — **track W and his own remaining Phase-0 items before firmware M0**, run in parallel with each other, with firmware parked until both are green.
 
 ---
 
@@ -363,3 +450,4 @@ Dependencies worth stating once: **E1 before E2** (no flashing from an unpinned 
 - When a routing-table row closes, keep it and write `closed — ADR NNNN` / `closed — exp 000N` / `closed — <commit>` in the last cell; rows are never deleted (they are the audit trail of the 65 questions).
 - A new open question gets a new row (Q48…, H19…) and one of the four homes before the commit that raises it is merged.
 - A threshold that trips gets its consequence executed as written and the row annotated with the date; if the consequence is *not* executed, that is an ADR, not an edit to this table.
+- **Track W's DoD boxes are ticked by the `web:` or `host:` milestone commit that closes them — never in the ADR commit.** [ADR 0021](../adr/0021-host-web-application.md) created the track and may say what "done" means; only the commit that makes it true may tick the box. The same rule the D- and E-tracks already follow, restated because a new track invites a tidy-up sweep.

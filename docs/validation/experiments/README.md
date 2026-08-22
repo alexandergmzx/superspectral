@@ -9,7 +9,9 @@ One file per experiment, numbered `NNNN-kebab-title.md`, append-only. An experim
 | [0002](0002-rollback-and-boot-guard-race.md) | OTA rollback and boot-guard race | validated 2026-08-21 (window clause open) | E2 week 1 | proof that the recovery path works before any feature code |
 | 0003 | ST7789V3 hardware scroll axis vs `MADCTL` (reserved 2026-08-22; hardware, parked until the DoD gate — gates ADR 0007) | reserved | M1 | whether the analyzer canvas may bypass LVGL with the panel's vertical scroll |
 | 0004 | M0 bring-up on `ota_1`: PDM capture → FFT → first spectrum frame (reserved 2026-08-22; hardware, parked) | reserved | M0 | the first end-to-end latency and refresh numbers, both `(prov.)` until 0001 |
-| [0005](0005-t7b-bundled-praat-vs-praat-org.md) | Golden files: bundled Praat 6.1.38 vs praat.org 7.0.01 (threshold T7b) | planned | H0 | version drift and method drift of the Praat reference, measured separately |
+| [0005](0005-t7b-bundled-praat-vs-praat-org.md) | Golden files: bundled Praat 6.1.38 vs praat.org 7.0.01 (threshold T7b) | planned | H0 *(historical label: host milestones are **W**-numbered since [ADR 0021](../../adr/0021-host-web-application.md) — H-numbers are the roadmap's hardware questions and are not reused)* | version drift and method drift of the Praat reference, measured separately |
+| [0006](0006-web-capture-chain-linearity.md) | Host web application: capture-chain linearity per browser and OS | planned | W1 | the **unprocessed / processed** verdict that travels with every acoustic number the web application reports |
+| [0007](0007-web-latency-and-refresh.md) | Host web application: microphone-to-pixel latency and sustained refresh | planned | W2 | browser latency and refresh — **measured, never claimed**; reported beside the watch's ≤ 80 ms row, never inside it |
 
 ## Section order (generalized from swarm's `detector-smoke-model.md`)
 
