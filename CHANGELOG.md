@@ -141,7 +141,88 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
   Praat 7.0's `--FULL-TRUST` handled. 339 + 21 + 111 tests, every unit adversarially
   reviewed with mutation runs.
 
+*Session of 2026-08-22 (branch `web-app`):*
+
+- **[ADR 0021](docs/adr/0021-host-web-application.md) accepted** (owner's
+  decision, 2026-08-22): the founding research document's web application
+  ([§B](docs/research/00-linux-analyzer-architecture-and-build-guide.md)) is
+  built **in full** under `host/` — front end `host/web/` (Vite + TypeScript,
+  GPL-3.0-or-later), backend `host/src/spectral_host/web/` (FastAPI). It
+  decides: the scope (the founding document's §B live path and offline compare
+  mode; its M5 native core stays out); **browser-native live DSP** in
+  TypeScript, re-implementing the ADR 0006 conventions and held to the Python
+  oracle through the same committed golden set the watch is held to — the
+  oracle is the only arbiter, so there is no browser-vs-device row; that the
+  web application is **the host's user interface and a second
+  digital-injection-path instrument, never a wearable claim**, with its latency
+  and refresh **measured and never claimed**; GPL-3.0-or-later for all of
+  `host/web/` with a fail-closed npm licence gate (permissive only, **AGPL
+  forbidden**); **no live link** between watch and host — the contract stays
+  files; the six presets served byte-identical from `protocols/presets/`, the
+  32 kHz assertion that refuses to start on a mismatch, the meaning of
+  `analysis.smoothing`, and one shared `(prov.)` ring/twang constant; mkcert
+  HTTPS with **phone-on-LAN as a requirement**, raw-capture constraints as
+  mandatory-and-insufficient, and an XDG data directory that is never inside
+  the repository; and milestones **W0–W4** on a new roadmap track.
+  It **amends** [ADR 0002](docs/adr/0002-companion-architecture.md) decision 4
+  ("no live host view" → "**no live link between watch and host**") and
+  decision 3 ("the host never sees live audio" → "the host never sees **the
+  watch's** live audio"), and it withdraws the offline-viewer-only position of
+  `host/README.md`.
+- **Roadmap track W** ([`docs/roadmap/documentation-roadmap.md`](docs/roadmap/documentation-roadmap.md)):
+  W0 peak CLI + both skeletons + `/api/presets` · W1 live spectrum against the
+  goldens · W2 waterfall + preset switching + injection mode + phone-on-LAN ·
+  W3 f0 / ring / F1–F2 overlays · W4 offline compare — each with owner, inputs,
+  outputs and a definition of done. Track W needs no hardware and, by the
+  owner's ordering decision of the same day, **runs first**, in parallel with
+  his own remaining Phase-0 items; firmware stays parked until both are green.
+  Routing-table rows **Q48–Q53** give the web application's open questions a
+  home (estimator family → ADR 0020; the 32 kHz refusal; the XDG data
+  directory; the ring/twang band edges → ADR 0008; the shared colormap LUT →
+  ADR 0011; the `requires-python` floor).
+- **Validation, web side**: a *Host web application metrics* block in
+  [`docs/validation/README.md`](docs/validation/README.md) — spectrum vs the
+  Python oracle, window-table digest, peak frequency, browser f0 vs the Praat
+  golden in **its own row**, capture-chain linearity, mic-to-pixel latency and
+  sustained refresh (both *measured, no claim*), preset byte-identity — and
+  three tolerance rows in
+  [`docs/validation/golden-files.md`](docs/validation/golden-files.md), each
+  saying why it is not tighter and where its measured residual will be
+  recorded. Experiments
+  [0006](docs/validation/experiments/0006-web-capture-chain-linearity.md)
+  (capture-chain linearity per browser and OS — the *unprocessed / processed*
+  verdict that travels with every acoustic number) and
+  [0007](docs/validation/experiments/0007-web-latency-and-refresh.md)
+  (microphone-to-pixel latency and sustained refresh, measured on the watch's
+  own phototransistor rig) pre-registered.
+- Commit type **`web`** added to the conventional-commit linter's `--types`
+  list, so track W's milestone commits have a prefix of their own.
+
 ### Changed
+
+- **The host is no longer an offline viewer only.** The position stated in
+  `host/README.md` ("not a browser app … if a UI is ever added here, it is an
+  offline viewer"), in [ADR 0002](docs/adr/0002-companion-architecture.md)
+  decision 4, and in the architecture overview is **withdrawn** by
+  [ADR 0021](docs/adr/0021-host-web-application.md) (owner, 2026-08-22).
+  Nothing in that chain argued against the web application *as the host's own
+  instrument*; it argued against it *as the wearable*, and that argument still
+  stands — the four rehearsal-room objections of proposal §1 remain true of the
+  web application, which is exactly why it is not the product.
+- **The research question's closing clause was reworded** (owner's choice of
+  wording, 2026-08-22; every number in the question is untouched). It now reads:
+  *"— with all real-time DSP behind these bounds on-device, the host never in
+  the watch's live loop, and files the only contract between them?"*, replacing
+  *"— with all real-time DSP on-device and the host used only for offline
+  analysis of recorded takes?"*, which a live analyzer on the host would have
+  made false. The clause now states a **testable property** (the host is absent
+  from the watch's loop; the contract is files) instead of a feature
+  restriction on the host. Applied byte-identically to
+  [`docs/proposal/01-super-spectral-proposal.md`](docs/proposal/01-super-spectral-proposal.md)
+  §1, `CLAUDE.md`, `README.md` and
+  [`docs/proposal/research-statement.md`](docs/proposal/research-statement.md);
+  the **freeze** of the research question is still the author's act and remains
+  open.
 
 - ADR 0004's `host/` boundary is one `grep` over *headers*: every file under
   `host/` except `LICENSE` carries the GPL-3.0-or-later header (or is annotated

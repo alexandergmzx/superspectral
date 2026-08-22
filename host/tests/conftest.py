@@ -66,3 +66,77 @@ def tier0_dir(repo_root: Path) -> Path:
     ADR 0009 exists to prevent.
     """
     return repo_root / "datasets" / "tier0-synthetic"
+
+
+# --- the web application (roadmap W0, ADR 0021) ------------------------------------
+#
+# Appended by unit W0-BE. The fixtures above are the golden lane's and are
+# untouched; these three are everything the `test_web_*.py` suites share.
+
+
+@pytest.fixture
+def web_dist(tmp_path: Path) -> Path:
+    """A stand-in for `host/web/dist` — an index and one hashed asset, enough to test the cache policy.
+
+    Deliberately NOT the real `npm run build` output: the Python suite must be
+    green on a machine that has never run npm (the CI `host` job does not), and
+    a fixture that depended on the front end being built would make the two
+    jobs one job.
+    """
+    dist = tmp_path / "dist"
+    (dist / "assets").mkdir(parents=True)
+    (dist / "index.html").write_text(
+        "<!doctype html>\n<title>fixture</title>\n<script type=module src=/assets/index-abc123.js></script>\n",
+        encoding="utf-8",
+    )
+    (dist / "assets" / "index-abc123.js").write_text("export const fixture = true;\n", encoding="utf-8")
+    (dist / "assets" / "window-hann-4096.npy").write_bytes(b"\x93NUMPY fixture")
+    (dist / "unhashed.txt").write_text("not content-addressed\n", encoding="utf-8")
+    return dist
+
+
+@pytest.fixture
+def web_settings(tmp_path: Path, repo_root: Path, web_dist: Path):
+    """A validated `Settings` over a temporary data directory and the REAL presets directory.
+
+    The presets are the real ones on purpose: the byte-identity gate of roadmap
+    W0 is about `protocols/presets/`, and a fixture that copied them would be
+    testing the copy. `data_dir` is under pytest's `tmp_path` (outside the
+    checkout), which is also what keeps `validate()`'s repository refusal from
+    firing.
+    """
+    from spectral_host.web.settings import Settings
+
+    return Settings(
+        data_dir=tmp_path / "data",
+        presets_dir=repo_root / "protocols" / "presets",
+        golden_dir=repo_root / "host" / "golden",
+        dist_dir=web_dist,
+    ).validate()
+
+
+@pytest.fixture
+def web_client(web_settings):
+    """A `TestClient` entered as a CONTEXT MANAGER, so the application's lifespan actually runs.
+
+    `TestClient(app)` used bare never calls startup or shutdown; anything the
+    lifespan does — here, storing the settings and creating the data directory
+    — would silently not happen, and the suite would be testing a half-built
+    application. Imported inside the fixture because `httpx` (the TestClient's
+    transport) is a `dev` extra, and collection must not require it in a
+    default install.
+    """
+    from fastapi.testclient import TestClient
+
+    from spectral_host.web.app import create_app
+
+    with TestClient(create_app(web_settings)) as client:
+        yield client
+
+
+@pytest.fixture
+def csrf() -> dict[str, str]:
+    """The marker header every state-changing request must carry (`app.py` rule 3)."""
+    from spectral_host.web.app import REQUESTED_WITH_VALUE
+
+    return {"X-Requested-With": REQUESTED_WITH_VALUE}

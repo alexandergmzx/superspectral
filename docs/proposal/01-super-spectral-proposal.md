@@ -3,7 +3,11 @@
 > **DRAFT (2026-08-21, unattended session).** Structure, evidence and citations are in
 > place; the prose is a starting point, not the author's voice. Nothing here is frozen —
 > §1's research question is the only part already treated as binding elsewhere in the repo
-> and must not be altered.
+> and must not be altered. Its **closing clause** was reworded on 2026-08-22 by
+> [ADR 0021](../adr/0021-host-web-application.md) decision 9, in the wording the owner chose
+> that day, and applied byte-identically to all four copies ([`CLAUDE.md`](../../CLAUDE.md),
+> [`README.md`](../../README.md), [`research-statement.md`](research-statement.md) and §1
+> here); every number in the question is untouched, and the **freeze itself is still open**.
 
 > **Revision note (2026-08-20).** Skeleton filed in documentation-roadmap phase D0; prose is written in phase D2 once the bibliography ([`../bibliography/`](../bibliography/README.md)) exists to cite. Values marked `(prov.)` are provisional and `TBD` values are unsettled; each is tracked in the [roadmap routing table](../roadmap/documentation-roadmap.md). The research question becomes binding when its `(prov.)` tag is removed in the D2 closing commit.
 >
@@ -24,13 +28,15 @@ A phone or laptop analyzer fails in a rehearsal room for four reasons that are n
 3. **Its audio front end is not yours.** Mobile and browser capture chains apply echo cancellation, noise suppression and automatic gain control by default; all three are non-linear and corrupt exactly the quantities being measured — spectra, formants, H1–H2. The founding document's own remedy (`echoCancellation:false, noiseSuppression:false, autoGainControl:false`) is a request, not a guarantee, and some drivers process regardless.
 4. **It is a second device to carry, charge and keep unlocked** for a practice session that may be twenty minutes in a corridor.
 
+That browser analyzer is not abandoned — since [ADR 0021](../adr/0021-host-web-application.md) it is built in full as the host's own instrument, and the four reasons above are precisely why it is not the *wearable*, and why none of its numbers ever stands in for the watch's.
+
 The honest counter-argument is that the wrist is also the *worst* acoustic position available: roughly 30 cm from the mouth, off-axis, moving, behind a sealed plastic case, with a consumer PDM MEMS microphone whose datasheet was written for voice pickup, not measurement. That objection is the reason this proposal exists rather than a feature list. Titze & Winholtz (05 #65) already measured the degradation of perturbation measures at 4 cm / 30 cm / 1 m and 0° / 45° / 90° — the wrist sits inside that grid. Švec & Granqvist (05 #63) state the admissibility criteria a microphone must meet to be used in voice-production research at all, and (05 #64) that an SPL figure without its mouth-to-microphone distance is meaningless. Katz & d'Alessandro (05 #66) show that singing directivity is strongly frequency-dependent in exactly the 2.5–5 kHz band the timbre readouts care about.
 
 So the question is not "can an ESP32-S3 compute an FFT" — it can, comfortably (§3.3). The question is whether a wrist-worn consumer-MEMS device can produce numbers a voice teacher may act on, **with the errors stated**, and whether saying so is falsifiable.
 
 ### Research question
 
-> **RQ (prov.)** — Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
+> **RQ (prov.)** — Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP behind these bounds on-device, the host never in the watch's live loop, and files the only contract between them?
 
 The question follows the swarm grammar — *system class + method + primary metric + secondary constraint + bounded environment + architectural prohibition* — and carries three numeric bounds plus one prohibition. Each bound names the instrument that can refute it; a bound whose refutation procedure is not written down is a slogan.
 
@@ -47,7 +53,7 @@ The question follows the swarm grammar — *system class + method + primary metr
 
    The refresh figures are what the display path can sustain (§3.4) and what each preset's hop can supply; the latency anchor is the action–sound and visual-biofeedback literature (05 #83, 05 #84, 05 #85), which puts action–sound thresholds near 10 ms but tolerates considerably more for *visual* biofeedback — the 80 ms bound is deliberately conservative and is stated with its anchor rather than inherited from a desktop tool. **Falsifiable by:** an oscilloscope with the drive signal on channel 1 and a phototransistor taped to the LCD on channel 2, 100 repetitions per preset scored against *that preset's own* `refresh_hz_target`, plus a firmware frame counter that is *cross-checked* against the phototransistor and never trusted alone.
 3. **Autonomy bound.** **≥ 3 h** of continuous analysis on the watch's own cell, measured full-charge-to-PMU-cutoff per preset with an external energy analyzer (01 #33, 01 #34) on a battery pigtail, cross-checked against the AXP2101 coulomb counter (01 #17) — where a disagreement between the two is a finding, not a nuisance. The cell capacity is itself unsettled: **470 mAh per the vendor library and the Zephyr board files, 400 mAh per resellers** — `TBD`, roadmap Q9/T9 ([`../hw/twatch-s3-pins.md`](../hw/twatch-s3-pins.md)). **Falsifiable by:** one 3-hour run per preset; the bound stands or falls per preset, and a preset that fails it becomes a documented operating limit rather than a hidden one.
-4. **Architectural prohibition.** All real-time DSP runs on the device; the Linux host ([`../../host/README.md`](../../host/README.md)) is used **only** for offline analysis of recorded takes. Without this clause the question is trivially answerable by streaming audio to a PC, and the result is not a wearable result. It also makes latency and refresh properties of the firmware alone, which is what makes bound 2 measurable at all.
+4. **Architectural prohibition.** Every real-time number behind bounds 1–3 is computed **on the device**, and the host is **never in the watch's live loop**: no live link between the two exists, and the host ([`../../host/README.md`](../../host/README.md)) reads takes and writes reports ([ADR 0002](../adr/0002-companion-architecture.md) decision 4, as amended by [ADR 0021](../adr/0021-host-web-application.md) decision 5). Without this clause the question is trivially answerable by streaming audio to a PC, and the result is not a wearable result; the clause is also what makes latency and refresh properties of the firmware alone, which is what makes bound 2 measurable at all. **The prohibition binds the watch's claim, not the host's feature set.** The host carries the founding document's browser-native live analyzer ([ADR 0021](../adr/0021-host-web-application.md)) — an analyzer of the laptop's or the phone's own capture, never of the watch's, whose latency and refresh are measured and reported but claimed nowhere in this question. A result obtained with the host's analyzer in the loop is a result about a laptop.
 
 A fifth thing the question deliberately does *not* claim: absolute sound pressure level, clinical meaning, or accuracy against a class-conformant sound level meter. Those are ruled out in §7.1 and by the no-clinical-claim decision recorded as [ADR 0005](../adr/0005-no-clinical-claim.md), **accepted**.
 
@@ -104,6 +110,8 @@ The split is decided by physics and by licence, not by convenience: anything who
 | DTW alignment, Demucs stem separation | ✗ | ✅ | host only; the founding document's offline compare mode |
 | Take recording (OPUS / PCM) | ✅ | ingests | coexists with the FFT load (02 #19) |
 | AFE / NS / AGC / AEC | ✗ never | ✗ never | non-linear; corrupts spectra, formants and H1–H2 — the same rule as the browser path's disabled constraints |
+
+**The host also has a user interface, and it is the founding document's own.** [ADR 0021](../adr/0021-host-web-application.md) builds §B of [`../research/00-linux-analyzer-architecture-and-build-guide.md`](../research/00-linux-analyzer-architecture-and-build-guide.md) in full under `host/`: a browser-native live analyzer as the front end (`host/web/`, Vite + TypeScript) over a FastAPI backend (`host/src/spectral_host/web/`), plus the offline compare mode — `/analyze`, `/separate`, DTW alignment, aligned f0 / LTAS / SPR / H1–H2 overlays — which is the interface the host's analysis modules never had. It reads the six presets **byte-identical** from [`../../protocols/presets/`](../../protocols/presets/) through the backend and never ships a copy of its own. It joins §4.1's digital-injection path as a **second instrument**: an independent TypeScript implementation of the [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) conventions, run on the same Tier-0 files against the same goldens. It is **never a row in the On-watch column above** — its own mic-to-pixel latency and sustained refresh are *measured and reported, never claimed*, and no number it produces may be quoted for any bound of §1. The contract with the watch is unchanged: takes in, reports out, **no live link** ([ADR 0021](../adr/0021-host-web-application.md) decision 5, amending [ADR 0002](../adr/0002-companion-architecture.md) decision 4).
 
 Licensing follows the same line: Apache-2.0 for the repository, firmware, documentation and tooling; `host/` **GPL-3.0-or-later** with its own `LICENSE` so it may import parselmouth/Praat in-process; no code crosses the boundary in either direction, only files on disk ([ADR 0004](../adr/0004-split-licensing.md), accepted; 03 #36, 03 #37, `NOTICE`).
 
@@ -184,16 +192,17 @@ The ST7789's hardware vertical scroll (`VSCRDEF` 0x33 / `VSCSAD` 0x37, 01 #13) c
                       │   takes ──► FAT partition          presets ──► littlefs partition               │
                       └──────────────────────────────────┬──────────────────────────────────────────────┘
                                                          │  USB-Serial-JTAG (the only port)
-                      ┌──────────────────────────────────┴──────── HOST (offline, GPL-3.0-or-later) ────┐
+                      ┌──────────────────────────────────┴── HOST (offline + own UI, GPL-3.0-or-later) ─┐
                       │  ingest takes ─► Praat/parselmouth (formants, pitch reference) · LTAS/SPR · FHE  │
                       │                 H1-H2 (Iseli-Alwan) · CPPS · DTW align · Demucs stems           │
                       │                 golden-file generation ─► tolerance table ─► CI                  │
+                      │  host web app (ADR 0021): live analyzer · offline compare · measured, no claim  │
                       └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 3.6 Presets
 
-The six presets of the Linux analyzer are carried over unchanged in intent and made explicit in specification: `live_singing` (4096, Blackman-Harris, 20 ms hop) · `vowel_formant_study` (8192, Hann) · `sustained_pitch_lab` (8192, Blackman-Harris, 40 ms) · `diction_consonants` (1024, Hann, 10 ms) · `room_noise_floor` (8192, Hann, linear average, min-hold) · `stem_analysis` (host-only). Three fields are added that the founding document did not need: an **explicit analysis bandwidth / ENBW** per preset instead of the informal "wideband/narrowband" convention (05 #6, 05 #2), a **mic-EQ slot** filled by experiment 0001, and a **clock-correction constant**. The schema is JSON, versioned, owned by [`../../protocols/specs/README.md`](../../protocols/specs/README.md) and stored on the littlefs partition ([ADR 0010](../adr/0010-preset-schema.md), accepted; [`../architecture/README.md`](../architecture/README.md) planned doc `07-preset-schema.md`).
+The six presets of the Linux analyzer are carried over unchanged in intent and made explicit in specification: `live_singing` (4096, Blackman-Harris, 20 ms hop) · `vowel_formant_study` (8192, Hann) · `sustained_pitch_lab` (8192, Blackman-Harris, 40 ms) · `diction_consonants` (1024, Hann, 10 ms) · `room_noise_floor` (8192, Hann, linear average, min-hold) · `stem_analysis` (host-only). Three fields are added that the founding document did not need: an **explicit analysis bandwidth / ENBW** per preset instead of the informal "wideband/narrowband" convention (05 #6, 05 #2), a **mic-EQ slot** filled by experiment 0001, and a **clock-correction constant**. The schema is JSON, versioned, owned by [`../../protocols/specs/README.md`](../../protocols/specs/README.md) and stored on the littlefs partition ([ADR 0010](../adr/0010-preset-schema.md), accepted; [`../architecture/README.md`](../architecture/README.md) planned doc `07-preset-schema.md`). The host web application loads the same six files from its backend — byte-identical to `protocols/presets/` and labelled in the interface with each file's sha256 — so `"host"` in a preset's `targets` field now means the CLI and the web application alike ([ADR 0021](../adr/0021-host-web-application.md) decision 7).
 
 ### 3.7 Energy budget
 
@@ -220,6 +229,8 @@ On a sealed board with zero exposed GPIO and the BOOT button inside the case, re
 2. **Acoustic path** — the same signal is reproduced through a calibrated source at a fixed, stated geometry (mouth simulator per ITU-T P.51 or HATS per ITU-T P.58 — 03 #11, 03 #10, 01 #35 — or a reference monitor at a stated distance and angle), captured simultaneously by the watch and a reference microphone, then time-aligned by cross-correlation. This measures the *whole chain*: case, port, microphone, PDM→PCM, clock, estimator.
 3. *(optional third path)* **Injection ⊛ RIR** — the corpus convolved with a measured room impulse response (10 #24) and injected. It isolates room effects from microphone effects at zero bench cost.
 
+**The injection path has two instruments since [ADR 0021](../adr/0021-host-web-application.md).** The watch is one, through the `file_blob` audio source. The host web application is the other, through its injection mode — a TypeScript WAV reader that parses the int16 PCM itself and feeds the same DSP module in a Worker, with no `decodeAudioData` and therefore no browser resampler anywhere in the chain, so *the same Tier-0 files against the same goldens* is literally true of both. Two independent implementations of the [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) conventions run against the same [golden set](../adr/0009-golden-file-strategy.md) give a convention bug two witnesses instead of one; each is compared to the Python oracle and never to the other. **Only the watch's numbers answer the research question** — the web application's rows are reported beside them and claimed nowhere in §1.
+
 **Reporting only the acoustic path hides algorithm bugs behind acoustics; reporting only the injection path is not a wearable result at all.** Both failure modes are common in embedded-audio work and both are invisible to a reader who is given one number. The research question names both paths explicitly (±20 cents acoustic, ≤ 5 cents injection) precisely so that the two cannot be quietly merged later. The rule is normative in [`../validation/README.md`](../validation/README.md) and applies to level, band, timbre and latency metrics as well as to f0.
 
 ### 4.2 Metrics
@@ -231,6 +242,7 @@ Three properties of that table are worth stating in the proposal itself, because
 - **Every target names an external anchor.** A row whose number comes from nowhere is not frozen. Where no anchor exists the row says so.
 - **Percentiles, not means.** Cents error is reported as median, p90 and p99; a mean cents error hides exactly the octave errors that matter.
 - **Agreement, not correlation.** Level and timbre metrics are Bland–Altman problems (05 #86) with ICC for repeatability (05 #87) and TOST for equivalence claims (05 #89) — an `r ≥ 0.9` target would be the specific error Bland & Altman was written to correct.
+- **The web application's rows are reported, not claimed.** They live in the *Host web application metrics* block of [`../validation/README.md`](../validation/README.md), where the target cell for mic-to-pixel latency and for sustained refresh reads *measured, no claim* ([ADR 0021](../adr/0021-host-web-application.md) decision 3), and every acoustic number from that instrument carries the capture-chain linearity verdict — *unprocessed* or *processed* — under which it was taken.
 
 ### 4.3 The uncertainty budget
 
@@ -319,7 +331,7 @@ A singer's feedback tool that works with **no phone, no PC and no network** — 
 
 ## Section 6: Timeline and milestones `(prov.)`
 
-All weeks are provisional and follow the project-phase table in the [root README](../../README.md); the internal structure of Phase 0 is the D/E track roadmap.
+All weeks are provisional and follow the project-phase table in the [root README](../../README.md); the internal structure of Phase 0 is the D/E/W track roadmap. The host web milestones **W0–W4** ([ADR 0021](../adr/0021-host-web-application.md); [roadmap](../roadmap/documentation-roadmap.md) track W) run **first**, by the owner's ordering decision of 2026-08-22, in parallel with his own Phase-0 definition-of-done items, and are gated on no hardware at all.
 
 | Phase | Weeks | Deliverables | Status |
 |---|---|---|---|

@@ -128,6 +128,12 @@ Unless stated otherwise every field is **required**. `additionalProperties` is `
 | `weighting` | `Z` \| `A` \| `C` | applies to **level readouts only**, never to the displayed spectrum. Relative dBFS in every case: no calibrator is in the chain, so no reading is dB SPL |
 | `dc_blocker_hz` | number 0–100 | corner of the software DC blocker in the capture path. The ESP32-S3 has no hardware PDM high-pass, so this filter always exists and the host must reproduce it ([ADR 0003](../../docs/adr/0003-microphone-path.md) decision 6) |
 
+**The direction of `smoothing`.** `s` is the weight of the **previous** frame, not of the new one:
+
+> P̂[k] ← s · P̂[k] + (1 − s) · P[k]
+
+applied in **linear power**, before the dB conversion ([ADR 0006](../../docs/adr/0006-fft-normalisation-and-window-conventions.md) D8) — so a **larger** value is **smoother**, `s = 0` is no smoothing at all, and the ceiling of 0.95 is the heaviest smoothing a preset may ask for. This is Spectroid's sense of the control, and it is the reading every consumer must share: the watch, the Python oracle and the host web application all update the same recursion in the same direction, or their spectra differ by a first-order filter nobody declared. The table above says only "exponential coefficient", which is symmetric between the two readings and was about to be guessed three different ways; the direction was settled by [ADR 0021](../../docs/adr/0021-host-web-application.md) decision 7(d) when a second consumer had to implement it, and is `(prov.)` here until [ADR 0006](../../docs/adr/0006-fft-normalisation-and-window-conventions.md) ratifies it as a numbered decision. Nothing in the schema changes: `smoothing` keeps its type, its bounds and rule V5.
+
 ### 4.3 `analysis.window` — properties of the window alone
 
 | Field | Type | Notes |

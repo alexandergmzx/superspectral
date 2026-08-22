@@ -243,6 +243,112 @@ reaches into every one of these `.venv`s too: `uv run` honours `PYTHONPATH`, and
 at import time. Run the commands above from the direnv-activated repo shell, or
 `env -u PYTHONPATH uv run …`.
 
+## 11. Node and npm — the fourth environment (the host web application)
+
+Added 2026-08-22 with [ADR 0021](../adr/0021-host-web-application.md) (roadmap
+[W0](../roadmap/documentation-roadmap.md)). Section 10 keeps three Python
+interpreters apart; this is a **fourth** environment that is not one of them and
+must not become one.
+
+| Tool | Version measured here (2026-08-22) | Path | Where the pin lives |
+|---|---|---|---|
+| node | `v20.20.2` | `/usr/bin/node` | `host/web/.nvmrc` (`20.20.2`) |
+| npm | `10.8.2` | `/usr/bin/npm` | ships with node; not pinned separately |
+
+Distribution packages, not `nvm` / `fnm` / `volta` — one Node on the machine, the
+same way there is one `direnv`. `host/web/.nvmrc` is the single pin: the CI `web`
+job reads it through `actions/setup-node`'s `node-version-file`, so the runner
+and this machine cannot drift apart silently. `tools/env-lock.sh` records both
+versions in the inventory (informational rows — the digest-pinned IDF container
+carries no Node, so they are not in `INVARIANT_ROWS`).
+
+The versions satisfy the toolchain's own floors, checked 2026-08-22:
+vite 8.2.2 wants `^20.19.0 || >=22.12.0`, vitest 4.1.11 wants
+`^20.0.0 || ^22.0.0 || >=24.0.0`, and TypeScript 7.0.2 — the native compiler —
+answers `npx tsc --version` with `Version 7.0.2`.
+
+**It never mixes with the three Python environments.** Node owns `host/web/` and
+nothing else; no npm script shells into Python and nothing under `host/src/`
+invokes npm. The front end and the backend meet over HTTP (`/api/...`) and, in a
+built deployment, over one directory (`host/web/dist/`, mounted by uvicorn) —
+never over an interpreter. The ROS 2 `PYTHONPATH` leak that section 10 warns
+about does not reach Node at all, which is precisely why the two toolchains are
+kept from calling each other: the day one does, the leak follows it.
+
+### 11.1 `npm ci --ignore-scripts` is the only install path
+
+```sh
+cd host/web
+npm ci --ignore-scripts --no-audit --no-fund   # the ONLY install command
+node scripts/check-licences.mjs                # fail-closed licence gate (11.2)
+npx tsc --noEmit                               # type-check, emits nothing
+npx vitest run --project unit                  # unit project; `golden` arrives at W1
+npm run build                                  # typecheck + vite build -> dist/
+```
+
+`npm ci` installs `package-lock.json` exactly and **refuses** when the lock and
+`package.json` disagree; that refusal is the enforcing lock-vs-manifest check,
+and it runs offline against the committed file in the CI `web` job. `npm install`
+is for *changing* dependencies, and the way to do that without touching
+`node_modules` is the manual-stage pre-commit hook
+`web-lockfile-matches-manifest` (`npm install --package-lock-only
+--ignore-scripts`, then `git diff --exit-code`), the npm twin of
+`lockfile-matches-manifest` — manual because it needs the registry.
+
+`--ignore-scripts` is deliberate and is the whole of the supply-chain mitigation
+[ADR 0021](../adr/0021-host-web-application.md) names (its third `(−)`
+consequence): a lifecycle script is arbitrary code from a transitive dependency,
+running with your shell's privileges, on `npm ci`. If a package ever genuinely
+needs its `postinstall`, the flag comes off **with the package named and the
+reason stated** here and in [`ci.yml`](../../.github/workflows/ci.yml) — never
+silently, and never as a fix for a build that "just fails".
+
+### 11.2 The licence allowlist and its fail-closed gate
+
+[ADR 0021](../adr/0021-host-web-application.md) decision 4 admits **MIT, ISC,
+0BSD, BSD-2-Clause, BSD-3-Clause, Apache-2.0, CC0-1.0, Unlicense, BlueOak-1.0.0,
+Python-2.0, Zlib and CC-BY-4.0** and nothing else. **AGPL-3.0 is forbidden** —
+audioMotion-analyzer is the named do-not-use, because a served web application is
+exactly the case its network clause reaches. GPL and LGPL npm packages are
+refused too, not because this GPL tree could not carry them but so the allowlist
+stays one line a reviewer can check.
+
+The list is a **policy, and it is the owner's to sign** (roadmap W0's Owner
+line), not something a lockfile update may widen. `node scripts/check-licences.mjs`
+reads `package-lock.json` and **fails closed**: an unknown identifier, an absent
+`license` field, or a licence expression it cannot evaluate is a failure, not a
+warning. It runs locally (above) and as a named step of the CI `web` job, between
+`npm ci` and the type-check, so a package can never reach `tsc` before its licence
+has been read.
+
+### 11.3 mkcert — phone-on-LAN (the owner's steps; **mkcert is not installed here**)
+
+`navigator.mediaDevices` is `undefined` on an insecure origin that is not
+`localhost`, so opening the analyzer on a phone over the LAN needs HTTPS
+([ADR 0021](../adr/0021-host-web-application.md) decision 8). Phone-on-LAN is a
+**requirement, not a nicety** (owner, 2026-08-22) and it is a W2 gate; Chrome's
+insecure-origin flag is a development fallback and is deliberately not written
+down here as the way in. `mkcert` is **absent from this machine as of
+2026-08-22** — the steps below are the owner's to run, not a record of a run:
+
+```sh
+mkcert -install                                # local CA into this machine's trust stores
+mkcert <lan-ip> localhost 127.0.0.1 ::1        # one certificate for the laptop's LAN address
+# Keep BOTH files outside the repository. They are machine-local secrets: a
+# certificate in the tree is a certificate in a push, and every third party who
+# builds this mints their own.
+spectral-web serve --host 0.0.0.0 \
+    --ssl-certfile /path/outside/repo/<lan-ip>.pem \
+    --ssl-keyfile  /path/outside/repo/<lan-ip>-key.pem
+```
+
+Then, on the phone: install `$(mkcert -CAROOT)/rootCA.pem` through the phone's
+own certificate store — until that is done the phone rejects the certificate and
+the live path never starts. **(verify on the actual phone)**: a laptop browser
+already trusts the CA and proves nothing about the device the requirement is
+about. The same recipe, from the GPL side's own point of view, is in
+[`host/README.md`](../../host/README.md).
+
 ## Quick reference
 
 | Need | Command |
@@ -252,6 +358,8 @@ at import time. Run the commands above from the direnv-activated repo shell, or
 | Flash a dev build (ota_1, rollback armed) | `tools/flash.sh` — never `idf.py flash` ([flash.sh](../../tools/flash.sh)) |
 | Monitor | `idf.py -p /dev/ttyTWATCH monitor` (exit with Ctrl-]) |
 | Regenerate lock / inventory | `idf.py reconfigure` · `tools/env-lock.sh` |
+| Install the web front end | `cd host/web && npm ci --ignore-scripts --no-audit --no-fund` (§11.1) |
+| Serve the web application | `uv run --project host spectral-web serve` (add `--ssl-*` for a phone, §11.3) |
 | After editing `sdkconfig.defaults*` | `rm -f sdkconfig && idf.py reconfigure` ([B2](pitfalls.md#b-build-system-and-configuration)) |
 | After changing IDF version/target | `idf.py fullclean` ([B3](pitfalls.md#b-build-system-and-configuration)) |
 | Something is wrong with the port | [brick-runbook.md](brick-runbook.md) |

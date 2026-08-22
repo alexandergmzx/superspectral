@@ -1,0 +1,337 @@
+/* SPDX-FileCopyrightText: 2026 Alexander Gomez */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
+/*
+ * Host web application — layout and palette (ADR 0021).
+ *
+ * CONTRAST IS A W3 GATE, NOT A W0 ONE. WCAG 2.2 (bibliography 03 #23) stops
+ * being an analogy and becomes an obligation of a shipped interface the moment
+ * this application exists (ADR 0021 consequences), and EN 301 549 (03 #24)
+ * applies if it is ever offered in the EU. Nothing below has been measured
+ * against 1.4.3 / 1.4.11; the colours here are a working palette, and the
+ * contrast audit — including the spectrum trace and the ADR 0011 colormap
+ * against their backgrounds, which is the hard part — is a W3 deliverable.
+ * Do not read these values as compliant. They are (prov.).
+ *
+ * The palette lives in custom properties so that audit changes one block rather
+ * than fifty rules, and so the W2 waterfall can read its chrome colours from the
+ * same place as the DOM.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "DejaVu Sans Mono", monospace;
+
+  /* Light scheme (the default). */
+  --bg: #f7f7f8;
+  --bg-panel: #ffffff;
+  --bg-sunken: #eceef1;
+  --fg: #16181d;
+  --fg-muted: #5a6070;
+  --border: #d3d7de;
+  --accent: #1c4f9c;
+  --accent-fg: #ffffff;
+  --warn-bg: #fff4d6;
+  --warn-fg: #4a3200;
+  --warn-border: #d0a400;
+  --error-fg: #a01223;
+
+  --radius: 6px;
+  --gap: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* A dark default matters here: this is a rehearsal-room instrument and a
+       white page behind a spectrogram is the wrong thing to point at a singer
+       in a dim room. The waterfall's own colormap is ADR 0011's and is not
+       affected by the scheme. */
+    --bg: #101216;
+    --bg-panel: #181b21;
+    --bg-sunken: #0b0d10;
+    --fg: #e7e9ee;
+    --fg-muted: #9aa1b1;
+    --border: #2c313b;
+    --accent: #79a9ff;
+    --accent-fg: #0b0d10;
+    --warn-bg: #3a2d05;
+    --warn-fg: #ffe9a8;
+    --warn-border: #a98600;
+    --error-fg: #ff8a95;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* --- The insecure-origin banner -------------------------------------- */
+/* Fixed, above everything: on a phone the app may be scrolled past the
+   header when capture is attempted, and a banner that scrolled away would be
+   a message the user never sees. */
+.banner {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 10;
+  padding: 0.6rem 1rem;
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  border-bottom: 2px solid var(--warn-border);
+}
+
+.banner--static {
+  position: static;
+}
+
+.banner[hidden] {
+  display: none;
+}
+
+/* --- Layout ----------------------------------------------------------- */
+/* 100dvh, not 100vh: on mobile browsers vh is the tallest viewport, so the
+   canvases would sit under the retracting URL bar exactly when the singer is
+   looking at them. */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: var(--gap);
+  gap: var(--gap);
+}
+
+.app__header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--gap);
+}
+
+.app__title {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: 0.01em;
+}
+
+.app__subtitle,
+.app__version {
+  margin: 0.25rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+
+/*
+ * Portrait (the phone) is one column in reading order: chain, spectrum,
+ * waterfall, readouts, controls. Landscape puts the two canvases side by side
+ * and keeps the readout strip full width beneath them, because the readouts are
+ * what is glanced at and a narrow column of them is unreadable at a distance.
+ */
+.app__main {
+  flex: 1;
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+  align-content: start;
+}
+
+@media (orientation: landscape) and (min-width: 900px) {
+  .app__main {
+    grid-template-columns: minmax(14rem, 20rem) 1fr 1fr;
+    grid-template-areas:
+      "chain spectrum waterfall"
+      "chain readouts readouts"
+      "controls controls controls";
+  }
+
+  .panel--chain { grid-area: chain; }
+  .panel--spectrum { grid-area: spectrum; }
+  .panel--waterfall { grid-area: waterfall; }
+  .panel--readouts { grid-area: readouts; }
+  .panel--controls { grid-area: controls; }
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--gap);
+  min-width: 0;
+}
+
+.panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+.panel h3 {
+  margin: var(--gap) 0 0.35rem;
+  font-size: 0.9rem;
+}
+
+/* --- Canvases --------------------------------------------------------- */
+/* The intrinsic width/height attributes in index.html are the BACKING STORE
+   size; this rule only stretches the presentation. W1 sets the backing store
+   from devicePixelRatio at capture start — a CSS-scaled canvas would resample
+   the spectrum and make the peak marker lie. */
+.canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg-sunken);
+  border-radius: calc(var(--radius) - 2px);
+}
+
+/* --- Capture chain ---------------------------------------------------- */
+.chain {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.chain__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+  border-bottom: 1px dotted var(--border);
+}
+
+.chain dt {
+  color: var(--fg-muted);
+}
+
+.chain dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* --- Readout strip ---------------------------------------------------- */
+.readouts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.readout {
+  flex: 1 1 6rem;
+  background: var(--bg-sunken);
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.4rem 0.6rem;
+}
+
+.readout__label {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+.readout__value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Controls and presets --------------------------------------------- */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  flex-wrap: wrap;
+}
+
+button {
+  font: inherit;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-fg);
+  cursor: pointer;
+  /* 44 px is the touch target the phone gate needs; stated here so the W3
+     audit has something to check rather than something to discover. */
+  min-height: 44px;
+}
+
+button[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.presets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.preset {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) auto 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  padding: 0.3rem 0;
+  border-bottom: 1px dotted var(--border);
+}
+
+@media (max-width: 640px) {
+  .preset {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+}
+
+.preset__targets {
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+}
+
+.preset__sha {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--fg-muted);
+}
+
+.error {
+  color: var(--error-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No transitions exist yet; the rule is here so the waterfall's own
+     animation work in W2 has to opt IN past it. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

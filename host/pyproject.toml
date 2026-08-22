@@ -25,10 +25,42 @@ dependencies = [
   "scipy>=1.13,<2",
   "pyyaml>=6.0,<7",
   "jsonschema>=4.10,<5",
+  # The web application's backend (ADR 0021 decision 1, roadmap W0). CORE, not
+  # an extra: the backend is what serves the interface at all, and `spectral-web
+  # serve` with no extras installed must start and answer /api/presets — the
+  # byte-identity gate of W0 runs against it.
+  "fastapi>=0.115,<1",
+  # PLAIN uvicorn, never uvicorn[standard]. The `standard` extra pulls in
+  # `websockets` (plus uvloop, httptools, watchfiles), and ADR 0002 decision 4
+  # as amended by ADR 0021 decision 5 is "no live link between watch and host":
+  # no transport of audio or spectra exists in v1, so a WebSocket implementation
+  # on the server is a capability with no caller and an attack surface with no
+  # justification. Leaving it out makes the absence checkable (`import
+  # websockets` fails in the locked environment) rather than merely intended.
+  "uvicorn>=0.30,<1",
+  # Multipart form parsing for the WAV upload of the offline-compare mode.
+  # FastAPI raises at import of a route declaring `UploadFile` without it, so it
+  # is a hard dependency of the shape of the API rather than of W0's endpoints.
+  "python-multipart>=0.0.9,<1",
+  # Explicit, though FastAPI depends on it: `spectral_host.web.models` imports
+  # pydantic directly, and a direct import is a direct pin (a transitive bump
+  # under FastAPI must not silently change our response models).
+  "pydantic>=2.9,<3",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+# httpx is the TestClient's transport: `fastapi.testclient.TestClient` wraps
+# `httpx.Client`, so the web suite cannot collect without it. It is test-only —
+# nothing under src/ imports httpx.
+dev = ["pytest>=8", "httpx>=0.27,<1"]
+# `spectral-web peak` live mode. PortAudio bindings; the WAV mode needs nothing.
+capture = ["sounddevice>=0.5,<1"]
+# `analyze` (librosa) and `separate` (demucs + torch) land at W4, NOT here:
+# adding hundreds of megabytes to uv.lock for code that does not exist would
+# churn the lock and make every W0 CI run pay for W4. Until then `/analyze` and
+# `/separate` answer 501 through `spectral_host.web.extras`, and that 501 path
+# is what CI exercises (ADR 0021 consequence: "/separate is exercised through
+# its 501 path in CI").
 
 [project.scripts]
 # The one entry point. Subcommands: verify | env | generate | t7 (roadmap H0,
@@ -36,6 +68,12 @@ dev = ["pytest>=8"]
 # until its unit lands (t7 as of 2026-08-22 — experiment 0005 is the owner's
 # to run), so a half-built environment is loud rather than silently green.
 spectral-golden = "spectral_host.golden.cli:main"
+
+# The web application's entry point (ADR 0021 decision 1, roadmap W0).
+# Subcommands: serve | peak. `peak` is the founding research document's M0
+# peak-frequency printer; `serve` runs the FastAPI application under uvicorn,
+# with --ssl-certfile / --ssl-keyfile for phone-on-LAN (ADR 0021 decision 8).
+spectral-web = "spectral_host.web.cli:main"
 
 # src layout, same backend as python-scripts/doc_ocr. The package lives in
 # host/src/spectral_host/ so that `import spectral_host` only works from an

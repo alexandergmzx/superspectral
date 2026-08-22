@@ -1,8 +1,8 @@
 # Super Spectral
 
-A wrist-worn singing-voice spectral analyzer on the LilyGO T-Watch S3 (ESP32-S3), **documented before it is built**. The watch is the live-capture and real-time-display front end of a preset-driven analyzer; a Linux companion does the offline science on recorded takes. It carries the six Spectroid-style presets of the founding research document — [`docs/research/00-linux-analyzer-architecture-and-build-guide.md`](docs/research/00-linux-analyzer-architecture-and-build-guide.md) — onto a device you can wear in a rehearsal room.
+A wrist-worn singing-voice spectral analyzer on the LilyGO T-Watch S3 (ESP32-S3), **documented before it is built**. The watch is the live-capture and real-time-display front end of a preset-driven analyzer; a Linux companion does the offline science on recorded takes and carries the founding document's web application — a browser-native live analyzer and offline-compare UI — as its own instrument ([ADR 0021](docs/adr/0021-host-web-application.md)). It carries the six Spectroid-style presets of the founding research document — [`docs/research/00-linux-analyzer-architecture-and-build-guide.md`](docs/research/00-linux-analyzer-architecture-and-build-guide.md) — onto a device you can wear in a rehearsal room.
 
-> **Research question (provisional).** Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP on-device and the host used only for offline analysis of recorded takes?
+> **Research question (provisional).** Can a wrist-worn ESP32-S3 device with a single PDM MEMS microphone, acting as the live-capture and real-time-display front end of a preset-driven singing-voice analyzer, estimate singing f0 within ±20 cents median absolute error (≥90 % RPA @ 50 cents) on the acoustic path and ≤5 cents vs Praat on the digital-injection path, render a spectrogram at ≥30 Hz for the presets whose hop supports it (50 Hz for the live-singing and diction-consonants presets) with ≤80 ms acoustic-to-photon latency, and sustain ≥3 h of continuous analysis on its own battery — with all real-time DSP behind these bounds on-device, the host never in the watch's live loop, and files the only contract between them?
 
 Full proposal: [`docs/proposal/01-super-spectral-proposal.md`](docs/proposal/01-super-spectral-proposal.md) · Project guide for Claude Code sessions: [`CLAUDE.md`](CLAUDE.md)
 
@@ -42,11 +42,12 @@ Full proposal: [`docs/proposal/01-super-spectral-proposal.md`](docs/proposal/01-
                                                                        │ takes + manifests over USB (prov.;
                                                                        │ mass-storage or serial dump, ADR-gated)
                                                                        ▼
-┌──────────────────────────── LINUX HOST — OFFLINE PATH (host/, GPL-3.0-or-later) ─────────────────────────────┐
+┌──────────────────────────── LINUX HOST — OFFLINE PATH + WEB APPLICATION (host/, GPL-3.0-or-later) ───────────┐
 │  parselmouth/Praat: f0 golden files, Burg formants F1–F3 · LTAS / SPR / FHE over whole takes · H1–H2         │
 │  librosa: DTW alignment against a Demucs-separated reference stem · mir_eval / mirdata corpus evaluation     │
 │  host/golden/: pinned parselmouth → bundled Praat → method → floor/ceiling → sha256 manifest                 │
-│  Never real-time. Never linked into firmware. Reads takes and presets; writes reports and golden vectors.    │
+│  web app (ADR 0021): host/web/ live analyzer on the HOST's OWN mic · offline compare UI · measured, no claim │
+│  Python side never real-time; never in firmware; never in the watch's live loop. Takes in, reports out.      │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -65,7 +66,7 @@ Each engineering subsystem is **self-contained** — code, design notes, and spe
 | [`firmware/twatch-s3/`](firmware/twatch-s3/) | ESP-IDF application: `spectral_core` (pure C99 DSP), FFT backend, board support, audio-source and display-backend seams, LVGL UI |
 | [`dsp/`](dsp/) | DSP design notes ([`dsp/design/`](dsp/design/)) shared by watch and host: FFT normalization, decimation cascade, pitch, band energy, mic EQ |
 | [`protocols/`](protocols/) | Take/record format and preset JSON schema ([`protocols/specs/`](protocols/specs/)) — the watch↔host contract |
-| [`host/`](host/) | Linux companion: offline analysis and the Praat golden-file generator ([`host/golden/`](host/golden/)) — **GPL-3.0-or-later** |
+| [`host/`](host/) | Linux companion: offline analysis, the Praat golden-file generator ([`host/golden/`](host/golden/)) and the web application — front end `host/web/` (Vite + TypeScript), backend `host/src/spectral_host/web/` (FastAPI), [ADR 0021](docs/adr/0021-host-web-application.md) — **GPL-3.0-or-later** |
 | [`host-tests/`](host-tests/) | Plain-CMake tests for `spectral_core` with ASan/UBSan — Apache-2.0, no ESP-IDF |
 | [`hardware/`](hardware/) | BOM with instruments and tolerances, acoustic-port/case notes |
 | [`python-scripts/`](python-scripts/) | All Apache-2.0 Python tooling, including the `doc_ocr` reference-library extractor |
@@ -76,7 +77,7 @@ Each engineering subsystem is **self-contained** — code, design notes, and spe
 
 ## Roadmap
 
-All dates provisional. The documentation roadmap (tracks D0–D6 and E0–E2, with a definition of done per phase) is [`docs/roadmap/documentation-roadmap.md`](docs/roadmap/documentation-roadmap.md).
+All dates provisional. The documentation roadmap (tracks D0–D6, E0–E2 and W0–W4 — the host web application, [ADR 0021](docs/adr/0021-host-web-application.md) — with a definition of done per phase) is [`docs/roadmap/documentation-roadmap.md`](docs/roadmap/documentation-roadmap.md).
 
 | Phase | Weeks | Deliverable |
 |-------|-------|-------------|
@@ -100,6 +101,6 @@ The repo is in Phase 0: documentation first, firmware as configuration stubs onl
 **Split licensing, on purpose** ([ADR 0004](docs/adr/0004-split-licensing.md), accepted; stated in [`NOTICE`](NOTICE)):
 
 - **Apache-2.0** — the repository default: firmware, DSP core, protocols, documentation, tooling, host tests. See [`LICENSE`](LICENSE). Permissive so the firmware stays upstreamable to ESP-IDF/Zephyr and reusable by other permissive projects; the firmware link line admits only MIT/BSD/Apache components, with copyright lines carried in `NOTICE` and SPDX headers on every file.
-- **GPL-3.0-or-later** — [`host/`](host/) only, under its own [`host/LICENSE`](host/LICENSE). The Linux companion imports parselmouth/Praat (GPLv3) in-process, which a permissive licence cannot do. No code crosses the `host/` boundary in either direction: firmware never depends on `host/`, and `host/` is never linked into firmware.
+- **GPL-3.0-or-later** — [`host/`](host/) only, under its own [`host/LICENSE`](host/LICENSE). The Linux companion imports parselmouth/Praat (GPLv3) in-process, which a permissive licence cannot do. No code crosses the `host/` boundary in either direction: firmware never depends on `host/`, and `host/` is never linked into firmware. The same licence covers the web application's TypeScript, CSS and HTML under `host/web/` — it is the user interface of that same program ([ADR 0021](docs/adr/0021-host-web-application.md)); its npm dependencies are **permissive-only** (MIT, ISC, 0BSD, BSD-2/3-Clause, Apache-2.0, CC0-1.0, Unlicense, BlueOak-1.0.0, Python-2.0, Zlib, CC-BY-4.0), **AGPL is forbidden**, and a fail-closed CI licence gate over `package-lock.json` enforces both.
 
 Consequences on the watch side: GPL/AGPL embedded code (arduinoFFT, cyberwisk, ikostoski, Friture) and LGPL-2.1 `arduino-esp32` are **read-only references**; the field-of-use "Espressif MIT" licence of ESP-ADF/ESP-SR is excluded; esp-dsp (Apache-2.0), LVGL (MIT), SensorLib (MIT) are in.

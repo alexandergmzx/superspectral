@@ -51,6 +51,19 @@ cppcheck.xml
 # --- Host tests (plain CMake) ----------------------------------------
 host-tests/build/
 
+# --- Node / host web application (ADR 0021, roadmap W0) ---------------
+# Installed and built output, never committed: `npm ci --ignore-scripts`
+# recreates node_modules/ from the committed package-lock.json, and
+# `npm run build` recreates dist/, which uvicorn mounts. Both are excluded by
+# pathspec from the CI licence-boundary scan and from the host-boundary
+# pre-commit hook, which only works if git never tracks them in the first place.
+host/web/node_modules/
+host/web/dist/
+# The mkcert pair vite.config.ts picks up. *.pem / *.key below already cover the
+# two files; this covers everything else mkcert may drop beside them (a .srl,
+# a rootCA copy) so the whole directory is machine-local by construction.
+host/web/certs/
+
 # --- Python ----------------------------------------------------------
 __pycache__/
 *.py[cod]

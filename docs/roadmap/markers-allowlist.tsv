@@ -8,7 +8,7 @@
 # lower a count in the same commit that removes a marker.
 .github/workflows/ci.yml	3	prose describing the marker gate and the (verify) class it checks
 .pre-commit-config.yaml	4	prose describing the marker gate; two hook revs annotated with what their first run found
-CHANGELOG.md	2	historical record
+CHANGELOG.md	3	historical record
 CLAUDE.md	4	the constitution quotes the proposal; follows the RQ freeze
 README.md	5	follows the documents it indexes
 datasets/README.md	1	fetch-time confirmation
@@ -30,18 +30,19 @@ docs/architecture/12-interaction-model.md	3	owner: ADR 0012 is a UX judgement (p
 docs/architecture/README.md	1	follows the ADRs it summarises
 docs/bibliography/01-datasheets.md	6	acquisition — Knowles and Bosch parts are delisted
 docs/bibliography/02-application-notes.md	6	dated Disclosure prose — historical record, not an open flag
-docs/bibliography/03-standards.md	6	purchase — editions confirmed, the texts are paid
+docs/bibliography/03-standards.md	7	purchase — editions confirmed, the texts are paid
 docs/bibliography/04-books.md	3	purchase / ISBN confirmation
 docs/bibliography/05-papers.md	13	model-recalled rows: R7 re-audit, then acquisition
-docs/bibliography/06-reference-projects.md	7	dated Disclosure prose — historical record, not an open flag
+docs/bibliography/06-reference-projects.md	15	dated Disclosure prose — historical record, not an open flag
 docs/bibliography/08-voice-metrology-on-the-wrist.md	5	model-recalled rows: R7 re-audit
-docs/bibliography/09-visual-feedback-for-singing.md	3	model-recalled rows: R7 re-audit
+docs/bibliography/09-visual-feedback-for-singing.md	4	model-recalled rows: R7 re-audit
 docs/bibliography/10-datasets-and-ground-truth.md	2	open per-entry licensing (OpenAIR) + CMU ARCTIC _egg availability
 docs/bibliography/11-esp-idf-platform-and-toolchain.md	1	model-recalled rows: R7 re-audit
 docs/bibliography/README.md	3	dated Disclosure prose — historical record, not an open flag
 docs/bibliography/acquisition-status.md	3	dated Disclosure prose — historical record, not an open flag
 docs/devenv/brick-runbook.md	1	E1/E2 host state — owner's shell
 docs/devenv/first-flash-checklist.md	1	E1/E2 host state — owner's shell
+docs/devenv/setup.md	1	W2 phone-on-LAN gate — the certificate is verified on Alexander's own phone
 docs/hw/README.md	1	E2 measured on the unit
 docs/hw/twatch-s3-pins.md	1	E2 measured on the unit
 docs/proposal/01-super-spectral-proposal.md	18	owner: the RQ freeze and the author's voice
@@ -49,13 +50,13 @@ docs/proposal/README.md	1	owner: the RQ freeze and the author's voice
 docs/reference-projects/notes/esp-dsp_notes.md	5	read at a pinned revision; re-read at the next bump
 docs/reference-projects/notes/lilygolib-axp2101_notes.md	8	read at a pinned revision; re-read at the next bump
 docs/roadmap/README.md	1	tracks the questions; closes when they do
-docs/roadmap/documentation-roadmap.md	8	tracks the questions; closes when they do
+docs/roadmap/documentation-roadmap.md	13	tracks the questions; closes when they do (incl. W4's torch licence (verify), cleared when the ledger row is written)
 docs/session-plans/2026-08-21-daytime-remediation.md	1	dated session record — historical
 docs/session-plans/2026-08-21-overnight-phase0.md	2	dated session record — historical
 docs/standards/README.md	1	follows the documents it indexes
-docs/validation/README.md	10	Phase 1 measured — every target has a method, not yet a number
+docs/validation/README.md	13	Phase 1 measured — every target has a method, not yet a number
 docs/validation/experiments/0001-pdm-mic-in-situ-characterization.md	2	Phase 1 measured — every target has a method, not yet a number
-docs/validation/golden-files.md	6	Phase 1 measured — every target has a method, not yet a number; the formant-settings (prov.) is owned by experiment 0005 / the H1 vowel set
+docs/validation/golden-files.md	7	Phase 1 measured — every target has a method, not yet a number; the formant-settings (prov.) is owned by experiment 0005 / the H1 vowel set
 dsp/README.md	1	follows the documents it indexes
 firmware/twatch-s3/README.md	1	follows the ADRs it implements
 firmware/twatch-s3/components/spectral_fft_backend/README.md	1	follows the ADRs it implements
@@ -69,8 +70,14 @@ host/golden/manifest.schema.yaml	3	follows ADR 0009
 protocols/README.md	7	provisional preset values — freeze with experiment 0001
 protocols/presets/README.md	1	provisional preset values — freeze with experiment 0001
 protocols/specs/README.md	1	provisional preset values — freeze with experiment 0001
-protocols/specs/preset-schema.md	8	provisional preset values — freeze with experiment 0001
+protocols/specs/preset-schema.md	9	provisional preset values — freeze with experiment 0001
 protocols/specs/presets.schema.json	4	provisional preset values — freeze with experiment 0001
 python-scripts/README.md	5	prose describing check_markers.py and the marker class
 docs/validation/experiments/README.md	1	experiment 0004 (M0 bring-up) — its latency/refresh numbers are (prov.) until experiment 0001 characterises the mic; owner Alexander + hardware
 docs/session-plans/2026-08-22-dod-closure-and-host-h0.md	3	dated session record — historical (quotes "(verify" rule names and the (prov.) formant finding)
+docs/adr/0021-host-web-application.md	8	torch's licence (verify) — no bibliography row of its own, cleared at W4 — plus (prov.) values inside an accepted record — the TS spectrum tolerance and the browser-f0 row (W1/W3 measure them), the smoothing convention (preset-schema §4), the ring/twang constant (ADR 0008), the FFT-kernel choice (W1) and the data directory (Q50)
+docs/validation/experiments/0006-web-capture-chain-linearity.md	4	owner Alexander — the ±0.5 dB linearity step and the ±0.5 dB floor movement are the thresholds this experiment exists to measure; they come off when it runs
+docs/validation/experiments/0007-web-latency-and-refresh.md	0	owner Alexander — deliberately marker-free: both its rows read *measured, no claim*, so there is no provisional target to tag
+host/README.md	2	owner: ADR 0021 decision 8 — the XDG data directory, routed as Q50 in the roadmap; plus torch's licence (verify), cleared at W4 from the LICENSE at the pinned version
+docs/adr/0004-split-licensing.md	1	torch's licence (verify) in the ADR 0021 amendment — no bibliography row of its own; cleared at W4 from the LICENSE at the pinned version
+host/web/tests/golden/README.md	1	owner: Claude (W0) — the 0.01 dB per-bin limit is ADR 0021 D2 (prov.), quoted here from docs/validation/golden-files.md; it stops being provisional when W1 records the measured residual, and this row drops to 0 in that commit

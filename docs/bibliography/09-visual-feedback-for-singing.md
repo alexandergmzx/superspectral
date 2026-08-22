@@ -83,13 +83,13 @@ Grounds [ADR 0012](../adr/0012-hands-free-interaction.md) (wrist-raise arm via B
 
 ## E. Accessibility as a feature, not a checkbox
 
-Grounds the §5 practical-significance paragraph, the companion-UI requirements under [`host/`](../../host/README.md), and the CVD-safe default of ADR 0011.
+Grounds the §5 practical-significance paragraph, the accessibility requirements of the **host web application** under [`host/web/`](../../host/README.md) ([ADR 0021](../adr/0021-host-web-application.md)), and the CVD-safe default of ADR 0011.
 
 | # | Item | Priority | Why |
 |---|------|:--------:|-----|
-| [05 #75](05-papers.md) | **Öster (2006)** — visual-feedback speech therapy for profoundly hearing-impaired children (KTH thesis) (verify) | ★ | The assistive-technology lineage: a real-time visual voice display *is* a speech-training aid; frames the deaf/HoH singer as a first-class user — grounds the §5 practical-significance paragraph and the accessibility requirements of the companion UI under [`host/`](../../host/README.md). |
-| S3 | **WCAG 2.2** (W3C Recommendation, 2023) — free — home: [03](03-standards.md) | ★★ | Non-colour redundancy (peak markers, numeric readout alongside the spectrogram), contrast minima — applies to the companion web/desktop UI and, by analogy, to the watch `ui`. |
-| S4 | **EN 301 549** (ETSI, accessibility requirements for ICT products and services) — free — home: [03](03-standards.md) | ★ | Mandatory framing if any companion UI ships in the EU; cite once in §7. |
+| [05 #75](05-papers.md) | **Öster (2006)** — visual-feedback speech therapy for profoundly hearing-impaired children (KTH thesis) (verify) | ★ | The assistive-technology lineage: a real-time visual voice display *is* a speech-training aid; frames the deaf/HoH singer as a first-class user — grounds the §5 practical-significance paragraph and the accessibility requirements of the **host web application** under [`host/web/`](../../host/README.md) ([ADR 0021](../adr/0021-host-web-application.md)). |
+| S3 | **WCAG 2.2** (W3C Recommendation, 2023) — free — home: [03](03-standards.md) | ★★ | Non-colour redundancy (peak markers, numeric readout alongside the spectrogram), contrast minima — **binding** on the host web application under [`host/web/`](../../host/README.md) ([ADR 0021](../adr/0021-host-web-application.md)) and, by analogy, on the watch `ui`. **W3 is the gate:** no colour-only state, contrast minima on every readout, target conformance **level AA `(prov.)`** until the owner fixes the level. |
+| S4 | **EN 301 549** (ETSI, accessibility requirements for ICT products and services) — free — home: [03](03-standards.md) | ★ | Mandatory framing **if the host web application ([ADR 0021](../adr/0021-host-web-application.md)) is ever offered in the EU**; cite once in §7. |
 
 The CVD-safe default itself — **cividis**, [05 #76](05-papers.md), row in section C — is the accessibility anchor of ADR 0011; §5 cites it through C.
 
