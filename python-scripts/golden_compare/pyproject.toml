@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# golden_compare -- the Apache-2.0 consumer of the golden files. It reads the
+# arrays and manifest that host/golden/ (GPL-3.0-or-later) wrote, AS DATA, and
+# applies the tolerance table of docs/validation/golden-files.md to a candidate
+# (a device dump, a host-tests result, an esp-dsp backend). Under
+# python-scripts/ per the repo rule (CLAUDE.md "Where Python lives").
+#
+# Own uv project, own lock, own .venv: the three Python environments never mix
+# (ESP-IDF's venv under ~/esp/tools/v6.0.2, python-scripts/<pkg>/.venv, and the
+# GPL host/.venv -- python-scripts/README.md "Environment", ADR 0004). Nothing
+# here imports from host/ (no `spectral_host`, no sys.path tricks) and nothing
+# in host/ imports this; the two halves exchange .npy / .yaml / raw float32
+# files on disk only (ADR 0009 decision 3).
+#
+#   cd python-scripts/golden_compare
+#   uv sync --frozen --extra test
+#   uv run pytest -q
+#   uv run python -m golden_compare spectrum --golden A.npy --candidate B.npy
+#   uv run python -m golden_compare pitch    --golden P.npy --candidate D.npy --path injection
+#   uv run python -m golden_compare window   --raw table.f32 --manifest manifest.yaml --family hann --n 4096
+
+[project]
+name = "golden-compare"
+version = "0.1.0"
+description = "Super Spectral — applies the golden-file tolerance table to a candidate (device, host-tests or backend output)"
+requires-python = ">=3.12,<3.14"
+license = "Apache-2.0"
+dependencies = [
+  "numpy>=2,<3",
+  "pyyaml>=6,<7",
+  "mir_eval>=0.8,<1",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+# setuptools >= 77 for the PEP 639 `license = "<SPDX>"` string form (same
+# reason as host/pyproject.toml and synth_signals). Build-time only.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+# Flat layout, like python-scripts/doc_ocr and synth_signals: the package is
+# importable from this directory without an install, so `python3 -m
+# golden_compare` works from a plain checkout once the dependencies are present.
+[tool.setuptools]
+packages = ["golden_compare"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: Apache-2.0
+#
+# Tier-0 synthetic signal generator (datasets/tier0-synthetic). Apache-2.0,
+# under python-scripts/ per the repo rule (CLAUDE.md "Where Python lives").
+#
+# Own uv project, own lock, own .venv: the three Python environments never mix
+# (ESP-IDF's venv under ~/esp/tools/v6.0.2, python-scripts/<pkg>/.venv, and the
+# GPL host/.venv -- python-scripts/README.md "Environment", ADR 0004). Nothing
+# here imports from host/ and nothing in host/ imports this; the two halves
+# exchange WAV files and manifest.yaml on disk only.
+#
+#   cd python-scripts/synth_signals
+#   uv sync --frozen --extra test
+#   uv run pytest -q
+#   uv run python -m synth_signals generate --out ../../datasets/tier0-synthetic
+#   uv run python -m synth_signals check    --out ../../datasets/tier0-synthetic
+
+[project]
+name = "synth-signals"
+version = "0.1.0"
+description = "Super Spectral — Tier-0 synthetic signals with exact ground truth (datasets/tier0-synthetic)"
+requires-python = ">=3.12,<3.14"
+license = "Apache-2.0"
+dependencies = [
+  "numpy>=2,<3",
+  "scipy>=1.13,<2",
+  "pyyaml>=6,<7",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+# setuptools >= 77 for the PEP 639 `license = "<SPDX>"` string form (same
+# reason as host/pyproject.toml). Build-time only.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+# Flat layout, like python-scripts/doc_ocr: the package is importable from this
+# directory without an install, so `python3 -m synth_signals` works from a plain
+# checkout once the three dependencies are present.
+[tool.setuptools]
+packages = ["synth_signals"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

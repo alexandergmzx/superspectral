@@ -9,12 +9,12 @@
 ## Manifest schema (`manifest.yaml` — one manifest per vector set, per the schema's `set` field)
 
 ```yaml
-schema: 1
+schema: "1.1"                 # quoted MAJOR.MINOR; a reader accepts exactly one value (ADR 0009, amended 2026-08-21)
 set: tier0-synthetic          # also the output directory: outputs/<set>/
 generated: "2026-MM-DD"       # quoted: an unquoted date is not a JSON string
 generator:
-  script: host/golden/generate.py
-  sha256: <64 hex of generate.py>
+  script: host/src/spectral_host            # the generator PACKAGE (src layout); the only value verify accepts
+  sha256: <64 hex>                          # sorted tree hash of env.GENERATOR_TREE (the numerics-bearing modules), ADR 0009 amended 2026-08-22
   commit: <40 hex repo commit>
   python: 3.12.3              # `python3 --version`
   numpy: <version>
@@ -84,6 +84,30 @@ analyses:
     max_frequency: 8000
   ltas:
     bandwidth_hz: 100
+  spectrum:                    # the NumPy/SciPy reference, not a Praat block
+    window: hann               # a preset-schema §4.3 family (or `rect`), never a SciPy name
+    window_length_samples: 4096
+    fftbins: true              # periodic: general_cosine(N, a, sym=False) (ADR 0006 D1)
+    fft_size: 4096
+    normalization: "S1"        # ADR 0006 D2
+    scaling: power_spectrum
+    dbfs_reference: sine       # ADR 0006 D3
+    int16_scale: 32768
+    dtype: float64
+windows:                       # required whenever analyses.spectrum is present (schema "1.1")
+  # ADR 0006 D1: one entry per (family, N) the set uses. sha256 of the N
+  # float32 little-endian samples of the PERIODIC window built from
+  # `coefficients`; verify.py recomputes it (invariant 7) and looks up the
+  # entry for (spectrum.window, window_length_samples) (invariant 8).
+  # `rect` is admitted here only, for calibration tones -- never in a preset.
+  - family: hann
+    n: 4096
+    coefficients: [0.5, 0.5]
+    sha256: 3ce6c7c870b60fc2425689b96f2ccf1cecff9b071766a48ae3d25a0ca8f3d304   # recomputed 2026-08-21, host/tests/test_manifest_schema.py
+  - family: rect
+    n: 4096
+    coefficients: [1.0]
+    sha256: 3035aac5fb87474c303702f9030301b4e6bb7aee93be3710b8ab8dcea201db70   # = sha256(b'\x00\x00\x80\x3f' * 4096)
 outputs:
   - path: host/golden/outputs/tier0-synthetic/pitch_sine_440.npy
     sha256: <64 hex>
@@ -116,9 +140,15 @@ Bit-exactness between an Xtensa LX7 single-precision pipeline and an x86-64 doub
 | Device f0 vs Praat, injection path | median \|Δcents\| over voiced frames | ≤ 5 cents | different estimator class (time-domain MPM/YIN vs Praat's autocorrelation with candidate tracking); frames near voicing boundaries excluded by mir_eval convention |
 | Device f0 vs Praat, acoustic path | median \|Δcents\| | ≤ 20 cents | whole-chain metric (see [README](README.md) two-path rule) |
 | Device voicing vs Praat | VR / VFA | ≥ 90 % / ≤ 10 % | voicing thresholds are estimator-specific |
-| `spectral_core` window **table digest** per `(family, N)` | sha256 of the float32 table | **exact** | [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) D1: a window that quietly changes shape shifts every level by a fraction of a dB and nothing else notices. The digest is a golden-manifest field; a mismatch is a red `verify`, not a widened tolerance |
+| `spectral_core` window **table digest** per `(family, N)` | sha256 of the N float32 little-endian samples of the periodic table | **exact** | [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) D1: a window that quietly changes shape shifts every level by a fraction of a dB and nothing else notices. The digest is the golden-manifest field `windows[].sha256` (schema `"1.1"`, [ADR 0009](../adr/0009-golden-file-strategy.md) amended 2026-08-21); `verify.py` recomputes it from `windows[].coefficients` (invariant 7), and a mismatch is a red `verify`, not a widened tolerance |
 | `spectral_to_dbfs_fast()` vs `log10()` in double | max abs. error over the float32 domain | **≤ 0.005 dB** `(prov.)` | [ADR 0006](../adr/0006-fft-normalisation-and-window-conventions.md) D9. Its **own** row, deliberately: the fast log is an approximation we choose, not a platform difference we absorb, so it may not eat the 0.01 dB spectrum budget. Verified exhaustively in host-tests, not sampled. M0 ships exact `log10f` and this row is dormant until a polynomial exists |
 | `spectral_core` window coefficients vs `scipy.signal.windows.general_cosine(N, a, sym=False)` | `assert_allclose`, float32 | `atol = 1e-6`, `rtol = 0` | float32 evaluation of `cos()` on Xtensa libm vs x86 glibc differs in the last ULP |
+| `spectral_core` magnitude spectrum vs `numpy.fft.rfft` (same window, same normalization per ADR 0006) | per-bin level in dB | `atol = 0.01 dB` for bins ≥ −80 dBFS; bins below are masked | float32 accumulation across 11 radix-2 stages |
+| esp-dsp `_aes3` (optimized) vs esp-dsp ANSI-C, on QEMU/target ("backend agreement") | per-bin magnitude | `rtol = 1e-4` in linear magnitude (≈ 1e-3 dB) | the assembly kernels reorder the butterflies; same precision, different rounding path |
+| Interpolated peak frequency vs known synthetic tone | cents | ≤ 3 cents on-bin and off-bin | quadratic interpolation bias per window (Smith SASP) |
+| Device F1/F2 vs Praat Burg | Hz or % | ≤ 5 % or 50 Hz, whichever larger | LPC order, pre-emphasis and ceiling must match the manifest exactly or the comparison is meaningless (roadmap Q36) — and the reference itself is not the truth: on the Tier-0 synthetic vowel (poles 700/1220/2600 Hz) Praat Burg with `max_formants = 5`, ceiling 5500 Hz returns medians 646/1152/1379 Hz (H0 golden set, 2026-08-22); the row is device-vs-Praat, so it is judged against those numbers, and the Praat-vs-truth gap is a finding for the formant settings `(prov.)`, not a tolerance |
+| Device LTAS band levels vs Praat `To Ltas` (same bandwidth) | dB per band | ≤ 0.2 dB | window and normalization conventions (ADR 0006) |
+| Device FHE / SPR vs host | Hz / dB | ≤ 50 Hz / ≤ 0.5 dB | both are read off the same LTAS; differences are band-edge interpolation |
 
 **Do not build the reference window from `get_window(<name>, N, fftbins=True)`.** Four of the six preset families happen to match a SciPy name exactly, and two do not, in opposite directions (measured with SciPy 1.18.0 at N = 4096, 2026-08-21):
 
@@ -129,12 +159,6 @@ Bit-exactness between an Xtensa LX7 single-precision pipeline and an x86-64 doub
 | `nuttall` | *none* | **0.0163** — esp-dsp's Nuttall set is a different window |
 
 So the oracle builds every window from the coefficient table in [`preset-schema.md` §4.3](../../protocols/specs/preset-schema.md) via `general_cosine(N, a, sym=False)`, and records the *preset* name. Two independent checks that the periodic form is the right one, same run: `N·S2/S1²` equals the closed form `(a₀² + Σ_{k≥1} a_k²/2)/a₀²` **and** the `enbw_bins` each preset ships, to the printed precision, for all six families; the symmetric form does not (`hann` gives 1.500366, not 1.5).
-| `spectral_core` magnitude spectrum vs `numpy.fft.rfft` (same window, same normalization per ADR 0006) | per-bin level in dB | `atol = 0.01 dB` for bins ≥ −80 dBFS; bins below are masked | float32 accumulation across 11 radix-2 stages |
-| esp-dsp `_aes3` (optimized) vs esp-dsp ANSI-C, on QEMU/target ("backend agreement") | per-bin magnitude | `rtol = 1e-4` in linear magnitude (≈ 1e-3 dB) | the assembly kernels reorder the butterflies; same precision, different rounding path |
-| Interpolated peak frequency vs known synthetic tone | cents | ≤ 3 cents on-bin and off-bin | quadratic interpolation bias per window (Smith SASP) |
-| Device F1/F2 vs Praat Burg | Hz or % | ≤ 5 % or 50 Hz, whichever larger | LPC order, pre-emphasis and ceiling must match the manifest exactly or the comparison is meaningless (roadmap Q36) |
-| Device LTAS band levels vs Praat `To Ltas` (same bandwidth) | dB per band | ≤ 0.2 dB | window and normalization conventions (ADR 0006) |
-| Device FHE / SPR vs host | Hz / dB | ≤ 50 Hz / ≤ 0.5 dB | both are read off the same LTAS; differences are band-edge interpolation |
 
 A tolerance is only ever **widened with a recorded reason** in the commit message and in this table; it is never widened to make a failing test pass on the day.
 
@@ -156,7 +180,7 @@ Bold callouts in swarm's style: name, cost, what the wrong answer looks like, wh
 
 ## Tooling
 
-- **Host (Python, GPL side):** `host/golden/generate.py` writes the vectors and the manifest; `pytest-regressions` (`num_regression`, `file_regression`) keeps the host-side numeric snapshots; `numpy.testing.assert_allclose(rtol=…, atol=…)` with the explicit values from the table above.
+- **Host (Python, GPL side):** `spectral-golden generate` (`host/src/spectral_host/golden/generate.py`) writes the vectors and the manifest; `pytest-regressions` (`num_regression`, `file_regression`) keeps the host-side numeric snapshots; `numpy.testing.assert_allclose(rtol=…, atol=…)` with the explicit values from the table above.
 - **Host (C, Apache side):** `host-tests/` is a plain-CMake build of `spectral_core` (pure C99, `REQUIRES ""`) with ASan/UBSan and `ctest`; it reads the vectors and the manifest and applies the tolerance table. esp-dsp cannot build on the ESP-IDF `linux` target (its `CMakeLists.txt` registers the Xtensa `.S` files unconditionally), so the host lane tests `spectral_core` against NumPy, not esp-dsp.
 - **QEMU / target (backend agreement):** `sdkconfig.ci.qemu` builds with `CONFIG_DSP_OPTIMIZED=y`; the test loads the same vectors through the `file_blob` audio source, runs esp-dsp's `_aes3` path and the ANSI path, and compares both to the golden magnitudes in dB. QEMU for the ESP32-S3 emulates PSRAM, the PSRAM MMU, eFuse and GPIO strapping but **not** I²C, I²S, GP-SPI, USB or the GPIO matrix — which is exactly why the audio-source and display-backend seams exist. Whether QEMU executes the S3 TIE/PIE vector instructions correctly is open question H12; the ANSI lane is the fallback.
 - **Where the numbers go:** every CI run emits the per-metric residuals as an artifact; `check_performance()` fails a regression; the tolerance table here is the only place a limit is defined.

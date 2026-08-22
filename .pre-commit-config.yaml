@@ -235,6 +235,66 @@ repos:
         exclude: '(^|/)(managed_components|build|build_[^/]+|scratch)/|/clones/|\.ocr'
         pass_filenames: false
 
+      # 5c. ADR 0009 item 4: "a commit may not both regenerate vectors and change a
+      #     tolerance -- two changes, two commits, two reasons". The record names this
+      #     hook as its Phase-1 deliverable: refuse a commit whose STAGED set touches both
+      #     host/golden/outputs/ (the vectors and their manifests) and
+      #     docs/validation/golden-files.md (the only place a limit is defined). File-level
+      #     on purpose -- a widened limit is exactly the kind of edit that hides in a diff
+      #     of a prose table. When nothing is staged (`pre-commit run -a`, the CI
+      #     guard-hooks loop) it checks the HEAD commit instead, so the CI run is an
+      #     assertion about the tip and not a no-op; a merge commit has no single diff and
+      #     passes. The escape is two commits, not SKIP=. Fails closed (exit 2) when HEAD is
+      #     the cut of a shallow clone: git then reports HEAD as parentless and
+      #     `diff-tree --root` lists the WHOLE tree, which would trip the rule on every push
+      #     the moment both paths exist -- measured 2026-08-21 in a `--depth 1` clone of an
+      #     empty commit: 354 files "changed". The CI checkout uses fetch-depth 2 for this.
+      - id: golden-regen
+        name: golden vectors and the tolerance table never change in the same commit (ADR 0009)
+        language: system
+        entry: >-
+          bash -c 'set=$(git diff --cached --name-only --diff-filter=ACDMR);
+          if [ -n "$set" ]; then src="staged set";
+          else src="HEAD commit $(git rev-parse --short HEAD)";
+          if [ "$(git rev-parse --is-shallow-repository)" = true ] && grep -qx "$(git rev-parse HEAD)" "$(git rev-parse --git-path shallow)"; then
+          echo "golden-regen: HEAD is the cut of a shallow clone -- its parent is absent, so its diff cannot be taken; fetch depth >= 2 (refusing to pass)"; exit 2; fi;
+          set=$(git diff-tree --no-commit-id --name-only -r --root HEAD); fi;
+          o=$(printf "%s\n" "$set" | grep -c "^host/golden/outputs/" || true);
+          t=$(printf "%s\n" "$set" | grep -cx "docs/validation/golden-files.md" || true);
+          if [ "$o" -gt 0 ] && [ "$t" -gt 0 ]; then
+          echo "golden-regen: the $src touches $o file(s) under host/golden/outputs/ AND docs/validation/golden-files.md";
+          echo "ADR 0009 item 4: regenerate in one commit (golden: ...), change the tolerance in another, each with its reason";
+          exit 1; fi;
+          echo "golden-regen: $src -- outputs: $o, tolerance table: $t -- ok"'
+        files: '^(host/golden/outputs/|docs/validation/golden-files\.md$)'
+        pass_filenames: false
+
+      # 5d. The licence boundary is the directory (ADR 0004): host/ is GPL-3.0-or-later
+      #     because it imports parselmouth in-process; everything else is Apache-2.0; the
+      #     two halves exchange files on disk and never import each other. Four greps,
+      #     mirrored one-for-one by the `host` CI job: (a) no file outside host/ DECLARES
+      #     itself GPL in its header (first 5 lines -- prose mentions in ADRs and NOTICE
+      #     are not violations); (b) `spectral_host` is imported nowhere outside host/;
+      #     (c) no .py under host/ (src, tests, golden alike -- CLAUDE.md: "nothing
+      #     outside host/ is imported by host/") imports an Apache package; (d) host/src
+      #     never edits sys.path (the one way a checkout-relative import could cross the
+      #     directory without an install; host/tests may READ it -- test_env.py does, to
+      #     prove the boundary). Runs on every commit: four `git grep`s cost nothing.
+      - id: host-boundary
+        name: licence boundary — GPL headers and imports stay inside host/, Apache imports stay out
+        language: system
+        entry: >-
+          bash -c 'rc=0;
+          bad=$(git ls-files -z -- . ":!host" | while IFS= read -r -d "" f; do
+          [ -f "$f" ] && head -n 5 -- "$f" | grep -qE "SPDX-License-Identifier:.*GPL" && echo "$f"; done);
+          if [ -n "$bad" ]; then printf "%s\n" "$bad" | sed "s|$|: GPL SPDX header outside host/|"; rc=1; fi;
+          if git grep -nE "^(from|import) spectral_host" -- . ":!host"; then echo "spectral_host (GPL) imported outside host/"; rc=1; fi;
+          if git grep -nE "^(from|import) (synth_signals|golden_compare|check_presets|doc_ocr)" -- ":(glob)host/**/*.py"; then echo "host/ imports from python-scripts/"; rc=1; fi;
+          if git grep -n "sys\.path" -- host/src; then echo "host/src edits sys.path"; rc=1; fi;
+          [ $rc -eq 0 ] || echo "licence boundary crossed -- ADR 0004: host/ and python-scripts/ exchange files on disk only";
+          exit $rc'
+        pass_filenames: false
+
       # 6. Needs an activated ESP-IDF shell: the lock must match the manifest.
       - id: lockfile-matches-manifest
         name: dependencies.lock is up to date (manual stage; needs idf.py)

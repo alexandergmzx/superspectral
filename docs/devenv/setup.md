@@ -200,21 +200,48 @@ them apart is the same discipline `.envrc` applies to ESP-IDF.
 | Environment | Where | What it is for | Licence |
 |---|---|---|---|
 | ESP-IDF venv | `~/esp/tools/v6.0.2/python_env/` | `idf.py`, `esptool`, `otatool` — created and owned by `install.sh`. **Never** used for repo scripts. | — |
-| Host companion | `host/.venv`, from `host/pyproject.toml` + `host/uv.lock` | parselmouth, numpy, scipy — the offline analysis and golden-file generation | **GPL-3.0-or-later** |
-| Apache tooling | system `python3` (stdlib only) or a per-package `uv` project under `python-scripts/` | `doc_ocr`, `check_links.py`, `check_presets.py`, `gen_colormap_lut.py` | Apache-2.0 |
+| Host companion | `host/.venv`, from `host/pyproject.toml` + `host/uv.lock` + `host/.python-version` | parselmouth, numpy, scipy — the offline analysis and golden-file generation (`spectral-golden`) | **GPL-3.0-or-later** |
+| Apache tooling, stdlib-only | system `python3` (3.12) | `doc_ocr`, `check_links.py`, `check_markers.py`, `check_presets.py`, `gen_colormap_lut.py` — no environment at all, by rule ([`python-scripts/README.md`](../../python-scripts/README.md) "Environment") | Apache-2.0 |
+| Apache tooling with dependencies | one `uv` project **per package**: `python-scripts/synth_signals/.venv` and `python-scripts/golden_compare/.venv`, each from its own `pyproject.toml` + `uv.lock` + `.python-version` | `synth_signals` (numpy, scipy, pyyaml — the Tier-0 generator), `golden_compare` (numpy, pyyaml, mir_eval — the consumer of the golden files) | Apache-2.0 |
+
+So there are **three `uv` projects** and three locks, and none of them shares a
+`.venv` with another or with the IDF. The GPL side and the Apache side exchange
+files on disk (`datasets/tier0-synthetic/*.wav` + `manifest.yaml` one way,
+`host/golden/outputs/**` the other) and never import each other — the
+`host-boundary` pre-commit hook and the `host` CI job grep for exactly that
+([ADR 0004](../adr/0004-split-licensing.md)).
 
 ```sh
-cd host && uv sync --extra dev              # GPL side; host/.venv, gitignored
-uv run --project host python -c "import parselmouth; print(parselmouth.PRAAT_VERSION)"   # 6.1.38
-pipx install pre-commit                     # not `pip install --user`, not `uvx`
+# GPL side -- host/.venv, gitignored
+uv lock --check --project host                  # the lock still matches pyproject.toml
+uv sync  --project host --frozen --extra dev
+uv run   --project host python -c "import parselmouth; print(parselmouth.PRAAT_VERSION)"   # 6.1.38
+uv run   --project host pytest -q host/tests
+uv run   --project host spectral-golden verify
+
+# Apache side -- one project per package, run from inside it
+cd python-scripts/synth_signals && uv lock --check && uv sync --frozen --extra test && uv run pytest -q && cd -
+cd python-scripts/golden_compare && uv lock --check && uv sync --frozen --extra test && uv run pytest -q && cd -
+
+pipx install pre-commit                         # not `pip install --user`, not `uvx`
 ```
 
-`uv` (0.11.32 here) is used rather than bare `venv` because the lock file is the
-artefact ADR 0009 needs: `praat-parselmouth==0.4.7` pins Praat 6.1.38, and a
-resolver that silently moved to a 0.5.x would change the default pitch method
-underneath every golden file. `uvx pre-commit` would work for a one-shot run, but
-`pre-commit install` writes the interpreter path into `.git/hooks/pre-commit`, so
-the tool has to stay on PATH — hence pipx.
+`uv` (0.11.32 here; CI installs the same version with `pip install uv==0.11.32`
+and the inventory in `tools/env-lock.sh` records it) is used rather than bare
+`venv` because the lock file is the artefact ADR 0009 needs:
+`praat-parselmouth==0.4.7` pins Praat 6.1.38, and a resolver that silently moved
+to a 0.5.x would change the default pitch method underneath every golden file.
+`--frozen` installs the lock as committed; `uv lock --check` is what notices a
+lock that no longer matches its `pyproject.toml`, which is why CI runs both.
+`uvx pre-commit` would work for a one-shot run, but `pre-commit install` writes
+the interpreter path into `.git/hooks/pre-commit`, so the tool has to stay on
+PATH — hence pipx.
+
+A shell with `PYTHONPATH` set (the ROS 2 leak `.envrc` strips for the IDF shell)
+reaches into every one of these `.venv`s too: `uv run` honours `PYTHONPATH`, and
+`/opt/ros/jazzy/lib/python3.12/site-packages` shadows the venv's own packages
+at import time. Run the commands above from the direnv-activated repo shell, or
+`env -u PYTHONPATH uv run …`.
 
 ## Quick reference
 

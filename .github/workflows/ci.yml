@@ -81,22 +81,34 @@ jobs:
             '**/*.md'
           fail: true
 
-  # The eight `repo: local` hooks in .pre-commit-config.yaml are the project's
+  # The ten `repo: local` hooks in .pre-commit-config.yaml are the project's
   # rules expressed as code: GPIO19/20 (the only recovery path on a sealed
   # board), the twatch_pins.h reserved-name rule, the sdkconfig anti-brick
-  # invariants, the partition-table arithmetic, the preset/marker gates, and the
-  # PDF-redistribution rule (a tracked document must be `redistributable=yes`).
-  # Until 2026-08-21 they ran ONLY as local git hooks, and `pre-commit install`
-  # had never been run — so CLAUDE.md's Never-rule 1, which promises "CI greps
-  # for the literals", was describing a second line of defence that did not
-  # exist. This job is that line. It runs the local hooks only: the upstream
-  # hooks (clang-format, shellcheck, codespell, kconfig) are style and are the
-  # developer's business, but these five are invariants.
+  # invariants, the partition-table arithmetic, the preset/marker gates, the
+  # PDF-redistribution rule (a tracked document must be `redistributable=yes`),
+  # and since roadmap H0 (2026-08-21) the golden-regeneration rule (ADR 0009
+  # item 4: vectors and the tolerance table never change in one commit) and
+  # the licence boundary (ADR 0004: GPL stays inside host/, Apache imports stay
+  # out). Until 2026-08-21 they ran ONLY as local git hooks, and `pre-commit
+  # install` had never been run — so CLAUDE.md's Never-rule 1, which promises
+  # "CI greps for the literals", was describing a second line of defence that
+  # did not exist. This job is that line. It runs the local hooks only: the
+  # upstream hooks (clang-format, shellcheck, codespell, kconfig) are style and
+  # are the developer's business, but these are invariants. golden-regen has no
+  # staged set here, so it checks the HEAD commit (its own documented fallback);
+  # host-boundary is additionally repeated as four named steps in the `host`
+  # job, the way the GPIO19/20 scan below repeats no-usb-pins.
   guard-hooks:
-    name: safety hooks (GPIO19/20, sdkconfig, partitions, presets, markers)
+    name: safety hooks (GPIO19/20, sdkconfig, partitions, presets, markers, golden, licence boundary)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1              # v7.0.1
+        with:
+          # golden-regen diffs HEAD against its parent; at depth 1 the parent is
+          # absent and `git diff-tree --root` lists the whole tree (the hook then
+          # exits 2 rather than failing the rule falsely). Depth 2 reaches both
+          # parents of a merge tip too.
+          fetch-depth: 2
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97          # v7.0.0
         with:
           python-version: "3.12"
@@ -114,7 +126,7 @@ jobs:
           rc=0
           for h in pdf-redistributable spdx-header no-usb-pins pins-h-usb-reserved-only \
                    sdkconfig-invariants partitions-arithmetic \
-                   presets-rules markers-baseline; do
+                   presets-rules markers-baseline golden-regen host-boundary; do
             echo "::group::$h"
             pre-commit run --all-files "$h" || rc=1
             echo "::endgroup::"
@@ -161,24 +173,74 @@ jobs:
           echo "clean: $(wc -l < files.lst) files scanned, 0 matches"
 
   python-scripts:
-    name: python-scripts compile + doc_ocr tests
+    name: python-scripts compile + tests (doc_ocr, synth_signals, golden_compare) + tier-0 reproducibility
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1              # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97          # v7.0.0
         with:
           python-version: "3.12"
+      # uv 0.11.32 is the version on the development machine (docs/devenv/setup.md
+      # section 10, `uv --version` in tools/env-lock.sh); pinned exactly so the
+      # resolver that reads the three committed uv.lock files is the one that
+      # wrote them. Bump here, on the machine, and in setup.md together.
+      - name: Install uv (pinned to the dev machine's version)
+        run: python -m pip install --quiet "uv==0.11.32"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9                 # v6.1.0
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('python-scripts/*/uv.lock', 'host/uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-
+      # compileall runs BEFORE any `uv sync` so it never descends into a .venv.
       - name: Syntax-check every Python script
         run: python -m compileall -q python-scripts
       # doc_ocr has no runtime dependencies on purpose (it shells out to
       # poppler/mutool); its tests use captured tool output as fixtures, so
-      # they need pytest only. host/ is GPL and has its own environment; it
-      # is not compiled here.
+      # they need pytest only. host/ is GPL and has its own environment and
+      # its own job (`host`, below); it is not compiled here.
       - name: doc_ocr unit tests
         run: |
           python -m pip install --quiet "pytest>=8"
           cd python-scripts/doc_ocr
           python -m pytest -q
+      # The two packages that need NumPy/SciPy/mir_eval each carry their own
+      # pyproject.toml + uv.lock + .python-version + .venv (python-scripts/README.md
+      # "Environment"): the IDF venv, python-scripts/<pkg>/.venv and host/.venv
+      # never mix (ADR 0004). `uv lock --check` first: `--frozen` installs the
+      # lock without asking whether it still matches pyproject.toml, so a stale
+      # lock would otherwise pass this job silently -- the same reason the
+      # firmware job diffs dependencies.lock after the build.
+      - name: synth_signals + golden_compare unit tests (own lock each)
+        run: |
+          rc=0
+          for pkg in synth_signals golden_compare; do
+            echo "::group::$pkg"
+            ( cd "python-scripts/$pkg" \
+              && uv lock --check \
+              && uv sync --frozen --extra test \
+              && uv run pytest -q ) || rc=1
+            echo "::endgroup::"
+          done
+          exit $rc
+      # The reproducibility test on a different libm: the tracked
+      # datasets/tier0-synthetic/manifest.yaml records the sha256 of every WAV
+      # as rendered on the development machine; `check` re-renders each one
+      # in memory here and fails on any digest that differs (glibc's cos/sin
+      # on the runner vs the developer's, NumPy/SciPy rounding). `generate`
+      # rewrites manifest.yaml from its own render, which would make the
+      # subsequent `check` compare the runner with itself -- so the tracked
+      # manifest is kept aside and put back before `check` runs against it
+      # with the freshly written WAVs on disk (a plain copy, not a git
+      # command, so the same three lines run unchanged on a developer machine).
+      - name: tier-0 synthetic signals regenerate bit-exactly (generate, then check against the tracked manifest)
+        run: |
+          set -euo pipefail
+          cd python-scripts/synth_signals
+          m=../../datasets/tier0-synthetic/manifest.yaml
+          keep="$(mktemp)"; cp "$m" "$keep"
+          uv run python -m synth_signals generate --out ../../datasets/tier0-synthetic
+          cp "$keep" "$m"
+          uv run python -m synth_signals check --out ../../datasets/tier0-synthetic
       # The presets are a protocol, not configuration: the watch rejects a file
       # that fails any rule in protocols/specs/preset-schema.md section 6, so a
       # rule that quietly stops being true here would ship a preset the device
@@ -197,6 +259,126 @@ jobs:
         run: |
           python -m pip install --quiet "jsonschema>=4.10"
           python python-scripts/check_presets.py --verbose
+
+  # The GPL-3.0-or-later half of the licence boundary (ADR 0004), in its own
+  # job and its own environment (host/.venv from host/uv.lock): parselmouth is
+  # imported in-process here and nowhere else. Runs the host unit tests, then
+  # `spectral-golden verify` -- ADR 0009 item 4: recompute every digest, re-read
+  # the installed parselmouth / bundled Praat / numpy / scipy, exit 1 on any
+  # drift, never regenerate -- and then the boundary itself as four separate
+  # failing steps, so the step name says which side leaked.
+  host:
+    name: host companion (GPL env) - pytest, spectral-golden verify, licence boundary
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1              # v7.0.1
+        with:
+          # Full history: verify rule G1 resolves `tolerances.revision` with
+          # `git cat-file -e` and reports "shallow clone" as a skip, not a check;
+          # spectral_host.env records `git rev-parse HEAD` as generator.commit.
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97          # v7.0.0
+        with:
+          python-version: "3.12"
+      # Same pin as the python-scripts job; see the comment there.
+      - name: Install uv (pinned to the dev machine's version)
+        run: python -m pip install --quiet "uv==0.11.32"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9                 # v6.1.0
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('python-scripts/*/uv.lock', 'host/uv.lock') }}
+          restore-keys: uv-${{ runner.os }}-
+      # The tier0-synthetic golden set's inputs are the Tier-0 WAVs, which are
+      # gitignored (datasets/**/*.wav) and regenerated from the tracked
+      # manifest by the Apache-2.0 generator -- the one direction of traffic
+      # across the boundary, files on disk. verify rule I4 hashes every input,
+      # so they must exist before it runs; the tracked manifest is put back
+      # after `generate` for the reason given in the python-scripts job.
+      # This is a separate uv project with its own lock (python-scripts/
+      # synth_signals/uv.lock); nothing from it is installed into host/.venv.
+      - name: Regenerate the Tier-0 WAVs (inputs of the tier0-synthetic golden set)
+        run: |
+          set -euo pipefail
+          cd python-scripts/synth_signals
+          m=../../datasets/tier0-synthetic/manifest.yaml
+          keep="$(mktemp)"; cp "$m" "$keep"
+          uv sync --frozen
+          uv run python -m synth_signals generate --out ../../datasets/tier0-synthetic
+          cp "$keep" "$m"
+      # `uv lock --check` before `--frozen` for the reason given in the
+      # python-scripts job. praat-parselmouth==0.4.7 (Praat 6.1.38) is the pin
+      # that matters (host/pyproject.toml); a lock that drifted from it would
+      # change the default pitch method under every golden file.
+      - name: uv sync host/ (frozen, dev extra)
+        run: |
+          uv lock --check --project host
+          uv sync --project host --frozen --extra dev
+      - name: host unit tests
+        run: uv run --project host pytest -q host/tests
+      # Rules S, I1-I8, N1-N4, G1 over every host/golden/outputs/*/manifest.yaml
+      # (host/src/spectral_host/golden/verify.py). No --no-env-check: CI IS the
+      # environment the pins are compared against. A red step is a decision
+      # request for a human (regenerate under a new name with a reason), not
+      # something to fix in this workflow.
+      - name: spectral-golden verify (never regenerates)
+        run: uv run --project host spectral-golden verify
+      # --- The licence boundary (ADR 0004), one failing step per direction. ---
+      # Headers only (first 5 lines): the ADRs, NOTICE and this file all MENTION
+      # the GPL in prose, and that is not a violation; a file that DECLARES
+      # itself GPL outside host/ is. Fails closed like the GPIO19/20 scan: an
+      # empty listing is a tooling error, never "clean".
+      - name: boundary - no GPL SPDX header outside host/
+        shell: bash
+        run: |
+          set -euo pipefail
+          n=0; bad=0
+          while IFS= read -r -d '' f; do
+            [ -f "$f" ] || continue
+            n=$((n + 1))
+            if head -n 5 -- "$f" | grep -qE 'SPDX-License-Identifier:.*GPL'; then
+              echo "::error file=$f::GPL SPDX header outside host/ (ADR 0004: the licence boundary is the directory)"
+              bad=1
+            fi
+          done < <(git ls-files -z -- . ':!host')
+          if [ "$n" -eq 0 ]; then
+            echo "::error::git ls-files listed nothing -- the listing broke; refusing to pass"
+            exit 2
+          fi
+          [ "$bad" -eq 0 ] && echo "clean: $n files scanned, 0 GPL headers outside host/"
+          exit $bad
+      # `git grep` exits 1 on no match, which is the only clean outcome here;
+      # 0 (a match) and 2 (an error) both fail the step.
+      - name: boundary - spectral_host is imported nowhere outside host/
+        shell: bash
+        run: |
+          git grep -nE '^(from|import) spectral_host' -- . ':!host' && rc=0 || rc=$?
+          case $rc in
+            1) echo "clean: no import of spectral_host outside host/" ;;
+            0) echo "::error::GPL package spectral_host imported outside host/ (ADR 0004)"; exit 1 ;;
+            *) echo "::error::git grep failed (rc $rc); refusing to pass"; exit 2 ;;
+          esac
+      # Every .py under host/ (src, tests, golden alike): CLAUDE.md says "nothing
+      # outside host/ is imported by host/", not only by the package.
+      - name: boundary - nothing under host/ imports the Apache tooling
+        shell: bash
+        run: |
+          git grep -nE '^(from|import) (synth_signals|golden_compare|check_presets|doc_ocr)' -- ':(glob)host/**/*.py' && rc=0 || rc=$?
+          case $rc in
+            1) echo "clean: host/ imports nothing from python-scripts/" ;;
+            0) echo "::error::host/ reaches into python-scripts/ (ADR 0004: files on disk only)"; exit 1 ;;
+            *) echo "::error::git grep failed (rc $rc); refusing to pass"; exit 2 ;;
+          esac
+      # host/src only: host/tests reads sys.path on purpose (test_env.py proves
+      # python-scripts/ is not on it).
+      - name: boundary - host/src does no sys.path surgery
+        shell: bash
+        run: |
+          git grep -n 'sys\.path' -- host/src && rc=0 || rc=$?
+          case $rc in
+            1) echo "clean: host/src never touches sys.path" ;;
+            0) echo "::error::host/src edits sys.path (ADR 0004: the only way a checkout-relative import crosses the directory)"; exit 1 ;;
+            *) echo "::error::git grep failed (rc $rc); refusing to pass"; exit 2 ;;
+          esac
 
   firmware:
     name: firmware build (${{ matrix.config }})
@@ -302,9 +484,13 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-  # Deferred jobs, in the order they are worth adding (devenv synthesis §6.11):
+  # Deferred jobs, in the order they are worth adding (devenv synthesis §6.11).
+  # The `host` job (GPL environment, golden verify, licence boundary) landed
+  # 2026-08-21 with roadmap H0; it is NOT host-tests, which is the Apache-2.0
+  # C lane and stays deferred:
   #   host-tests     — cmake -S host-tests -B host-tests/build && ctest; the moment
-  #                    spectral_core has sources (host-tests/README.md)
+  #                    spectral_core has sources (host-tests/README.md) — as of
+  #                    2026-08-21 there is no spectral_core/src/*.c to test
   #   qemu-tests     — pytest-embedded 2.8.1 against firmware-qemu, once the
   #                    audio-source and display-backend seams exist (tests/README.md)
   #   size-diff      — idf.py size --diff against the PR base, same image digest

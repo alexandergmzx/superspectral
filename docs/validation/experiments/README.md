@@ -6,7 +6,10 @@ One file per experiment, numbered `NNNN-kebab-title.md`, append-only. An experim
 |---|---|---|---|---|
 | [0000](0000-template.md) | Template | — | — | the section order below |
 | [0001](0001-pdm-mic-in-situ-characterization.md) | PDM microphone in-situ characterization through the watch case | planned | Phase 1 | the mic EQ filter; LF corner; EIN; 3.072 MHz verdict; DC offset; resonance map |
-| [0002](0002-rollback-and-boot-guard-race.md) | OTA rollback and boot-guard race | planned | E2 week 1 | proof that the recovery path works before any feature code |
+| [0002](0002-rollback-and-boot-guard-race.md) | OTA rollback and boot-guard race | validated 2026-08-21 (window clause open) | E2 week 1 | proof that the recovery path works before any feature code |
+| 0003 | ST7789V3 hardware scroll axis vs `MADCTL` (reserved 2026-08-22; hardware, parked until the DoD gate — gates ADR 0007) | reserved | M1 | whether the analyzer canvas may bypass LVGL with the panel's vertical scroll |
+| 0004 | M0 bring-up on `ota_1`: PDM capture → FFT → first spectrum frame (reserved 2026-08-22; hardware, parked) | reserved | M0 | the first end-to-end latency and refresh numbers, both `(prov.)` until 0001 |
+| [0005](0005-t7b-bundled-praat-vs-praat-org.md) | Golden files: bundled Praat 6.1.38 vs praat.org 7.0.01 (threshold T7b) | planned | H0 | version drift and method drift of the Praat reference, measured separately |
 
 ## Section order (generalized from swarm's `detector-smoke-model.md`)
 
