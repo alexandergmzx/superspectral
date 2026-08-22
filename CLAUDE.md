@@ -132,7 +132,7 @@ A full layout summary lives in [`README.md`](README.md).
 
 ### When to commit and push
 
-- Make small, semantically meaningful, subsystem-prefixed commits (`docs: …`, `devenv: …`, `firmware: …`, `ADR 0003: …`). Avoid "WIP" commits to `main`.
+- Make small, semantically meaningful, subsystem-prefixed commits (`docs: …`, `devenv: …`, `firmware: …`, `ADR(0003): …`). The prefix is a *type* and ADR numbers are its *scope*, so the `conventional-precommit-linter` commit-msg hook (installed 2026-08-21, types listed in `.pre-commit-config.yaml`) can check it — `ADR 0003:` with a space cannot be a type token. Avoid "WIP" commits to `main`.
 - **The remote exists.** `origin` is `github.com/alexandergmzx/superspectral` (public, created 2026-08-21) and `origin/main` is at `4468334`. Never add a second remote, and never push — any branch, `main` included — unless Alexander asks for that specific push.
 - Never `git push --force` or `git reset --hard` on `main` without explicit authorization for the specific operation.
 - The orchestrating session commits; agents writing files do not run state-mutating git commands.

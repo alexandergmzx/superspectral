@@ -81,10 +81,11 @@ jobs:
             '**/*.md'
           fail: true
 
-  # The five `repo: local` hooks in .pre-commit-config.yaml are the project's
-  # safety rules expressed as code: GPIO19/20 (the only recovery path on a sealed
+  # The eight `repo: local` hooks in .pre-commit-config.yaml are the project's
+  # rules expressed as code: GPIO19/20 (the only recovery path on a sealed
   # board), the twatch_pins.h reserved-name rule, the sdkconfig anti-brick
-  # invariants, the partition-table arithmetic, and the preset/marker gates.
+  # invariants, the partition-table arithmetic, the preset/marker gates, and the
+  # PDF-redistribution rule (a tracked document must be `redistributable=yes`).
   # Until 2026-08-21 they ran ONLY as local git hooks, and `pre-commit install`
   # had never been run — so CLAUDE.md's Never-rule 1, which promises "CI greps
   # for the literals", was describing a second line of defence that did not
@@ -111,7 +112,7 @@ jobs:
       - name: Run every repo-local guard hook over the whole tree
         run: |
           rc=0
-          for h in spdx-header no-usb-pins pins-h-usb-reserved-only \
+          for h in pdf-redistributable spdx-header no-usb-pins pins-h-usb-reserved-only \
                    sdkconfig-invariants partitions-arithmetic \
                    presets-rules markers-baseline; do
             echo "::group::$h"
@@ -120,18 +121,44 @@ jobs:
           done
           exit $rc
       # Belt and braces for the one rule whose failure bricks the board: even if
-      # the hook definition is ever edited away, this grep stays.
+      # the hook definition is ever edited away, this grep stays. It FAILS CLOSED:
+      # the only path to "clean" is an explicit "no match" (grep rc 1) on every
+      # file. The first version of this step sat under `set -o pipefail` inside
+      # an `if`, so a sed or xargs error read as "no match" and printed clean --
+      # the failure mode of a guard must never be silence. It also scans .cpp/.hpp
+      # and drops comment lines exactly as the hook does, so the two cannot
+      # disagree on the same tree.
       - name: GPIO19/20 appear nowhere in firmware sources (independent of the hook)
+        shell: bash
         run: |
-          set -o pipefail
-          if git ls-files 'firmware/**/*.c' 'firmware/**/*.h' \
-             | grep -v 'twatch_pins\.h$' \
-             | xargs -r sed 's/"[^"]*"/""/g' \
-             | grep -nE 'GPIO_NUM_(19|20)\b|\bGPIO(19|20)\b'; then
-            echo "::error::GPIO19/20 (USB-Serial-JTAG) referenced in firmware sources — CLAUDE.md Never-rule 1"
+          set -euo pipefail
+          # In a git pathspec `*` also matches `/`, so 'firmware/*.c' is every .c under firmware/.
+          git ls-files -z -- 'firmware/*.c' 'firmware/*.h' 'firmware/*.cpp' 'firmware/*.hpp' \
+            | tr '\0' '\n' | grep -vE '(^|/)twatch_pins\.h$' > files.lst || true
+          if [ ! -s files.lst ]; then
+            echo "::error::no firmware sources listed -- the listing broke; refusing to pass"
             exit 1
           fi
-          echo "clean"
+          : > matches.lst
+          while IFS= read -r f; do
+            sed 's/"[^"]*"/""/g' "$f" > blanked.txt            # under set -e a sed failure is fatal
+            set +e
+            grep -nE 'GPIO_NUM_(19|20)\b|\bGPIO(19|20)\b' blanked.txt \
+              | grep -vE '^[0-9]+:[[:space:]]*(/\*|\*|//)' | sed "s|^|$f:|" >> matches.lst
+            rcs=("${PIPESTATUS[@]}")
+            set -e
+            # grep: 0 match / 1 no match / 2 error; the filter grep likewise; sed must be 0.
+            if [ "${rcs[0]}" -gt 1 ] || [ "${rcs[1]}" -gt 1 ] || [ "${rcs[2]}" -ne 0 ]; then
+              echo "::error::tooling error scanning $f (grep ${rcs[0]}, filter ${rcs[1]}, sed ${rcs[2]})"
+              exit 2
+            fi
+          done < files.lst
+          if [ -s matches.lst ]; then
+            cat matches.lst
+            echo "::error::GPIO19/20 (USB-Serial-JTAG) referenced in firmware sources -- CLAUDE.md Never-rule 1"
+            exit 1
+          fi
+          echo "clean: $(wc -l < files.lst) files scanned, 0 matches"
 
   python-scripts:
     name: python-scripts compile + doc_ocr tests
