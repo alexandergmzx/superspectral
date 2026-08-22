@@ -1,0 +1,809 @@
+# SPDX-FileCopyrightText: 2026 Alexander Gomez
+# SPDX-License-Identifier: GPL-3.0-or-later
+schema: '1.1'
+set: tier0-synthetic
+generated: '2026-08-22'
+generator:
+  script: host/src/spectral_host
+  sha256: 1583a870a5b4afb4271e5d99c6160490032c6c99f6d6402ea84a8d8f7cdbff2b
+  commit: 5601e120f5d714e425508ed35d64ace9c64c8c69
+  python: 3.12.3
+  numpy: 2.5.2
+  scipy: 1.18.0
+  parselmouth: 0.4.7
+  praat_bundled: 6.1.38
+  praat_reference: null
+  platform: Linux-6.8.0-138-generic-x86_64-with-glibc2.39
+  blas: scipy-openblas 0.3.34.0.0
+inputs:
+- path: datasets/tier0-synthetic/sine_437p5_m20dBFS_32k.wav
+  sha256: 9163b9aac71171d7a63fb7af00566c2c3f3a8a40c642da3f485be16393ab2bf6
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sine
+    parameters:
+      f_hz: 437.5
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/sine_440_0dBFS_32k.wav
+  sha256: 77364fbe9b9090dbf8e621d2351dc4ab8be6d74cbcf82f9eb57326b597cce95b
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sine
+    parameters:
+      f_hz: 440.0
+      level_dbfs: 0.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/sine_440_m1dBFS_32k.wav
+  sha256: 57fa8c2048cb0b4499683c8eccbdba21587144e97263d94b4a7df7693cf64cdf
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sine
+    parameters:
+      f_hz: 440.0
+      level_dbfs: -1.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/sine_440_m20dBFS_32k.wav
+  sha256: 3f9379a3daac11bd66c1132c71e6223c6a7e3f42c6d93ac1bd50d08e243ba745
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sine
+    parameters:
+      f_hz: 440.0
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/sine_440_m60dBFS_32k.wav
+  sha256: 43925118e6da8fd09af3fc037c02419364cadba748c0c39fbbce0fe96e65f3c8
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sine
+    parameters:
+      f_hz: 440.0
+      level_dbfs: -60.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/sine_1000_m20dBFS_32k.wav
+  sha256: f464fabe041a4b2abac6b5aaa44cf07a7298ec0f31c24d01863f3b9b620698ea
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sine
+    parameters:
+      f_hz: 1000.0
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/square_1000_0dBFS_32k.wav
+  sha256: 76f4bce398717f2dc094f32468acbf720c1eca7f9722663b4ddd88bc4e77b7d4
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.square
+    parameters:
+      f_hz: 1000.0
+      level_dbfs: 0.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/twotone_1000_d0p5bin_32k.wav
+  sha256: 57f08fcef6034e12b619917ff6a86335014029ea4b290d6639f79f56801eea02
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.two_tone
+    parameters:
+      f1_hz: 1000.0
+      f2_hz: 1003.90625
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/twotone_1000_d1bin_32k.wav
+  sha256: 88289b7cfab86b66f9d9b0592a2b2ce9d85963e93f2222f68e8d1acae739a0be
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.two_tone
+    parameters:
+      f1_hz: 1000.0
+      f2_hz: 1007.8125
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/twotone_1000_d2bin_32k.wav
+  sha256: b66547c12f6a6394a119ff93cd9e171d0a23af92601e91f364e58d1782a13ff8
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.two_tone
+    parameters:
+      f1_hz: 1000.0
+      f2_hz: 1015.625
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/twotone_1000_d4bin_32k.wav
+  sha256: 374e5df8950ed1d07f1dc8ab011414dd83cf369884713d60f4ae8992372388eb
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.two_tone
+    parameters:
+      f1_hz: 1000.0
+      f2_hz: 1031.25
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/white_m20dBFS_seed1_32k.wav
+  sha256: 496a80004b61fb92d1f0dbaab24fb377e34ab41ce2a102102e4898ecaa5d3ddc
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.white_noise
+    parameters:
+      level_dbfs: -20.0
+      seed: 1
+- path: datasets/tier0-synthetic/pink_m20dBFS_seed1_32k.wav
+  sha256: bdc5715e771813ac71d9671edb1466240717aa44cda1046d0c89fd3184144792
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.pink_noise
+    parameters:
+      level_dbfs: -20.0
+      seed: 1
+- path: datasets/tier0-synthetic/sweep_lin_20_16000_32k.wav
+  sha256: 82401fd9f167567aee60c1a0d345961d4d66f841bad0c470fa5afa0dad68d9d1
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sweep_linear
+    parameters:
+      f_start_hz: 20.0
+      f_end_hz: 16000.0
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/sweep_exp_20_16000_32k.wav
+  sha256: d8bca5cb8072c376727413c7c83aedabc5fb7264468182cfa26700177e3d1eac
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.sweep_exponential
+    parameters:
+      f_start_hz: 20.0
+      f_end_hz: 16000.0
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/vowel_a_f0_220_32k.wav
+  sha256: d54ae7782e2f153ca349db4306f6142110c36648b4337afdf2ac32bcea0bf98f
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.glottal_vowel
+    parameters:
+      f0_hz: 220.0
+      formants_hz:
+      - 700.0
+      - 1220.0
+      - 2600.0
+      bandwidths_hz:
+      - 130.0
+      - 70.0
+      - 160.0
+      open_quotient: 0.6
+      rise_fraction: 0.6666666666666666
+      level_dbfs: -20.0
+- path: datasets/tier0-synthetic/vowel_a_vibrato_220_6hz_100c_32k.wav
+  sha256: 608002a379b1100ac1a477a60e670c3c4eb4c790b6a103f1f6761ae630e788c5
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.glottal_vowel
+    parameters:
+      f0_hz: 220.0
+      formants_hz:
+      - 700.0
+      - 1220.0
+      - 2600.0
+      bandwidths_hz:
+      - 130.0
+      - 70.0
+      - 160.0
+      open_quotient: 0.6
+      rise_fraction: 0.6666666666666666
+      level_dbfs: -20.0
+      vibrato_rate_hz: 6.0
+      vibrato_extent_cents: 100.0
+- path: datasets/tier0-synthetic/dc_0p1_plus_sine_440_m20dBFS_32k.wav
+  sha256: add27ed62f510666cfb2443a91e30f8aa216fe90ba971297ceb6997b4cc1c754
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.dc_plus_sine
+    parameters:
+      dc_offset: 0.1
+      f_hz: 440.0
+      level_dbfs: -20.0
+      phase_rad: 0.0
+- path: datasets/tier0-synthetic/silence_32k.wav
+  sha256: d4bd3ca1a3e5de733841da6c55adebbafd4f05fcc7fdf2023b1db4f151508a1b
+  sample_rate: 32000
+  bit_depth: 16
+  channels: 1
+  duration_s: 3.0
+  source:
+    kind: tier0-synthetic
+    name: synth_signals.signals.silence
+    parameters: {}
+analyses:
+  pitch:
+    method: raw
+    time_step: 0.01
+    pitch_floor: 65
+    pitch_ceiling: 1100
+    silence_threshold: 0.03
+    voicing_threshold: 0.45
+    octave_cost: 0.01
+    octave_jump_cost: 0.35
+    voiced_unvoiced_cost: 0.14
+    max_candidates: 15
+    very_accurate: false
+  formant:
+    method: burg
+    time_step: 0.01
+    max_formants: 5
+    ceiling_hz: 5500
+    window_length: 0.025
+    preemphasis_from_hz: 50
+  ltas:
+    bandwidth_hz: 100
+  spectrum:
+    window: hann
+    window_length_samples: 4096
+    fftbins: true
+    fft_size: 4096
+    normalization: S1
+    scaling: power_spectrum
+    dbfs_reference: sine
+    int16_scale: 32768
+    dtype: float64
+windows:
+- family: hann
+  n: 4096
+  coefficients:
+  - 0.5
+  - 0.5
+  sha256: 3ce6c7c870b60fc2425689b96f2ccf1cecff9b071766a48ae3d25a0ca8f3d304
+- family: blackman
+  n: 4096
+  coefficients:
+  - 0.42
+  - 0.5
+  - 0.08
+  sha256: ba975bad48c810aa27974b864c82227c3172f6dac0984a696568c3956c31f325
+- family: blackman_harris
+  n: 4096
+  coefficients:
+  - 0.35875
+  - 0.48829
+  - 0.14128
+  - 0.01168
+  sha256: 679ba3d283efa97d4ee14fb07a10c499905549c641ceea4492a8777e564dbacf
+- family: blackman_nuttall
+  n: 4096
+  coefficients:
+  - 0.3635819
+  - 0.4891775
+  - 0.1365995
+  - 0.0106411
+  sha256: 722f55c03ef5c98b78b912799dd1564ce1fa6834260fae5b78e1b7be39b32d20
+- family: nuttall
+  n: 4096
+  coefficients:
+  - 0.355768
+  - 0.487396
+  - 0.144232
+  - 0.012604
+  sha256: d4597269db507a9c3be601e1078b152dd59e5622f8233e97c43c398e902356a4
+- family: flat_top
+  n: 4096
+  coefficients:
+  - 0.21557895
+  - 0.41663158
+  - 0.277263158
+  - 0.083578947
+  - 0.006947368
+  sha256: 627aade4853b4fbcb2980ef339cf3b2fdbca2b59c7679a6730b214c8b08adac7
+- family: rect
+  n: 4096
+  coefficients:
+  - 1.0
+  sha256: 3035aac5fb87474c303702f9030301b4e6bb7aee93be3710b8ab8dcea201db70
+outputs:
+- path: host/golden/outputs/tier0-synthetic/pitch_sine_437p5_m20dBFS_32k.npy
+  sha256: 3f5a2a3cb44b9135265f7f41ead52a89cd855f569d32be9f4f357ec7602bf385
+  analysis: pitch
+  input: datasets/tier0-synthetic/sine_437p5_m20dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/pitch_sine_440_0dBFS_32k.npy
+  sha256: 89d889958f3aed43492bf845e181ebf7fd8147cfb0faf06b46f6272d2bb45352
+  analysis: pitch
+  input: datasets/tier0-synthetic/sine_440_0dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/pitch_sine_440_m1dBFS_32k.npy
+  sha256: a1da5288f496673fd84a660a6708dbca017e6db6f5b6873e918f66e56494088b
+  analysis: pitch
+  input: datasets/tier0-synthetic/sine_440_m1dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/pitch_sine_440_m20dBFS_32k.npy
+  sha256: 9e0307ce164b94f8a2ce0c33223760603c85847bb5a07264f0170a66224ea4d6
+  analysis: pitch
+  input: datasets/tier0-synthetic/sine_440_m20dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/pitch_sine_440_m60dBFS_32k.npy
+  sha256: 46f3b9d627694454966205d6f5c95cab886e4ee878f2bb931e4bb025ac522bc5
+  analysis: pitch
+  input: datasets/tier0-synthetic/sine_440_m60dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/pitch_sine_1000_m20dBFS_32k.npy
+  sha256: 66de2a8394b2197302512788f8144e3a09806359018878c43f5b4e9bfbe3505e
+  analysis: pitch
+  input: datasets/tier0-synthetic/sine_1000_m20dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/pitch_vowel_a_f0_220_32k.npy
+  sha256: ce69aa545c58d2bd6db3a2e5c92760c78cd7b4f740ee9692bfc00b9ef6cd9353
+  analysis: pitch
+  input: datasets/tier0-synthetic/vowel_a_f0_220_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/pitch_vowel_a_vibrato_220_6hz_100c_32k.npy
+  sha256: 1ad2c4aee81edff1b3d494d2895e1d2bbdb701b218031c6d11f96a882d755697
+  analysis: pitch
+  input: datasets/tier0-synthetic/vowel_a_vibrato_220_6hz_100c_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 2
+  units: s, Hz
+  columns:
+  - time
+  - f0
+  unvoiced_sentinel: 0
+- path: host/golden/outputs/tier0-synthetic/formant_vowel_a_f0_220_32k.npy
+  sha256: 2d83fce71a51be292bb752121a173a88edddf785ace8d6483539b7ce3157d73c
+  analysis: formant
+  input: datasets/tier0-synthetic/vowel_a_f0_220_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 11
+  units: s, Hz, Hz, Hz, Hz, Hz, Hz, Hz, Hz, Hz, Hz
+  columns:
+  - time
+  - F1
+  - B1
+  - F2
+  - B2
+  - F3
+  - B3
+  - F4
+  - B4
+  - F5
+  - B5
+- path: host/golden/outputs/tier0-synthetic/formant_vowel_a_vibrato_220_6hz_100c_32k.npy
+  sha256: 3f0b4af4c61c1d14cab832e34f328cf8e9dd40f415d47ab59a8445badbbb022d
+  analysis: formant
+  input: datasets/tier0-synthetic/vowel_a_vibrato_220_6hz_100c_32k.wav
+  dtype: float64
+  shape:
+  - 296
+  - 11
+  units: s, Hz, Hz, Hz, Hz, Hz, Hz, Hz, Hz, Hz, Hz
+  columns:
+  - time
+  - F1
+  - B1
+  - F2
+  - B2
+  - F3
+  - B3
+  - F4
+  - B4
+  - F5
+  - B5
+- path: host/golden/outputs/tier0-synthetic/ltas_white_m20dBFS_seed1_32k.npy
+  sha256: 641532f1695f3ada046a69c638ea6fcbc64e995e8e5fc6fd3879453c36fba6a5
+  analysis: ltas
+  input: datasets/tier0-synthetic/white_m20dBFS_seed1_32k.wav
+  dtype: float64
+  shape:
+  - 160
+  - 2
+  units: Hz, dB/Hz re (2e-5 Pa)^2 with 1.0 = 1 Pa (Praat To Ltas)
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/ltas_pink_m20dBFS_seed1_32k.npy
+  sha256: c671741cfbfa897c764f83a1f964be8d2f379cf0764b3d656eeb39d0a79f4920
+  analysis: ltas
+  input: datasets/tier0-synthetic/pink_m20dBFS_seed1_32k.wav
+  dtype: float64
+  shape:
+  - 160
+  - 2
+  units: Hz, dB/Hz re (2e-5 Pa)^2 with 1.0 = 1 Pa (Praat To Ltas)
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/ltas_vowel_a_f0_220_32k.npy
+  sha256: 550be02d9f2cca1c2b0815846736097820f948bd5fa3cfc53fc5509882df4731
+  analysis: ltas
+  input: datasets/tier0-synthetic/vowel_a_f0_220_32k.wav
+  dtype: float64
+  shape:
+  - 160
+  - 2
+  units: Hz, dB/Hz re (2e-5 Pa)^2 with 1.0 = 1 Pa (Praat To Ltas)
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/ltas_vowel_a_vibrato_220_6hz_100c_32k.npy
+  sha256: f9efb43f1fed32dc2d6a1d113e3145cad0c3c9a3b9a71092c735c65877d98fcc
+  analysis: ltas
+  input: datasets/tier0-synthetic/vowel_a_vibrato_220_6hz_100c_32k.wav
+  dtype: float64
+  shape:
+  - 160
+  - 2
+  units: Hz, dB/Hz re (2e-5 Pa)^2 with 1.0 = 1 Pa (Praat To Ltas)
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sine_437p5_m20dBFS_32k.npy
+  sha256: 448b8590bf6355db5e95db5daed7ae8140d22a3393def300eb2f637a6bf0354c
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sine_437p5_m20dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sine_440_0dBFS_32k.npy
+  sha256: e0b4cf8660ffdfc83d1d2797fccf890bcf3adc26161409a393df14f8d5763045
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sine_440_0dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sine_440_m1dBFS_32k.npy
+  sha256: 5ec68a4febacc624b665b5d2a3190d9d66f6d1a532fb06311f6ad6876c6f59f3
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sine_440_m1dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sine_440_m20dBFS_32k.npy
+  sha256: fbe61bbd7cffff58df81e51bab41724d83fbf0047339a23c5637bab506b7fcef
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sine_440_m20dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sine_440_m60dBFS_32k.npy
+  sha256: 22495a7514b2ce3b08f5792b652da3171755d577d24375a434a863c667afdfef
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sine_440_m60dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sine_1000_m20dBFS_32k.npy
+  sha256: fb22e604b9e10c372e8950ad15f8a485531a2d45c149cdb50e12997edae18ef5
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sine_1000_m20dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_square_1000_0dBFS_32k.npy
+  sha256: 972c5d6e23f73217358268370057c074ab32f800eeab7b31ca6f2b0a07b0694f
+  analysis: spectrum
+  input: datasets/tier0-synthetic/square_1000_0dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_twotone_1000_d0p5bin_32k.npy
+  sha256: ba770f6c86100fb71ae8f2e88e871705cf7f0be6efcd6cdef13177e3e3caea25
+  analysis: spectrum
+  input: datasets/tier0-synthetic/twotone_1000_d0p5bin_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_twotone_1000_d1bin_32k.npy
+  sha256: 73f15598c8be760550e650494a53f13603f77457dc77668afb6f2bc0f0bdc0a0
+  analysis: spectrum
+  input: datasets/tier0-synthetic/twotone_1000_d1bin_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_twotone_1000_d2bin_32k.npy
+  sha256: e15c16edeca4208f1f8a4d6fc9ff350f095b32fab5cd5a30316f021df6521290
+  analysis: spectrum
+  input: datasets/tier0-synthetic/twotone_1000_d2bin_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_twotone_1000_d4bin_32k.npy
+  sha256: 4789d5f0985242ee424167d6c6156117a356f25356abda1fc781d884498cf44b
+  analysis: spectrum
+  input: datasets/tier0-synthetic/twotone_1000_d4bin_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_white_m20dBFS_seed1_32k.npy
+  sha256: 7aa0ee0179e7b58bd2362372745eb4439045173077e4fbd034db8773bc3abf4b
+  analysis: spectrum
+  input: datasets/tier0-synthetic/white_m20dBFS_seed1_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_pink_m20dBFS_seed1_32k.npy
+  sha256: 72805cc10091fe0a0eda4901c2e45d71d40b8918975e5f262959da4adb61f5d4
+  analysis: spectrum
+  input: datasets/tier0-synthetic/pink_m20dBFS_seed1_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sweep_lin_20_16000_32k.npy
+  sha256: 2e4de1c46b1049b4c27b6e0b3ec14b83dbd2ca26bff9a0238fc28f4114d54b9a
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sweep_lin_20_16000_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_sweep_exp_20_16000_32k.npy
+  sha256: 88cdd03f42349621bc7031c428d6e5a9c5971ba1c52f2040d784d3e53d1c2e55
+  analysis: spectrum
+  input: datasets/tier0-synthetic/sweep_exp_20_16000_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_vowel_a_f0_220_32k.npy
+  sha256: 28e58d74632e73e784fe8924eaf09a505f2b2a567eafde389143330dfdd48e24
+  analysis: spectrum
+  input: datasets/tier0-synthetic/vowel_a_f0_220_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_vowel_a_vibrato_220_6hz_100c_32k.npy
+  sha256: c2bc17e070765bfabb58fb2c0c6bc3f17c247aa2639eaa16d20b6cd215ac9128
+  analysis: spectrum
+  input: datasets/tier0-synthetic/vowel_a_vibrato_220_6hz_100c_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_dc_0p1_plus_sine_440_m20dBFS_32k.npy
+  sha256: 374c4fba67f5ed882cbbec6705a09142495da31bdcd37f7100dd233436964b02
+  analysis: spectrum
+  input: datasets/tier0-synthetic/dc_0p1_plus_sine_440_m20dBFS_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+- path: host/golden/outputs/tier0-synthetic/spectrum_silence_32k.npy
+  sha256: f2c4034cb1b2ca10201fe352bda1b491dd61195a63428de4a53fa8d140a0581e
+  analysis: spectrum
+  input: datasets/tier0-synthetic/silence_32k.wav
+  dtype: float64
+  shape:
+  - 2049
+  - 2
+  units: Hz, dB re full-scale sine
+  columns:
+  - frequency
+  - level
+tolerances:
+  source: docs/validation/golden-files.md
+  revision: 18fbf22ba118d9895d8e27144c393f0e8be20527
+regeneration:
+  date: '2026-08-22'
+  reason: initial generation from a clean host/src at commit 5601e12 (H0 landing); the two earlier uncommitted
+    emissions were byte-identical in every array
+  approved_by: Alexander Gomez
+  previous_manifest_sha256: null
+  previous_set: null
+notes: 'spectrum = the first device frame, samples [0, N) of the int16 file scaled by 1/32768, BEFORE
+  the DC blocker (ADR 0006 D7 is not applied here; the dc_0p1 input exists to test it on the device).
+  Pitch/formant times are Praat''s frame centres: compare by time, never by index (golden-files.md frame-grid
+  trap). LTAS levels are Praat''s dB/Hz re (2e-5 Pa)^2 with 1.0 = 1 Pa, not dBFS; the LTAS tolerance row
+  is per band and reference-invariant. Formant columns F1..F5/B1..B5 are NaN where Praat has no value.'
