@@ -30,8 +30,29 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 
-[tool.uv]
-# No package build yet: host/ currently holds the schema and this environment.
-# The src layout (host/src/spectral_host/) and [project.scripts] land with the
-# first module (roadmap H0); this file is edited then, not replaced.
-package = false
+[project.scripts]
+# The one entry point. Subcommands: verify | env | generate | t7 (roadmap H0,
+# units B-U5/B-U4/B-U6/B-U10); a subcommand exits 2 with "not implemented"
+# until its unit lands (t7 as of 2026-08-22 — experiment 0005 is the owner's
+# to run), so a half-built environment is loud rather than silently green.
+spectral-golden = "spectral_host.golden.cli:main"
+
+# src layout, same backend as python-scripts/doc_ocr. The package lives in
+# host/src/spectral_host/ so that `import spectral_host` only works from an
+# installed environment (host/.venv) and never by accident from a checkout with
+# host/ on sys.path — which is how a GPL import would leak into Apache code.
+#
+# setuptools >= 77, not 68: the `license = "GPL-3.0-or-later"` SPDX-string form
+# above is PEP 639 (setuptools 77.0.0, 2025-03); older setuptools reject a
+# string there as invalid metadata. Build-time only; no runtime dependency.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+# Run from host/ (`uv run pytest`) or from the repository root
+# (`uv run --project host pytest -q host/tests`): both resolve here.
+testpaths = ["tests"]
