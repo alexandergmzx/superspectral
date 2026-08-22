@@ -122,6 +122,24 @@ every number not backed by a measurement or an ADR is marked `(prov.)`.
   code) carry reason tags. `acquisition-status.md` header recomputed from
   `manifest.tsv` (46 rows, 3 466 pages). The research-statement's RQ quotation
   is now byte-identical to the proposal (emphasis removed).
+- **Host H0 — the golden-file lane exists and runs.** GPL `host/src/spectral_host/`
+  (src layout, `spectral-golden verify | env | generate`): the ADR 0006 reference
+  spectrum from §4.3 coefficients (never a SciPy window name), Praat 6.1.38 raw-ac /
+  Burg / LTAS wrappers with every parameter recorded, the preset loader, the generator
+  and a verifier with 14 rules (S, I1–I8, N1–N4, G1) that never writes. Apache
+  `python-scripts/synth_signals/` (Tier-0 synthetic corpus, 21 files, tracked manifest,
+  `check` = reproducibility on another libm — closes bibliography 10 P1) and
+  `python-scripts/golden_compare/` (masked dB residuals, cents + mir_eval melody
+  metrics, window-table digests). First golden set **`tier0-synthetic`** committed
+  (848 KB, 33 arrays). Golden-manifest schema **"1.1"**: quoted version, `windows[]`
+  float32 digests, `rect` for calibration tones only, `generator.sha256` scoped to the
+  numerics-bearing modules (`env.GENERATOR_TREE`) — ADR 0009 amended twice, ADR 0006
+  D1/(c) closed and D3 carries the sampled-square note (+2.10 ideal, +2.112 at P = 32).
+  CI: new `host` job + uv-pinned python-scripts tests + boundary greps; hooks
+  `golden-regen` (outputs and the tolerance table never in one commit) and
+  `host-boundary`. Experiments 0003/0004 reserved, 0005 (T7b) pre-registered with
+  Praat 7.0's `--FULL-TRUST` handled. 339 + 21 + 111 tests, every unit adversarially
+  reviewed with mutation runs.
 
 ### Changed
 
