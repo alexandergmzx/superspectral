@@ -1,0 +1,27 @@
+{
+  "name": "superspectral-web",
+  "version": "0.0.0",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "description": "Host web application front end for Super Spectral (ADR 0021): browser-native live analyzer and second digital-injection-path instrument.",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite --host",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit",
+    "test:golden": "vitest run --project golden",
+    "licences": "node scripts/check-licences.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^7",
+    "vite": "^7",
+    "vitest": "^4",
+    "yaml": "^2"
+  }
+}

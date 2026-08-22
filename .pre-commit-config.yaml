@@ -120,14 +120,25 @@ repos:
       # 1. Every code/config file carries an SPDX identifier (BRIEF rule 6; feeds esp-idf-sbom).
       #    python-scripts/doc_ocr/ is NOT excluded: it originates from the author's swarm repo
       #    (MIT, same author) and carries SPDX + `Origin:` header lines here -- see NOTICE.
+      #    Web extensions added 2026-08-22 (ADR 0021 decision 4, roadmap W0): .ts/.tsx/.mts/
+      #    .cts/.js/.mjs/.cjs/.css/.html, so every front-end source under host/web/ declares
+      #    GPL-3.0-or-later. The script needed NO change to read them: it greps for the
+      #    literal string `SPDX-License-Identifier:` and never for a comment token, so `//`,
+      #    `/* ... */` and `<!-- ... -->` are all recognised for free -- which is also why
+      #    .json is deliberately NOT in the list. JSON cannot carry a comment at all, so
+      #    package.json / package-lock.json / tsconfig.json are covered by host/REUSE.toml
+      #    rows instead (ADR 0021 decision 4), and adding .json here would fail them all.
+      #    node_modules/ and dist/ are excluded because they are installed and built output:
+      #    a vendored MIT header there is not ours to change, and dist/ does not exist in a
+      #    clean checkout at all.
       - id: spdx-header
         name: SPDX-License-Identifier present in code/config files
         language: system
         entry: >-
           bash -c 'rc=0; for f in "$@"; do grep -q "SPDX-License-Identifier:" "$f"
           || { echo "missing SPDX header in $f"; rc=1; }; done; exit $rc' --
-        files: '(\.(c|h|cpp|hpp|py|sh|cmake|ya?ml|toml)|CMakeLists\.txt|\.envrc|\.clangd|\.clang-format|\.editorconfig|\.codespellrc|Kconfig(\.projbuild)?|idf_component\.yml|sdkconfig\.[a-z0-9.]+|firmware/twatch-s3/partitions\.csv)$'
-        exclude: '(^|/)(managed_components|build|build_[^/]+|scratch|docs/reference-projects/clones)/|^docs/OCR/manifest\.tsv$|dependencies\.lock$'
+        files: '(\.(c|h|cpp|hpp|py|sh|cmake|ya?ml|toml|ts|tsx|mts|cts|js|mjs|cjs|css|html)|CMakeLists\.txt|\.envrc|\.clangd|\.clang-format|\.editorconfig|\.codespellrc|Kconfig(\.projbuild)?|idf_component\.yml|sdkconfig\.[a-z0-9.]+|firmware/twatch-s3/partitions\.csv)$'
+        exclude: '(^|/)(managed_components|build|build_[^/]+|scratch|docs/reference-projects/clones|node_modules|dist)/|^docs/OCR/manifest\.tsv$|dependencies\.lock$'
 
       # 2. GPIO19/GPIO20 are the USB-Serial-JTAG D-/D+ pins — the ONLY recovery path on a
       #    sealed board with zero exposed GPIO. A literal 19/20 near any GPIO API or pin
@@ -282,7 +293,20 @@ repos:
       #     outside host/ is imported by host/") imports an Apache package; (d) host/src
       #     never edits sys.path (the one way a checkout-relative import could cross the
       #     directory without an install; host/tests may READ it -- test_env.py does, to
-      #     prove the boundary). Runs on every commit: four `git grep`s cost nothing.
+      #     prove the boundary). Added 2026-08-22 with the web application (ADR 0021
+      #     decision 4): (e) the MIRROR of (a) -- a file under host/ that declares an SPDX
+      #     identifier in its first 5 lines must declare GPL-3.0-or-later. Until (e) existed
+      #     the boundary was a one-way rule: nothing GPL could leak OUT, but a scaffolded
+      #     `// SPDX-License-Identifier: MIT` could land INSIDE host/web/ and no check would
+      #     say a word -- and npm scaffolds are exactly where that header comes from. A file
+      #     with NO identifier is not (e)'s business: hook 1 (spdx-header) requires one of
+      #     every source extension, and the files that cannot carry a comment (JSON, .npy,
+      #     .python-version) are covered by host/REUSE.toml rows instead. The listing is
+      #     `--cached --others --exclude-standard` rather than the plain index of (a), so a
+      #     tainted file is caught while it is still untracked -- before `git add`, which is
+      #     the moment a scaffold writes it; node_modules/ and dist/ are excluded by pathspec
+      #     because vendored and built output is not ours to relicense. Runs on every commit:
+      #     four `git grep`s and two `ls-files` walks cost nothing.
       - id: host-boundary
         name: licence boundary — GPL headers and imports stay inside host/, Apache imports stay out
         language: system
@@ -294,6 +318,11 @@ repos:
           if git grep -nE "^(from|import) spectral_host" -- . ":!host"; then echo "spectral_host (GPL) imported outside host/"; rc=1; fi;
           if git grep -nE "^(from|import) (synth_signals|golden_compare|check_presets|doc_ocr)" -- ":(glob)host/**/*.py"; then echo "host/ imports from python-scripts/"; rc=1; fi;
           if git grep -n "sys\.path" -- host/src; then echo "host/src edits sys.path"; rc=1; fi;
+          wrong=$(git ls-files -z --cached --others --exclude-standard -- host ":!host/web/node_modules" ":!host/web/dist" | while IFS= read -r -d "" f; do
+          [ -f "$f" ] || continue;
+          id=$(head -n 5 -- "$f" | grep -oE "SPDX-License-Identifier:[[:space:]]*[A-Za-z0-9.+-]+" | head -n 1 | sed "s/.*:[[:space:]]*//");
+          [ -n "$id" ] && [ "$id" != "GPL-3.0-or-later" ] && echo "$f: declares $id"; done);
+          if [ -n "$wrong" ]; then printf "%s\n" "$wrong" | sed "s|$| -- everything under host/ is GPL-3.0-or-later (ADR 0004 item 2, ADR 0021 decision 4)|"; rc=1; fi;
           [ $rc -eq 0 ] || echo "licence boundary crossed -- ADR 0004: host/ and python-scripts/ exchange files on disk only";
           exit $rc'
         pass_filenames: false
@@ -305,6 +334,24 @@ repos:
         entry: >-
           bash -c 'cd firmware/twatch-s3 && idf.py reconfigure >/dev/null && git diff --exit-code -- dependencies.lock'
         files: '(idf_component\.yml|dependencies\.lock)$'
+        pass_filenames: false
+        stages: [manual]
+
+      # 6b. The npm twin of hook 6, manual for the same shape of reason: hook 6 needs an
+      #     ESP-IDF shell, this one needs the NETWORK -- `npm install --package-lock-only`
+      #     re-resolves host/web/package.json against the registry and rewrites the lock
+      #     (without touching node_modules), so a non-empty diff means the committed lock no
+      #     longer describes the manifest. It is deliberately NOT the enforcing check and is
+      #     NOT in the CI guard-hooks loop: CI's `npm ci` already refuses outright when lock
+      #     and manifest disagree, offline against the committed file, which is the gate.
+      #     This hook exists so the answer is available before the push rather than after it.
+      - id: web-lockfile-matches-manifest
+        name: host/web/package-lock.json matches package.json (manual stage; needs the npm registry)
+        language: system
+        entry: >-
+          bash -c 'cd host/web && npm install --package-lock-only --ignore-scripts
+          && git diff --exit-code -- package-lock.json'
+        files: '^host/web/package(-lock)?\.json$'
         pass_filenames: false
         stages: [manual]
 

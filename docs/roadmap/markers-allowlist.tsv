@@ -42,6 +42,7 @@ docs/bibliography/README.md	3	dated Disclosure prose — historical record, not 
 docs/bibliography/acquisition-status.md	3	dated Disclosure prose — historical record, not an open flag
 docs/devenv/brick-runbook.md	1	E1/E2 host state — owner's shell
 docs/devenv/first-flash-checklist.md	1	E1/E2 host state — owner's shell
+docs/devenv/setup.md	1	W2 phone-on-LAN gate — the certificate is verified on Alexander's own phone
 docs/hw/README.md	1	E2 measured on the unit
 docs/hw/twatch-s3-pins.md	1	E2 measured on the unit
 docs/proposal/01-super-spectral-proposal.md	18	owner: the RQ freeze and the author's voice
@@ -79,3 +80,4 @@ docs/validation/experiments/0006-web-capture-chain-linearity.md	4	owner Alexande
 docs/validation/experiments/0007-web-latency-and-refresh.md	0	owner Alexander — deliberately marker-free: both its rows read *measured, no claim*, so there is no provisional target to tag
 host/README.md	2	owner: ADR 0021 decision 8 — the XDG data directory, routed as Q50 in the roadmap; plus torch's licence (verify), cleared at W4 from the LICENSE at the pinned version
 docs/adr/0004-split-licensing.md	1	torch's licence (verify) in the ADR 0021 amendment — no bibliography row of its own; cleared at W4 from the LICENSE at the pinned version
+host/web/tests/golden/README.md	1	owner: Claude (W0) — the 0.01 dB per-bin limit is ADR 0021 D2 (prov.), quoted here from docs/validation/golden-files.md; it stops being provisional when W1 records the measured residual, and this row drops to 0 in that commit

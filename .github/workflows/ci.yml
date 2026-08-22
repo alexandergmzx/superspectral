@@ -4,7 +4,9 @@
 # Super Spectral CI. Phase 0 ("documentation & environment") runs the docs
 # and Python jobs, plus the firmware job (enabled in roadmap E1 on
 # 2026-08-20, once firmware/twatch-s3/dependencies.lock was committed) — see
-# docs/roadmap/documentation-roadmap.md (E1) and ADR 0001.
+# docs/roadmap/documentation-roadmap.md (E1) and ADR 0001 — and, since
+# 2026-08-22, the `web` job of the host web application (roadmap W0, ADR 0021):
+# a fourth toolchain (Node/npm) with its own lockfile and its own licence gate.
 #
 # Third-party actions are pinned to full commit SHAs (the trailing comment is
 # the release tag the SHA was resolved from, verified against the GitHub API
@@ -120,7 +122,13 @@ jobs:
       # One invocation per hook: `pre-commit run` takes a single hook id, and
       # passing several makes it exit 2 with "unrecognized arguments" -- which
       # looks like a failure but tests nothing. The loop keeps going so one red
-      # hook does not hide the others, then fails at the end.
+      # hook does not hide the others, then fails at the end. MANUAL-stage hooks
+      # are absent by construction -- `lockfile-matches-manifest` and
+      # `gen-esp32part` need an ESP-IDF shell, and `web-lockfile-matches-manifest`
+      # (added 2026-08-22, ADR 0021) needs the npm registry; naming one here would
+      # exit 2 with "No hook with id ... in stage pre-commit". Each has an
+      # enforcing counterpart elsewhere: for the npm lock it is `npm ci` in the
+      # `web` job, which refuses offline when lock and manifest disagree.
       - name: Run every repo-local guard hook over the whole tree
         run: |
           rc=0
@@ -313,8 +321,12 @@ jobs:
         run: |
           uv lock --check --project host
           uv sync --project host --frozen --extra dev
+      # -rs: report the reason for every SKIPPED test. A silent skip is a false
+      # green -- the whole web suite would vanish if httpx were missing from the
+      # dev extra and nothing would say so. --strict-markers: an unregistered
+      # @pytest.mark typo is an error, not a marker that quietly matches nothing.
       - name: host unit tests
-        run: uv run --project host pytest -q host/tests
+        run: uv run --project host pytest -q -rs --strict-markers host/tests
       # Rules S, I1-I8, N1-N4, G1 over every host/golden/outputs/*/manifest.yaml
       # (host/src/spectral_host/golden/verify.py). No --no-env-check: CI IS the
       # environment the pins are compared against. A red step is a decision
@@ -379,6 +391,110 @@ jobs:
             0) echo "::error::host/src edits sys.path (ADR 0004: the only way a checkout-relative import crosses the directory)"; exit 1 ;;
             *) echo "::error::git grep failed (rc $rc); refusing to pass"; exit 2 ;;
           esac
+      # The MIRROR of the first boundary step, added 2026-08-22 with the web
+      # application (ADR 0021 decision 4): outward, no file may DECLARE the GPL
+      # outside host/; inward, no file INSIDE host/ may declare anything else.
+      # Until this step existed the boundary was one-way, and `npm create` writes
+      # `SPDX-License-Identifier: MIT` into a scaffold without being asked. A file
+      # with NO identifier is not this step's business -- the spdx-header hook
+      # requires one of every source extension, and the files that cannot carry a
+      # comment (package.json, package-lock.json, tsconfig.json, .npy,
+      # .python-version) are covered by host/REUSE.toml rows. Fails closed like
+      # the scan above: an empty listing is a tooling error, never "clean".
+      # node_modules/ and dist/ are excluded by pathspec -- vendored and built
+      # output is not ours to relicense (and neither exists in this checkout).
+      - name: boundary - everything under host/ that declares a licence declares GPL-3.0-or-later
+        shell: bash
+        run: |
+          set -euo pipefail
+          n=0; bad=0
+          while IFS= read -r -d '' f; do
+            [ -f "$f" ] || continue
+            n=$((n + 1))
+            id=$(head -n 5 -- "$f" \
+                 | grep -oE 'SPDX-License-Identifier:[[:space:]]*[A-Za-z0-9.+-]+' \
+                 | head -n 1 | sed 's/.*:[[:space:]]*//') || true
+            [ -n "$id" ] || continue
+            if [ "$id" != "GPL-3.0-or-later" ]; then
+              echo "::error file=$f::declares $id -- everything under host/ is GPL-3.0-or-later (ADR 0004 item 2, ADR 0021 decision 4)"
+              bad=1
+            fi
+          done < <(git ls-files -z -- host ':!host/web/node_modules' ':!host/web/dist')
+          if [ "$n" -eq 0 ]; then
+            echo "::error::git ls-files listed nothing under host/ -- the listing broke; refusing to pass"
+            exit 2
+          fi
+          [ "$bad" -eq 0 ] && echo "clean: $n files scanned under host/, 0 non-GPL declarations"
+          exit $bad
+
+  # The host web application's front end (ADR 0021, roadmap W0). WHAT IT GUARDS,
+  # in the order the steps run, because each one is a different failure:
+  #   1. the lockfile is the install -- `npm ci` refuses outright when
+  #      package-lock.json and package.json disagree, so it is the lock-vs-manifest
+  #      check as well as the installer. The `web-lockfile-matches-manifest`
+  #      pre-commit hook is its local, network-needing twin and is deliberately
+  #      manual-stage; it is NOT in the guard-hooks loop above, which runs
+  #      pre-commit-stage hooks only (the same reason `lockfile-matches-manifest`
+  #      and `gen-esp32part` are absent from it).
+  #   2. --ignore-scripts is DELIBERATE and is the whole of the npm supply-chain
+  #      mitigation ADR 0021 names: a lifecycle script is arbitrary code from a
+  #      transitive dependency running on install. If a package ever genuinely
+  #      needs its postinstall, drop the flag WITH THE PACKAGE NAMED AND THE REASON
+  #      STATED here and in docs/devenv/setup.md section 11.1 -- never silently, and
+  #      never as a fix for a build that "just fails". --no-audit/--no-fund only
+  #      quieten output; they check nothing.
+  #   3. the licence gate (ADR 0021 decision 4) reads package-lock.json against the
+  #      allowlist and FAILS CLOSED on an unknown or absent licence. It runs before
+  #      the type-check so no dependency reaches the compiler before its licence
+  #      has been read, and its AGPL-3.0 negative test is recorded in roadmap W0.
+  #   4. `tsc --noEmit` is the type-check on its own, separate from the build, so a
+  #      type error is reported as a type error and not as a bundler failure.
+  #   5. `vitest run --project unit` -- the unit project only. The `golden` project
+  #      (ADR 0021 decision 2) needs the gitignored Tier-0 WAVs and arrives at W1;
+  #      it is added to this job in the same commit that gives it tests to run.
+  #   6. `npm run build` is the last word: it type-checks again and produces the
+  #      dist/ that uvicorn mounts, so "it type-checks but does not bundle" cannot
+  #      pass. The artifact is uploaded with if-no-files-found: error, because an
+  #      empty upload is the silent version of a broken build.
+  # Node comes from host/web/.nvmrc (20.20.2 on the development machine), so the
+  # runner and that machine cannot drift apart without the file saying so.
+  web:
+    name: host web application (front end) - npm ci, licence gate, tsc, vitest, build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: host/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1              # v7.0.1
+      # SHA resolved 2026-08-22 with
+      #   gh api repos/actions/setup-node/git/ref/tags/v7.0.0 --jq '.object | "\(.type) \(.sha)"'
+      # -> `commit 820762786026740c76f36085b0efc47a31fe5020` (object type `commit`,
+      # so no second dereference through repos/.../git/tags/<sha> was needed).
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020            # v7.0.0
+        with:
+          # The pin is the file, not a literal here: one place to bump, and
+          # `nvm use` on the machine reads the same line.
+          node-version-file: host/web/.nvmrc
+          cache: npm
+          # working-directory does not apply to `uses:` steps -- both paths above
+          # are workspace-relative on purpose.
+          cache-dependency-path: host/web/package-lock.json
+      - name: npm ci against the committed lockfile (no lifecycle scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Licence gate over package-lock.json (fail-closed allowlist)
+        run: node scripts/check-licences.mjs
+      - name: Type-check (tsc --noEmit)
+        run: npx tsc --noEmit
+      - name: Unit tests (vitest, unit project)
+        run: npx vitest run --project unit
+      - name: Build the front end (vite)
+        run: npm run build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a       # v7.0.1
+        with:
+          name: web-dist
+          path: host/web/dist
+          retention-days: 30
+          if-no-files-found: error
 
   firmware:
     name: firmware build (${{ matrix.config }})

@@ -123,6 +123,41 @@ SPR_MAX_DB = Tolerance(
     row="Device FHE / SPR vs host", doc_text="≤ 0.5 dB",
 )
 
+# -- the host web application's rows (ADR 0021 D2, added to the document with
+#    the record on 2026-08-22) ------------------------------------------------
+#
+# These three limits are NOT applied by this package: the instrument they bound
+# is the TypeScript module under host/web/, and its vitest golden suite is what
+# checks them (golden-files.md, "Browser (TypeScript, GPL side)"). They are
+# copied here anyway because this module's contract is the WHOLE table -- the
+# drift test asserts that every row of golden-files.md has a constant, so a
+# limit that lived only in the document could be widened without either side
+# noticing. A constant with no caller in this package is the price of that,
+# and it is cheap; a row with no constant is not.
+#
+# Each is deliberately a SEPARATE constant from the device row that shares its
+# number rather than an alias of it: ADR 0021 D2 says these are tightened "for
+# the TypeScript instrument only, with a recorded reason", which an alias would
+# make impossible to do without moving the watch's limit too.
+BROWSER_SPECTRUM_ATOL_DB = Tolerance(
+    "BROWSER_SPECTRUM_ATOL_DB", 0.01, "dB",
+    row="Browser (TypeScript) magnitude spectrum vs the Python oracle",
+    doc_text="`atol = 0.01 dB`",
+)
+BROWSER_SPECTRUM_FLOOR_DBFS = Tolerance(
+    "BROWSER_SPECTRUM_FLOOR_DBFS", -80.0, "dBFS",
+    row="Browser (TypeScript) magnitude spectrum vs the Python oracle",
+    doc_text="−80 dBFS",
+)
+BROWSER_WINDOW_DIGEST_EXACT = Tolerance(
+    "BROWSER_WINDOW_DIGEST_EXACT", None, "sha256",
+    row="Browser window table digest", doc_text="**exact**",
+)
+BROWSER_F0_INJECTION_MEDIAN_ABS_CENTS = Tolerance(
+    "BROWSER_F0_INJECTION_MEDIAN_ABS_CENTS", 5.0, "cents",
+    row="Browser f0 vs the Praat golden", doc_text="≤ 5 cents",
+)
+
 #: Every constant above, in table order. The grep test walks this tuple, so a
 #: constant that is not listed here is not guarded — add it to both places.
 TABLE: tuple[Tolerance, ...] = (
@@ -143,6 +178,10 @@ TABLE: tuple[Tolerance, ...] = (
     LTAS_BAND_MAX_DB,
     FHE_MAX_HZ,
     SPR_MAX_DB,
+    BROWSER_SPECTRUM_ATOL_DB,
+    BROWSER_SPECTRUM_FLOOR_DBFS,
+    BROWSER_WINDOW_DIGEST_EXACT,
+    BROWSER_F0_INJECTION_MEDIAN_ABS_CENTS,
 )
 
 #: Which f0 row applies to which measurement path (validation README, two-path

@@ -117,8 +117,9 @@ The front end is the first application code in this repository that is neither C
 | npm | `10.8.2` (read on this machine, 2026-08-22) |
 | Install path | **`npm ci` against the committed `package-lock.json`, with `--ignore-scripts`** — the only install path ([ADR 0021](../docs/adr/0021-host-web-application.md) decision 4). `npm install` is not a substitute: it rewrites the lock |
 | Allowed dependency licences | MIT, ISC, 0BSD, BSD-2-Clause, BSD-3-Clause, Apache-2.0, CC0-1.0, Unlicense, BlueOak-1.0.0, Python-2.0, Zlib, CC-BY-4.0 — and nothing else. **AGPL-3.0 is forbidden** (a served web application is exactly the case its network clause reaches); GPL and LGPL packages are refused too, so that the allowlist stays one line a reviewer can check. A licence gate over `package-lock.json` runs in CI and **fails closed** on an unknown or absent licence |
+| Vite | **`^7`** (resolved `7.3.6`), not `^8`. **The licence gate chose this, not taste.** Vite 8 depends on `lightningcss`, which is **MPL-2.0** — an identifier the allowlist above does not carry — and it arrives with twelve prebuilt platform binaries, so `node scripts/check-licences.mjs` refuses twelve packages on a Vite 8 lock. Vite 7 resolves to a tree of MIT / Apache-2.0 / ISC / BSD-3-Clause only. Admitting MPL-2.0 is a **policy change and the owner's to sign** (roadmap W0); until he does, the pin is the fix, and `licence-policy.mjs`'s `NAMED_REFUSALS` prints exactly this paragraph when someone tries `^8` again |
 
-The exact Node and npm pin lands with the `package-lock.json` at W0; until then the versions above are what the machine has, not a decision.
+The Node and npm rows above are what the machine has; the pin that CI reads is [`web/.nvmrc`](web/.nvmrc) (`20.20.2`), and the dependency pin is the committed [`web/package-lock.json`](web/package-lock.json) as of W0.
 
 ### mkcert: phone-on-LAN is a requirement, not a nicety
 
